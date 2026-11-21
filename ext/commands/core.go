@@ -242,6 +242,9 @@ func (c *Command) transform(ctx *Context, p *Parameter) (reflect.Value, error) {
 			if p.Optional() {
 				return reflect.Zero(p.Type), nil
 			}
+			if v, ok, err := flagDefault(ctx, p.converter()); ok || err != nil {
+				return v, err
+			}
 			return reflect.Value{}, errMissingArgument(p)
 		}
 		return c.defaultValue(ctx, p)

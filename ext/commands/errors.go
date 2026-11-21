@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 	"time"
@@ -411,4 +412,20 @@ func errExtension(kind string, name string) ExtensionError {
 
 func errPartialEmoji(argument string) *PartialEmojiConversionFailure {
 	return &PartialEmojiConversionFailure{newKind(badArg, "Couldn't convert %q to PartialEmoji.", argument), argument}
+}
+
+func errTooManyFlags(flag *Flag, values []string) *TooManyFlags {
+	return &TooManyFlags{newKind(flagErr, "Too many flag values, expected %d but received %d.", flag.MaxArgs, len(values)), flag, values}
+}
+
+func errBadFlagArgument(flag *Flag, argument string, t reflect.Type, err error) *BadFlagArgument {
+	return &BadFlagArgument{newKind(flagErr, "Could not convert to %q for flag %q", t.Name(), flag.Name), flag, argument, err}
+}
+
+func errMissingRequiredFlag(flag *Flag) *MissingRequiredFlag {
+	return &MissingRequiredFlag{newKind(flagErr, "Flag %q is required and missing", flag.Name), flag}
+}
+
+func errMissingFlagArgument(flag *Flag) *MissingFlagArgument {
+	return &MissingFlagArgument{newKind(flagErr, "Flag %q does not have an argument", flag.Name), flag}
 }

@@ -80,6 +80,12 @@ func builtin(t reflect.Type, argument string) (reflect.Value, error) {
 }
 
 func actualConversion(ctx *Context, t reflect.Type, argument string, p *Parameter) (reflect.Value, error) {
+	if spec, err := flagSpecFor(t); err != nil || spec != nil {
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return spec.convert(ctx, argument)
+	}
 	if fn, ok := lookupConverter(t); ok {
 		v, err := fn(ctx, argument)
 		if err != nil && !errors.Is(err, ErrCommand) {
