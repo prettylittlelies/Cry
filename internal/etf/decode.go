@@ -293,6 +293,8 @@ func (d *Decoder) object(r source, n, depth int) error {
 	return nil
 }
 
+var maxSafeInteger = big.NewInt(1<<53 - 1)
+
 func (d *Decoder) bignum(r source, n int) error {
 	sign, err := r.ReadByte()
 	if err != nil {
@@ -309,7 +311,7 @@ func (d *Decoder) bignum(r source, n int) error {
 	if sign != 0 {
 		v.Neg(v)
 	}
-	if n <= 4 && (sign == 0 || v.Cmp(big.NewInt(math.MinInt32)) >= 0) {
+	if v.CmpAbs(maxSafeInteger) <= 0 {
 		d.buf.WriteString(v.String())
 		return nil
 	}
