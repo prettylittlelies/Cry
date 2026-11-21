@@ -2,6 +2,7 @@ package fingerprint
 
 import (
 	"context"
+	"crypto/x509"
 	"net"
 	"time"
 
@@ -16,6 +17,7 @@ type Dialer struct {
 	Hello    ClientHello
 	Sessions utls.ClientSessionCache
 	Net      ContextDialer
+	RootCAs  *x509.CertPool
 }
 
 func NewDialer(hello ClientHello) *Dialer {
@@ -40,6 +42,7 @@ func (d *Dialer) DialTLS(ctx context.Context, network, addr string) (*utls.UConn
 		ClientSessionCache: d.Sessions,
 		NextProtos:         []string{"h2", "http/1.1"},
 		OmitEmptyPsk:       true,
+		RootCAs:            d.RootCAs,
 	}, utls.HelloCustom)
 	if err := conn.ApplyPreset(d.Hello()); err != nil {
 		raw.Close()
