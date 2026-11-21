@@ -148,7 +148,7 @@ func breakCycles(fields map[string][]genField) {
 	}
 }
 
-func emitStructs(spec *Spec, r *resolver, overrides map[string]string) []byte {
+func emitStructs(spec *Spec, r *resolver, overrides map[string]string) ([]byte, map[string][]genField) {
 	fields := structFields(spec, r, overrides)
 	breakCycles(fields)
 	names := make([]string, 0, len(fields))
@@ -180,7 +180,7 @@ func emitStructs(spec *Spec, r *resolver, overrides map[string]string) []byte {
 		head.WriteString(")\n\n")
 	}
 	head.Write(body.Bytes())
-	return gofmt(head.Bytes())
+	return gofmt(head.Bytes()), fields
 }
 
 func omit(t string) string {

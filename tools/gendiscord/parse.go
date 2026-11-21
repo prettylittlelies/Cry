@@ -42,6 +42,7 @@ type Endpoint struct {
 	Params   *Structure
 	Query    *Structure
 	Response *Structure
+	Prose    []string
 }
 
 type GatewayEvent struct {
@@ -155,6 +156,9 @@ func parseDoc(spec *Spec, doc, text string) {
 		}
 		if event != nil && !strings.HasPrefix(lines[i], "|") {
 			event.Prose = append(event.Prose, lines[i])
+		}
+		if route != nil && !strings.HasPrefix(lines[i], "|") && !strings.HasPrefix(lines[i], "#") {
+			route.Prose = append(route.Prose, lines[i])
 		}
 		if !strings.HasPrefix(lines[i], "|") || i+1 >= len(lines) || !strings.HasPrefix(lines[i+1], "| -") {
 			continue

@@ -19,8 +19,8 @@ var enumNames = map[string]string{
 }
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "usage: gendiscord <userdoccers/pages> <output dir>")
+	if len(os.Args) != 4 {
+		fmt.Fprintln(os.Stderr, "usage: gendiscord <userdoccers/pages> <models dir> <api dir>")
 		os.Exit(2)
 	}
 	spec, err := ParseDir(os.Args[1])
@@ -70,13 +70,15 @@ func main() {
 	}
 	sort.Slice(enums, func(i, j int) bool { return enums[i].name < enums[j].name })
 	r := newResolver(spec, names, enums)
-	write := func(name string, data []byte) {
-		if err := os.WriteFile(filepath.Join(os.Args[2], name), data, 0o644); err != nil {
+	write := func(dir, name string, data []byte) {
+		if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 	}
-	write("structures.go", emitStructs(spec, r, overrides))
-	write("enums.go", emitEnums(enums))
+	structs, fields := emitStructs(spec, r, overrides)
+	write(os.Args[2], "structures.go", structs)
+	write(os.Args[2], "enums.go", emitEnums(enums))
+	write(os.Args[3], "endpoints.go", emitAPI(spec, r, fields))
 	fmt.Printf("generated %d structures, %d enums\n", len(spec.Structures), len(enums))
 }

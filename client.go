@@ -9,6 +9,7 @@ import (
 	"net/http/cookiejar"
 	"sync/atomic"
 
+	"github.com/prettylittlelies/cry/api"
 	"github.com/prettylittlelies/cry/build"
 	"github.com/prettylittlelies/cry/discord"
 	"github.com/prettylittlelies/cry/fingerprint"
@@ -28,6 +29,7 @@ type Client struct {
 	transport *transport.Transport
 	session   *properties.Session
 	rest      *rest.Client
+	api       *api.API
 	gateway   *gateway.Gateway
 	state     *state.State
 	events    *registry
@@ -68,6 +70,7 @@ func New(ctx context.Context, token string, opts ...Option) (*Client, error) {
 		restOpts = append(restOpts, rest.WithBaseURL(cfg.restBase))
 	}
 	c.rest = rest.New(token, tr, rest.Identity{Session: session, Host: cfg.host, Chrome: release.MacOS.Chrome}, restOpts...)
+	c.api = api.New(c.rest)
 	jar, _ := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	c.gateway = gateway.New(gateway.Config{
 		Token:       token,
@@ -80,6 +83,10 @@ func New(ctx context.Context, token string, opts ...Option) (*Client, error) {
 		Handler:     c.handle,
 	})
 	return c, nil
+}
+
+func (c *Client) API() *api.API {
+	return c.api
 }
 
 func (c *Client) REST() *rest.Client {

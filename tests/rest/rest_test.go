@@ -11,30 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prettylittlelies/cry/build"
-	"github.com/prettylittlelies/cry/fingerprint"
-	"github.com/prettylittlelies/cry/properties"
 	"github.com/prettylittlelies/cry/rest"
 	"github.com/prettylittlelies/cry/tests/testkit"
-	"github.com/prettylittlelies/cry/transport"
 )
-
-func identity(t *testing.T) rest.Identity {
-	t.Helper()
-	chrome, _ := build.ParseVersion("152.0.7977.169")
-	electron, _ := build.ParseVersion("44.10.0")
-	host, _ := build.ParseVersion("0.0.421")
-	h := properties.MacOSHost()
-	d := properties.NewDesktop(h, properties.DesktopRelease{Channel: build.Stable, Host: host, Electron: electron, Chrome: chrome, Number: 678818})
-	return rest.Identity{Session: properties.NewSession(d), Host: h, Chrome: chrome}
-}
 
 func clientURL(t *testing.T, h http.HandlerFunc, opts ...rest.Option) (*rest.Client, string) {
 	t.Helper()
-	srv := testkit.NewH2Server(t, h)
-	tr := transport.New(fingerprint.Electron44(), transport.WithRootCAs(srv.Pool))
-	t.Cleanup(tr.CloseIdleConnections)
-	return rest.New("token", tr, identity(t), append([]rest.Option{rest.WithBaseURL(srv.URL)}, opts...)...), srv.URL
+	return testkit.RESTClient(t, h, opts...)
 }
 
 func client(t *testing.T, h http.HandlerFunc, opts ...rest.Option) *rest.Client {
