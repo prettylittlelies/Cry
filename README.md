@@ -3,11 +3,11 @@
 <p align="center"><b>A Go library for Discord user accounts, modelled on discord.py-self.</b></p>
 
 <p align="center">
-  <a href="https://github.com/prettylittlelies/Cry"><img src="https://img.shields.io/github/languages/code-size/prettylittlelies/Cry?style=for-the-badge&labelColor=0a0a0a&color=cfff53&label=code%20size" alt="Code size"></a>
-  <a href="https://github.com/prettylittlelies/Cry/stargazers"><img src="https://img.shields.io/github/stars/prettylittlelies/Cry?style=for-the-badge&labelColor=0a0a0a&color=cfff53&logo=github&logoColor=white" alt="Stars"></a>
+  <a href="https://github.com/prettylittlelies/Cry"><img src="https://img.shields.io/github/languages/code-size/prettylittlelies/Cry?style=for-the-badge&labelColor=03141c&color=00add8&label=code%20size" alt="Code size"></a>
+  <a href="https://github.com/prettylittlelies/Cry/stargazers"><img src="https://img.shields.io/github/stars/prettylittlelies/Cry?style=for-the-badge&labelColor=03141c&color=00add8&logo=github&logoColor=white" alt="Stars"></a>
   <br>
-  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go_1.27-000000?style=for-the-badge&logo=go&logoColor=00add8" alt="Go"></a>
-  <a href="https://discord.com"><img src="https://img.shields.io/badge/Discord-000000?style=for-the-badge&logo=discord&logoColor=5865f2" alt="Discord"></a>
+  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go_1.27-03141c?style=for-the-badge&logo=go&logoColor=00add8" alt="Go"></a>
+  <a href="https://discord.com"><img src="https://img.shields.io/badge/Discord-03141c?style=for-the-badge&logo=discord&logoColor=5865f2" alt="Discord"></a>
 </p>
 
 <p align="center">
