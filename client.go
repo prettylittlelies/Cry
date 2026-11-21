@@ -2,7 +2,6 @@ package cry
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"github.com/prettylittlelies/cry/discord"
 	"github.com/prettylittlelies/cry/fingerprint"
 	"github.com/prettylittlelies/cry/gateway"
+	"github.com/prettylittlelies/cry/internal/lenient"
 	"github.com/prettylittlelies/cry/properties"
 	"github.com/prettylittlelies/cry/rest"
 	"github.com/prettylittlelies/cry/state"
@@ -131,7 +131,7 @@ func (c *Client) handle(e gateway.Event) {
 		return
 	}
 	v := newEvent()
-	if err := json.Unmarshal(e.Data, v); err != nil {
+	if err := lenient.Unmarshal(e.Data, v); err != nil {
 		c.cfg.logger.Warn("event decode failed", "type", e.Type, "err", err)
 		c.events.emit(ctx, &RawEvent{Type: e.Type, Seq: e.Seq, Data: e.Data})
 		return
