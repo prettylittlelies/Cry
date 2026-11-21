@@ -21,6 +21,10 @@ type decoder interface {
 	decode(r *Reader)
 }
 
+type Encodable = encoder
+
+type Decodable = decoder
+
 type Writer struct {
 	buf []byte
 }
@@ -74,10 +78,13 @@ func (w *Writer) Optional(present bool, body func(*Writer)) {
 	}
 }
 
-func writeList[T encoder](w *Writer, items []T) {
+func writeList[T any, P interface {
+	*T
+	encoder
+}](w *Writer, items []T) {
 	w.Vector(func(w *Writer) {
-		for _, it := range items {
-			it.encode(w)
+		for i := range items {
+			P(&items[i]).encode(w)
 		}
 	})
 }

@@ -198,3 +198,53 @@ func TestTreeMath(t *testing.T) {
 		t.Errorf("common ancestor 1,2 = %d", got)
 	}
 }
+
+func TestMessagesRoundTrip(t *testing.T) {
+	type vector struct {
+		Welcome     hexBytes `json:"mls_welcome"`
+		GroupInfo   hexBytes `json:"mls_group_info"`
+		KeyPackage  hexBytes `json:"mls_key_package"`
+		RatchetTree hexBytes `json:"ratchet_tree"`
+		Secrets     hexBytes `json:"group_secrets"`
+		Add         hexBytes `json:"add_proposal"`
+		Update      hexBytes `json:"update_proposal"`
+		PSK         hexBytes `json:"pre_shared_key_proposal"`
+		Commit      hexBytes `json:"commit"`
+		App         hexBytes `json:"public_message_application"`
+		Prop        hexBytes `json:"public_message_proposal"`
+		PubCommit   hexBytes `json:"public_message_commit"`
+		Private     hexBytes `json:"private_message"`
+	}
+	type codec interface {
+		mls.Encodable
+		mls.Decodable
+	}
+	for i, v := range load[vector](t, "messages.json") {
+		cases := []struct {
+			name string
+			raw  []byte
+			into codec
+		}{
+			{"welcome", v.Welcome, new(mls.Message)},
+			{"group info", v.GroupInfo, new(mls.Message)},
+			{"key package", v.KeyPackage, new(mls.Message)},
+			{"ratchet tree", v.RatchetTree, new(mls.RatchetTree)},
+			{"group secrets", v.Secrets, new(mls.GroupSecrets)},
+			{"add", v.Add, new(mls.KeyPackage)},
+			{"update", v.Update, new(mls.LeafNode)},
+			{"psk", v.PSK, new(mls.PreSharedKeyID)},
+			{"commit", v.Commit, new(mls.Commit)},
+			{"public application", v.App, new(mls.Message)},
+			{"public proposal", v.Prop, new(mls.Message)},
+			{"public commit", v.PubCommit, new(mls.Message)},
+			{"private", v.Private, new(mls.Message)},
+		}
+		for _, c := range cases {
+			if err := mls.Unmarshal(c.raw, c.into); err != nil {
+				t.Errorf("%d %s: %v", i, c.name, err)
+				continue
+			}
+			equal(t, c.name, mls.Marshal(c.into), c.raw)
+		}
+	}
+}
