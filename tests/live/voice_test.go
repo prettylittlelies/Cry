@@ -43,8 +43,8 @@ func (s *silence) Next() ([]byte, error) {
 
 func TestVoiceJoin(t *testing.T) {
 	tok := token(t)
-	guild := envID(t, "CRY_VOICE_GUILD", 1573803464159662120)
-	channel := envID(t, "CRY_VOICE_CHANNEL", 1573803465031950469)
+	guild := envID(t, "CRY_VOICE_GUILD", 1105071842064076830)
+	channel := envID(t, "CRY_VOICE_CHANNEL", 1254193760045236354)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
