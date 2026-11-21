@@ -90,3 +90,35 @@ func (s *State) UserByName(name string) (discord.PartialUser, bool) {
 	}
 	return discord.PartialUser{}, false
 }
+
+func (s *State) Members(guild snowflake.ID) []discord.GuildMember {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]discord.GuildMember, 0, len(s.members[guild]))
+	for _, m := range s.members[guild] {
+		out = append(out, *m)
+	}
+	return out
+}
+
+func (s *State) AllGuilds() []discord.GatewayGuild {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]discord.GatewayGuild, 0, len(s.guilds))
+	for _, g := range s.guilds {
+		out = append(out, *g)
+	}
+	return out
+}
+
+func (s *State) GuildChannels(guild snowflake.ID) []discord.Channel {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var out []discord.Channel
+	for _, c := range s.channels {
+		if c.GuildID == guild {
+			out = append(out, *c)
+		}
+	}
+	return out
+}

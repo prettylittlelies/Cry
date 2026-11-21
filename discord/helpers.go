@@ -40,3 +40,19 @@ func (m *Message) JumpURL(guildID snowflake.ID) string {
 	}
 	return "https://discord.com/channels/" + guild + "/" + m.ChannelID.String() + "/" + m.ID.String()
 }
+
+func (u *User) Partial() PartialUser {
+	return PartialUser{
+		ID:                   u.ID,
+		Username:             u.Username,
+		Discriminator:        u.Discriminator,
+		GlobalName:           u.GlobalName,
+		Avatar:               u.Avatar,
+		AvatarDecorationData: u.AvatarDecorationData,
+		Collectibles:         u.Collectibles,
+		DisplayNameStyles:    u.DisplayNameStyles,
+		PrimaryGuild:         u.PrimaryGuild,
+		Bot:                  u.Bot,
+		System:               u.System,
+	}
+}

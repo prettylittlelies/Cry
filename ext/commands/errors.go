@@ -408,3 +408,7 @@ func errExpectedClosingQuote(q rune) *ExpectedClosingQuoteError {
 func errExtension(kind string, name string) ExtensionError {
 	return ExtensionError{newKind(extension, kind, name), name}
 }
+
+func errPartialEmoji(argument string) *PartialEmojiConversionFailure {
+	return &PartialEmojiConversionFailure{newKind(badArg, "Couldn't convert %q to PartialEmoji.", argument), argument}
+}
