@@ -9,6 +9,7 @@ require (
 	github.com/klauspost/compress v1.20.5
 	github.com/refraction-networking/utls v1.8.2
 	golang.org/x/net v0.63.0
+	google.golang.org/protobuf v1.36.12
 	howett.net/plist v1.0.1
 )
 
