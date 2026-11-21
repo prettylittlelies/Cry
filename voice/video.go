@@ -61,7 +61,19 @@ func (v *Conn) SetVideo(active bool, opts VideoOptions) error {
 		}}
 	}
 	v.videoFPS.Store(int32(opts.FPS))
+	if v.stream == "" && v.opts.Video == Camera && v.selfVideo.Swap(active) != active {
+		if err := v.client.Gateway().UpdateVoiceState(v.ctx, v.voiceState(&v.channel)); err != nil {
+			return err
+		}
+	}
 	return ws.send(OpVideo, state)
+}
+
+func (v *Conn) VideoCodec() string {
+	if c := v.videoCodec.Load(); c != nil {
+		return *c
+	}
+	return ""
 }
 
 func (v *Conn) WriteVP8(frame []byte) error {

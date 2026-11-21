@@ -170,6 +170,7 @@ func playIVF(t *testing.T, ctx context.Context, conn *voice.Conn, path, what str
 		t.Fatal(err)
 	}
 	defer f.Close()
+	t.Logf("%s: negotiated video codec %q", what, conn.VideoCodec())
 	start := time.Now()
 	if err := conn.PlayIVF(ctx, f, voice.VideoOptions{}); err != nil {
 		t.Fatalf("%s: %v", what, err)

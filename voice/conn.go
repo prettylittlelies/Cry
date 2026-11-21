@@ -69,6 +69,7 @@ type Conn struct {
 	crypt      atomic.Pointer[transport]
 	rtp        rtpSender
 	video      *videoSender
+	selfVideo  atomic.Bool
 	videoFPS   atomic.Int32
 	videoCodec atomic.Pointer[string]
 	handshake  chan error
@@ -166,7 +167,7 @@ func (v *Conn) voiceState(channel *snowflake.ID) discord.UpdateVoiceState {
 	if v.guild != 0 {
 		guild = &v.guild
 	}
-	return discord.UpdateVoiceState{GuildID: guild, ChannelID: channel, SelfMute: v.opts.SelfMute, SelfDeaf: v.opts.SelfDeaf, PreferredRegions: v.opts.PreferredRegions}
+	return discord.UpdateVoiceState{GuildID: guild, ChannelID: channel, SelfMute: v.opts.SelfMute, SelfDeaf: v.opts.SelfDeaf, SelfVideo: v.selfVideo.Load() && channel != nil, PreferredRegions: v.opts.PreferredRegions}
 }
 
 func (v *Conn) serverID() snowflake.ID {
