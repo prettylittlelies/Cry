@@ -44,10 +44,17 @@ type Endpoint struct {
 	Response *Structure
 }
 
+type GatewayEvent struct {
+	Name    string
+	Prose   []string
+	Structs []*Structure
+}
+
 type Spec struct {
 	Structures []*Structure
 	Enums      []*Enum
 	Endpoints  []*Endpoint
+	Events     []*GatewayEvent
 }
 
 var (
@@ -115,7 +122,10 @@ func ParseDir(root string) (*Spec, error) {
 func parseDoc(spec *Spec, doc, text string) {
 	lines := strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n")
 	title := ""
-	var route *Endpoint
+	var (
+		route *Endpoint
+		event *GatewayEvent
+	)
 	for i := 0; i < len(lines); i++ {
 		if m := routePattern.FindStringSubmatch(lines[i]); m != nil {
 			route = &Endpoint{Doc: doc, Method: m[1], URL: m[2]}
@@ -135,7 +145,16 @@ func parseDoc(spec *Spec, doc, text string) {
 		}
 		if m := headingPattern.FindStringSubmatch(lines[i]); m != nil {
 			title = tagPattern.ReplaceAllString(m[1], "")
+			if doc == "gateway-events" && strings.HasPrefix(lines[i], "#### ") {
+				event = &GatewayEvent{Name: title}
+				spec.Events = append(spec.Events, event)
+			} else if strings.HasPrefix(lines[i], "## ") || strings.HasPrefix(lines[i], "### ") {
+				event = nil
+			}
 			continue
+		}
+		if event != nil && !strings.HasPrefix(lines[i], "|") {
+			event.Prose = append(event.Prose, lines[i])
 		}
 		if !strings.HasPrefix(lines[i], "|") || i+1 >= len(lines) || !strings.HasPrefix(lines[i+1], "| -") {
 			continue
@@ -171,6 +190,9 @@ func parseDoc(spec *Spec, doc, text string) {
 				if slot != nil {
 					*slot = s
 				}
+				if event != nil {
+					event.Structs = append(event.Structs, s)
+				}
 			}
 		case len(header) >= 2 && header[0] == "Value" && (header[1] == "Name" || header[1] == "Description"):
 			named := header[1] == "Name"
@@ -202,6 +224,8 @@ func parseDoc(spec *Spec, doc, text string) {
 
 func structureTitle(title string, route *Endpoint) (string, **Structure) {
 	switch {
+	case strings.HasSuffix(title, " Extra Fields"):
+		return strings.Replace(title, " Structure Extra Fields", " Extra Fields", 1), nil
 	case strings.HasSuffix(title, " Structure"):
 		return strings.TrimSuffix(title, " Structure"), nil
 	case strings.HasSuffix(title, " Object"):

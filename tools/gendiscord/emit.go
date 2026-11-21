@@ -161,6 +161,7 @@ func emitStructs(spec *Spec, r *resolver, overrides map[string]string) []byte {
 		}
 		body.WriteString("}\n\n")
 	}
+	body.Write(eventsBody(spec, r, fields))
 	var head bytes.Buffer
 	head.WriteString("package discord\n\n")
 	if len(r.imports) > 0 {

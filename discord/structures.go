@@ -1407,6 +1407,10 @@ type ChannelAffinity struct {
 	Affinity  float64      `json:"affinity"`
 }
 
+type ChannelCreateExtraFields struct {
+	OriginChannelID snowflake.ID `json:"origin_channel_id,omitzero"`
+}
+
 type ChannelFollowingByChannel struct {
 	DayPt                time.Time    `json:"day_pt"`
 	ChannelID            snowflake.ID `json:"channel_id"`
@@ -2048,9 +2052,21 @@ type Company struct {
 }
 
 type ComponentsContentInventoryEntry struct {
-	Type                  ComponentType         `json:"type"`
-	ID                    int64                 `json:"id,omitzero"`
-	ContentInventoryEntry ContentInventoryEntry `json:"content_inventory_entry"`
+	ID           string                      `json:"id"`
+	AuthorID     snowflake.ID                `json:"author_id"`
+	AuthorType   ContentInventoryAuthorType  `json:"author_type"`
+	ContentType  ContentInventoryContentType `json:"content_type"`
+	Traits       []ContentInventoryTrait     `json:"traits"`
+	Extra        ContentInventoryMetadata    `json:"extra"`
+	Participants []snowflake.ID              `json:"participants,omitempty"`
+	ExpiresAt    time.Time                   `json:"expires_at,omitzero"`
+	EndedAt      time.Time                   `json:"ended_at,omitzero"`
+	StartedAt    time.Time                   `json:"started_at,omitzero"`
+	OriginalID   snowflake.ID                `json:"original_id,omitzero"`
+	GuildID      snowflake.ID                `json:"guild_id,omitzero"`
+	ChannelID    snowflake.ID                `json:"channel_id,omitzero"`
+	SessionID    snowflake.ID                `json:"session_id,omitzero"`
+	Signature    ContentInventorySignature   `json:"signature"`
 }
 
 type ConfettiPotion struct {
@@ -2135,21 +2151,9 @@ type ContentInventoryArtist struct {
 }
 
 type ContentInventoryEntry struct {
-	ID           string                      `json:"id"`
-	AuthorID     snowflake.ID                `json:"author_id"`
-	AuthorType   ContentInventoryAuthorType  `json:"author_type"`
-	ContentType  ContentInventoryContentType `json:"content_type"`
-	Traits       []ContentInventoryTrait     `json:"traits"`
-	Extra        ContentInventoryMetadata    `json:"extra"`
-	Participants []snowflake.ID              `json:"participants,omitempty"`
-	ExpiresAt    time.Time                   `json:"expires_at,omitzero"`
-	EndedAt      time.Time                   `json:"ended_at,omitzero"`
-	StartedAt    time.Time                   `json:"started_at,omitzero"`
-	OriginalID   snowflake.ID                `json:"original_id,omitzero"`
-	GuildID      snowflake.ID                `json:"guild_id,omitzero"`
-	ChannelID    snowflake.ID                `json:"channel_id,omitzero"`
-	SessionID    snowflake.ID                `json:"session_id,omitzero"`
-	Signature    ContentInventorySignature   `json:"signature"`
+	Type                  ComponentType          `json:"type"`
+	ID                    int64                  `json:"id,omitzero"`
+	ContentInventoryEntry *ContentInventoryEntry `json:"content_inventory_entry"`
 }
 
 type ContentInventoryMetadata struct {
@@ -2534,12 +2538,26 @@ type CreateGuildRoleSubscriptionGroupListingParams struct {
 }
 
 type CreateGuildScheduledEventParams struct {
-	IsCanceled         *bool      `json:"is_canceled,omitempty"`
-	ScheduledStartTime *time.Time `json:"scheduled_start_time,omitempty"`
-	ScheduledEndTime   *time.Time `json:"scheduled_end_time,omitempty"`
+	ChannelID          snowflake.ID                  `json:"channel_id,omitzero"`
+	EntityMetadata     json.RawMessage               `json:"entity_metadata,omitempty"`
+	Name               string                        `json:"name"`
+	PrivacyLevel       PrivacyLevel                  `json:"privacy_level"`
+	ScheduledStartTime time.Time                     `json:"scheduled_start_time"`
+	ScheduledEndTime   time.Time                     `json:"scheduled_end_time,omitzero"`
+	Description        string                        `json:"description,omitzero"`
+	EntityType         GuildScheduledEventEntityType `json:"entity_type"`
+	Image              ImageData                     `json:"image,omitzero"`
+	RecurrenceRule     json.RawMessage               `json:"recurrence_rule,omitempty"`
 }
 
 type CreateGuildScheduledEventParamsGuildScheduledEvent struct {
+	OriginalScheduledStartTime time.Time  `json:"original_scheduled_start_time"`
+	IsCanceled                 *bool      `json:"is_canceled,omitempty"`
+	ScheduledStartTime         *time.Time `json:"scheduled_start_time,omitempty"`
+	ScheduledEndTime           *time.Time `json:"scheduled_end_time,omitempty"`
+}
+
+type CreateGuildScheduledEventParamsGuildScheduledEventXxx struct {
 	ChannelID          *snowflake.ID                 `json:"channel_id,omitempty"`
 	EntityMetadata     json.RawMessage               `json:"entity_metadata,omitempty"`
 	Name               string                        `json:"name,omitzero"`
@@ -2549,19 +2567,6 @@ type CreateGuildScheduledEventParamsGuildScheduledEvent struct {
 	Description        *string                       `json:"description,omitempty"`
 	EntityType         GuildScheduledEventEntityType `json:"entity_type,omitzero"`
 	Status             GuildScheduledEventStatus     `json:"status,omitzero"`
-	Image              ImageData                     `json:"image,omitzero"`
-	RecurrenceRule     json.RawMessage               `json:"recurrence_rule,omitempty"`
-}
-
-type CreateGuildScheduledEventParamsGuildScheduledEventXxx struct {
-	ChannelID          snowflake.ID                  `json:"channel_id,omitzero"`
-	EntityMetadata     json.RawMessage               `json:"entity_metadata,omitempty"`
-	Name               string                        `json:"name"`
-	PrivacyLevel       PrivacyLevel                  `json:"privacy_level"`
-	ScheduledStartTime time.Time                     `json:"scheduled_start_time"`
-	ScheduledEndTime   time.Time                     `json:"scheduled_end_time,omitzero"`
-	Description        string                        `json:"description,omitzero"`
-	EntityType         GuildScheduledEventEntityType `json:"entity_type"`
 	Image              ImageData                     `json:"image,omitzero"`
 	RecurrenceRule     json.RawMessage               `json:"recurrence_rule,omitempty"`
 }
@@ -2850,9 +2855,11 @@ type CreateStagedReportParams struct {
 }
 
 type CreateStoreListingParams struct {
+	ApplicationID               snowflake.ID        `json:"application_id"`
+	SKUID                       snowflake.ID        `json:"sku_id"`
 	ChildSKUIDs                 []snowflake.ID      `json:"child_sku_ids,omitempty"`
-	Summary                     json.RawMessage     `json:"summary,omitempty"`
-	Description                 json.RawMessage     `json:"description,omitempty"`
+	Summary                     json.RawMessage     `json:"summary"`
+	Description                 json.RawMessage     `json:"description"`
 	Tagline                     json.RawMessage     `json:"tagline,omitempty"`
 	Published                   bool                `json:"published,omitzero"`
 	CarouselItems               []StoreCarouselItem `json:"carousel_items,omitempty"`
@@ -4313,8 +4320,9 @@ type GatewayEventsMessageDelete struct {
 }
 
 type GatewayEventsQoSHeartbeat struct {
-	Seq *int64     `json:"seq"`
-	QoS QoSPayload `json:"qos"`
+	InitializationTimestamp int64  `json:"initialization_timestamp"`
+	SessionID               string `json:"session_id"`
+	ClientLaunchID          string `json:"client_launch_id"`
 }
 
 type GatewayEventsUserApplicationRemove struct {
@@ -4359,6 +4367,12 @@ type GatewayGuild struct {
 	Emojis                   []Emoji                    `json:"emojis"`
 	SoundboardSounds         []SoundboardSound          `json:"soundboard_sounds"`
 	PremiumSubscriptionCount int64                      `json:"premium_subscription_count"`
+}
+
+type GatewayLobbyExtraFields struct {
+	VoiceStates []json.RawMessage `json:"voice_states"`
+	Region      string            `json:"region"`
+	Metadata    map[string]string `json:"metadata"`
 }
 
 type GatewayPayload struct {
@@ -4720,11 +4734,7 @@ type GetGuildApplicationSKUStorefrontResponse struct {
 }
 
 type GetGuildApplicationStorefrontAnnouncementResponse struct {
-	ID                     snowflake.ID `json:"id"`
-	ApplicationID          snowflake.ID `json:"application_id"`
-	ApplicationName        string       `json:"application_name"`
-	AssetID                snowflake.ID `json:"asset_id"`
-	BackgroundImageAssetID snowflake.ID `json:"background_image_asset_id"`
+	InteractionID snowflake.ID `json:"interaction_id"`
 }
 
 type GetGuildArguments struct {
@@ -5180,6 +5190,17 @@ type GetUniqueUsernameSuggestionsResponse struct {
 }
 
 type GetUserApplicationCommandIndexParams struct {
+	Type                     int64                      `json:"type,omitzero"`
+	Name                     string                     `json:"name"`
+	NameLocalizations        map[string]string          `json:"name_localizations,omitempty"`
+	Description              string                     `json:"description"`
+	DescriptionLocalizations map[string]string          `json:"description_localizations,omitempty"`
+	Options                  []ApplicationCommandOption `json:"options,omitempty"`
+	DefaultMemberPermissions *string                    `json:"default_member_permissions,omitempty"`
+	NSFW                     bool                       `json:"nsfw,omitzero"`
+}
+
+type GetUserApplicationCommandIndexParamsApplicationCommands struct {
 	Type                     int64                         `json:"type,omitzero"`
 	Name                     string                        `json:"name"`
 	NameLocalizations        map[string]string             `json:"name_localizations,omitempty"`
@@ -5192,17 +5213,6 @@ type GetUserApplicationCommandIndexParams struct {
 	IntegrationTypes         []int64                       `json:"integration_types,omitempty"`
 	Contexts                 []int64                       `json:"contexts,omitempty"`
 	Handler                  ApplicationCommandHandlerType `json:"handler,omitzero"`
-}
-
-type GetUserApplicationCommandIndexParamsApplicationCommands struct {
-	Type                     int64                      `json:"type,omitzero"`
-	Name                     string                     `json:"name"`
-	NameLocalizations        map[string]string          `json:"name_localizations,omitempty"`
-	Description              string                     `json:"description"`
-	DescriptionLocalizations map[string]string          `json:"description_localizations,omitempty"`
-	Options                  []ApplicationCommandOption `json:"options,omitempty"`
-	DefaultMemberPermissions *string                    `json:"default_member_permissions,omitempty"`
-	NSFW                     bool                       `json:"nsfw,omitzero"`
 }
 
 type GetUserApplicationCommandIndexParamsApplicationCommandsXxx struct {
@@ -5651,7 +5661,7 @@ type GuildJoinRequestUpdate struct {
 }
 
 type GuildListGuildRoleSubscriptionListingTemplatesResponse struct {
-	IsEligible bool `json:"is_eligible"`
+	Templates []RoleSubscriptionListingTemplate `json:"templates"`
 }
 
 type GuildMember struct {
@@ -5673,6 +5683,10 @@ type GuildMember struct {
 	UnusualDMActivityUntil     *time.Time            `json:"unusual_dm_activity_until,omitempty"`
 	Flags                      GuildMemberFlags      `json:"flags"`
 	Permissions                Permissions           `json:"permissions,omitzero"`
+}
+
+type GuildMemberAddExtraFields struct {
+	GuildID snowflake.ID `json:"guild_id"`
 }
 
 type GuildMemberRemove struct {
@@ -5847,10 +5861,9 @@ type GuildScheduledEvent struct {
 }
 
 type GuildScheduledEventCreateGuildScheduledEventParams struct {
-	OriginalScheduledStartTime time.Time  `json:"original_scheduled_start_time"`
-	IsCanceled                 *bool      `json:"is_canceled,omitempty"`
-	ScheduledStartTime         *time.Time `json:"scheduled_start_time,omitempty"`
-	ScheduledEndTime           *time.Time `json:"scheduled_end_time,omitempty"`
+	IsCanceled         *bool      `json:"is_canceled,omitempty"`
+	ScheduledStartTime *time.Time `json:"scheduled_start_time,omitempty"`
+	ScheduledEndTime   *time.Time `json:"scheduled_end_time,omitempty"`
 }
 
 type GuildScheduledEventException struct {
@@ -6021,10 +6034,8 @@ type GuildWidgetSettings struct {
 }
 
 type Handshake struct {
-	V          int64  `json:"v"`
-	ClientID   string `json:"client_id"`
-	FrameID    string `json:"frame_id"`
-	SdkVersion string `json:"sdk_version,omitzero"`
+	V        int64  `json:"v"`
+	ClientID string `json:"client_id"`
 }
 
 type Harvest struct {
@@ -6191,6 +6202,10 @@ type IntegrationApplication struct {
 	ParentID                       snowflake.ID     `json:"parent_id,omitzero"`
 }
 
+type IntegrationCreateExtraFields struct {
+	GuildID snowflake.ID `json:"guild_id"`
+}
+
 type IntegrationDelete struct {
 	ID            snowflake.ID `json:"id"`
 	GuildID       snowflake.ID `json:"guild_id"`
@@ -6201,6 +6216,10 @@ type IntegrationGuild struct {
 	ID   snowflake.ID `json:"id"`
 	Name string       `json:"name"`
 	Icon *string      `json:"icon"`
+}
+
+type IntegrationUpdateExtraFields struct {
+	GuildID snowflake.ID `json:"guild_id"`
 }
 
 type Interaction struct {
@@ -6655,9 +6674,7 @@ type ListBogoPromotionsQuery struct {
 }
 
 type ListBulkApplicationIdentitiesParams struct {
-	Username string                     `json:"username,omitzero"`
-	Metadata json.RawMessage            `json:"metadata,omitempty"`
-	Data     UserApplicationProfileData `json:"data,omitzero"`
+	UserIDs []snowflake.ID `json:"user_ids"`
 }
 
 type ListBulkApplicationPrimaryStoreListingQuery struct {
@@ -6912,7 +6929,7 @@ type ListGuildProductListingsResponse struct {
 }
 
 type ListGuildRoleSubscriptionListingTemplatesResponse struct {
-	Templates []RoleSubscriptionListingTemplate `json:"templates"`
+	IsEligible bool `json:"is_eligible"`
 }
 
 type ListGuildRoleSubscriptionTrialsParams struct {
@@ -7636,6 +7653,15 @@ type MessageInteraction struct {
 	TriggeringInteractionMetadata *MessageInteraction    `json:"triggering_interaction_metadata,omitempty"`
 	TargetUser                    PartialUser            `json:"target_user,omitzero"`
 	TargetMessageID               snowflake.ID           `json:"target_message_id,omitzero"`
+}
+
+type MessageObjectExtraFields struct {
+	ChannelType        ChannelType       `json:"channel_type"`
+	GuildID            snowflake.ID      `json:"guild_id,omitzero"`
+	Member             GuildMember       `json:"member,omitzero"`
+	Mentions           []PartialUser     `json:"mentions"`
+	Metadata           map[string]string `json:"metadata,omitempty"`
+	ModerationMetadata map[string]string `json:"moderation_metadata,omitempty"`
 }
 
 type MessagePin struct {
@@ -9488,9 +9514,8 @@ type PushToTalkArguments struct {
 }
 
 type QoSHeartbeat struct {
-	InitializationTimestamp int64  `json:"initialization_timestamp"`
-	SessionID               string `json:"session_id"`
-	ClientLaunchID          string `json:"client_launch_id"`
+	Seq *int64     `json:"seq"`
+	QoS QoSPayload `json:"qos"`
 }
 
 type QoSPayload struct {
@@ -9893,8 +9918,10 @@ type RPCGuildTemplate struct {
 }
 
 type RPCHandshake struct {
-	V        int64  `json:"v"`
-	ClientID string `json:"client_id"`
+	V          int64  `json:"v"`
+	ClientID   string `json:"client_id"`
+	FrameID    string `json:"frame_id"`
+	SdkVersion string `json:"sdk_version,omitzero"`
 }
 
 type RPCMessage struct {
@@ -9965,6 +9992,7 @@ type RPCSendActivityJoinInviteArguments struct {
 
 type RPCSetUserVoiceSettingsArguments struct {
 	UserID snowflake.ID `json:"user_id"`
+	Pan    Pan          `json:"pan,omitzero"`
 	Volume int64        `json:"volume,omitzero"`
 	Mute   bool         `json:"mute,omitzero"`
 }
@@ -10267,6 +10295,10 @@ type RelationshipAdd struct {
 	Since            time.Time        `json:"since,omitzero"`
 }
 
+type RelationshipAddExtraFields struct {
+	ShouldNotify bool `json:"should_notify,omitzero"`
+}
+
 type RemoteCommand struct {
 	TargetSessionID string          `json:"target_session_id"`
 	Payload         json.RawMessage `json:"payload"`
@@ -10546,6 +10578,11 @@ type ResourceChannel struct {
 	Description string       `json:"description"`
 	Emoji       Emoji        `json:"emoji,omitzero"`
 	Icon        string       `json:"icon,omitzero"`
+}
+
+type ResponseBodyExtraFields struct {
+	ShowVerificationForm bool          `json:"show_verification_form,omitzero"`
+	WelcomeScreen        WelcomeScreen `json:"welcome_screen,omitzero"`
 }
 
 type Resume struct {
@@ -11345,7 +11382,6 @@ type SetStreamPaused struct {
 
 type SetUserVoiceSettingsArguments struct {
 	UserID snowflake.ID `json:"user_id"`
-	Pan    Pan          `json:"pan,omitzero"`
 	Volume int64        `json:"volume,omitzero"`
 	Mute   bool         `json:"mute,omitzero"`
 }
@@ -11658,11 +11694,9 @@ type StoreCreateSKUPurchaseParams struct {
 }
 
 type StoreCreateStoreListingParams struct {
-	ApplicationID               snowflake.ID        `json:"application_id"`
-	SKUID                       snowflake.ID        `json:"sku_id"`
 	ChildSKUIDs                 []snowflake.ID      `json:"child_sku_ids,omitempty"`
-	Summary                     json.RawMessage     `json:"summary"`
-	Description                 json.RawMessage     `json:"description"`
+	Summary                     json.RawMessage     `json:"summary,omitempty"`
+	Description                 json.RawMessage     `json:"description,omitempty"`
 	Tagline                     json.RawMessage     `json:"tagline,omitempty"`
 	Published                   bool                `json:"published,omitzero"`
 	CarouselItems               []StoreCarouselItem `json:"carousel_items,omitempty"`
@@ -11678,7 +11712,11 @@ type StoreCreateStoreListingParams struct {
 }
 
 type StoreGetGuildApplicationStorefrontAnnouncementResponse struct {
-	InteractionID snowflake.ID `json:"interaction_id"`
+	ID                     snowflake.ID `json:"id"`
+	ApplicationID          snowflake.ID `json:"application_id"`
+	ApplicationName        string       `json:"application_name"`
+	AssetID                snowflake.ID `json:"asset_id"`
+	BackgroundImageAssetID snowflake.ID `json:"background_image_asset_id"`
 }
 
 type StoreListing struct {
@@ -12296,6 +12334,10 @@ type ThirdPartyURL struct {
 	URL         string          `json:"url"`
 }
 
+type ThreadCreateExtraFields struct {
+	NewlyCreated bool `json:"newly_created,omitzero"`
+}
+
 type ThreadListSync struct {
 	GuildID    snowflake.ID   `json:"guild_id"`
 	ChannelIDs []snowflake.ID `json:"channel_ids,omitempty"`
@@ -12311,6 +12353,10 @@ type ThreadMember struct {
 	Muted         bool              `json:"muted,omitzero"`
 	MuteConfig    *MuteConfig       `json:"mute_config,omitempty"`
 	Member        GuildMember       `json:"member,omitzero"`
+}
+
+type ThreadMemberUpdateExtraFields struct {
+	GuildID snowflake.ID `json:"guild_id"`
 }
 
 type ThreadMembersUpdate struct {
@@ -13470,5 +13516,2613 @@ type WidgetSurfaceComponentField struct {
 }
 
 type WidgetsListBulkApplicationIdentitiesParams struct {
-	UserIDs []snowflake.ID `json:"user_ids"`
+	Username string                     `json:"username,omitzero"`
+	Metadata json.RawMessage            `json:"metadata,omitempty"`
+	Data     UserApplicationProfileData `json:"data,omitzero"`
+}
+
+type IdentifyEvent struct {
+	Token          string           `json:"token"`
+	Properties     ClientProperties `json:"properties"`
+	Compress       bool             `json:"compress,omitzero"`
+	LargeThreshold int64            `json:"large_threshold,omitzero"`
+	Shard          []int64          `json:"shard,omitempty"`
+	Presence       UpdatePresence   `json:"presence,omitzero"`
+	Intents        int64            `json:"intents,omitzero"`
+	Capabilities   int64            `json:"capabilities,omitzero"`
+	ClientState    ClientState      `json:"client_state,omitzero"`
+}
+
+type ResumeEvent struct {
+	Token     string `json:"token"`
+	SessionID string `json:"session_id"`
+	Seq       int64  `json:"seq"`
+}
+
+type QoSHeartbeatEvent struct {
+	Seq *int64     `json:"seq"`
+	QoS QoSPayload `json:"qos"`
+}
+
+type UpdatePresenceEvent struct {
+	Activities []Activity `json:"activities"`
+	Status     StatusType `json:"status"`
+	Since      int64      `json:"since"`
+	AFK        bool       `json:"afk"`
+}
+
+type UpdateVoiceStateEvent struct {
+	GuildID          *snowflake.ID `json:"guild_id"`
+	ChannelID        *snowflake.ID `json:"channel_id"`
+	SelfMute         bool          `json:"self_mute"`
+	SelfDeaf         bool          `json:"self_deaf"`
+	SelfVideo        bool          `json:"self_video,omitzero"`
+	PreferredRegion  *string       `json:"preferred_region,omitempty"`
+	PreferredRegions []string      `json:"preferred_regions,omitempty"`
+	Flags            VoiceFlags    `json:"flags,omitzero"`
+}
+
+type CreateStreamEvent struct {
+	Type            StreamType    `json:"type"`
+	GuildID         *snowflake.ID `json:"guild_id,omitempty"`
+	ChannelID       snowflake.ID  `json:"channel_id"`
+	PreferredRegion *string       `json:"preferred_region,omitempty"`
+}
+
+type SetStreamPausedEvent struct {
+	StreamKey string `json:"stream_key"`
+	Paused    bool   `json:"paused"`
+}
+
+type DeleteStreamEvent struct {
+	StreamKey string `json:"stream_key"`
+}
+
+type PingStreamServerEvent struct {
+	StreamKey string `json:"stream_key"`
+}
+
+type PingLobbyVoiceServerEvent struct {
+	LobbyID snowflake.ID `json:"lobby_id"`
+}
+
+type RequestGuildMembersEvent struct {
+	GuildID   snowflake.ID `json:"guild_id"`
+	Query     string       `json:"query,omitzero"`
+	Limit     int64        `json:"limit,omitzero"`
+	Presences bool         `json:"presences,omitzero"`
+	UserIDs   snowflake.ID `json:"user_ids,omitzero"`
+	Nonce     string       `json:"nonce,omitzero"`
+}
+
+type RequestCallConnectEvent struct {
+	ChannelID snowflake.ID `json:"channel_id"`
+}
+
+type GetDeletedEntityIDsNotMatchingHashEvent struct {
+	GuildID        snowflake.ID `json:"guild_id"`
+	ChannelIDsHash string       `json:"channel_ids_hash"`
+	RoleIDsHash    string       `json:"role_ids_hash"`
+	EmojiIDsHash   string       `json:"emoji_ids_hash"`
+	StickerIDsHash string       `json:"sticker_ids_hash"`
+}
+
+type RequestSoundboardSoundsEvent struct {
+	GuildIDs []snowflake.ID `json:"guild_ids"`
+}
+
+type CreateSpeedTestEvent struct {
+	PreferredRegion *string `json:"preferred_region,omitempty"`
+}
+
+type RequestLastMessagesEvent struct {
+	GuildID    snowflake.ID   `json:"guild_id"`
+	ChannelIDs []snowflake.ID `json:"channel_ids"`
+}
+
+type SearchRecentMembersEvent struct {
+	GuildID           snowflake.ID  `json:"guild_id"`
+	Query             string        `json:"query"`
+	ContinuationToken *snowflake.ID `json:"continuation_token"`
+	Nonce             string        `json:"nonce,omitzero"`
+}
+
+type ResyncGuildChannelsEvent struct {
+	GuildID              snowflake.ID   `json:"guild_id"`
+	ObfuscatedChannelIDs []snowflake.ID `json:"obfuscated_channel_ids"`
+}
+
+type RequestChannelStatusesEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+}
+
+type RequestChannelMemberCountEvent struct {
+	GuildID   snowflake.ID `json:"guild_id"`
+	ChannelID snowflake.ID `json:"channel_id"`
+}
+
+type RequestChannelInfoEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	Fields  []string     `json:"fields"`
+}
+
+type HelloEvent struct {
+	Trace             []string `json:"_trace"`
+	HeartbeatInterval int64    `json:"heartbeat_interval"`
+}
+
+type InitialGuildEvent struct {
+	ID                       snowflake.ID               `json:"id"`
+	JoinedAt                 time.Time                  `json:"joined_at"`
+	Large                    bool                       `json:"large"`
+	Unavailable              bool                       `json:"unavailable,omitzero"`
+	GeoRestricted            bool                       `json:"geo_restricted,omitzero"`
+	MemberCount              int64                      `json:"member_count"`
+	Members                  []GuildMember              `json:"members"`
+	Channels                 []Channel                  `json:"channels"`
+	Threads                  []Channel                  `json:"threads"`
+	Presences                []Presence                 `json:"presences"`
+	VoiceStates              []VoiceState               `json:"voice_states"`
+	ActivityInstances        []EmbeddedActivityInstance `json:"activity_instances"`
+	StageInstances           []StageInstance            `json:"stage_instances"`
+	GuildScheduledEvents     []GuildScheduledEvent      `json:"guild_scheduled_events"`
+	DataMode                 DataMode                   `json:"data_mode"`
+	PartialUpdates           PartialGuildUpdates        `json:"partial_updates,omitzero"`
+	ChannelUpdates           []ChannelUnread            `json:"channel_updates,omitempty"`
+	UnableToSyncDeletes      bool                       `json:"unable_to_sync_deletes,omitzero"`
+	Properties               PartialGuild               `json:"properties"`
+	Stickers                 []Sticker                  `json:"stickers"`
+	Roles                    []Role                     `json:"roles"`
+	Emojis                   []Emoji                    `json:"emojis"`
+	SoundboardSounds         []SoundboardSound          `json:"soundboard_sounds"`
+	PremiumSubscriptionCount int64                      `json:"premium_subscription_count"`
+}
+
+type ReadyEvent struct {
+	Trace                            []string                                  `json:"_trace"`
+	V                                int64                                     `json:"v"`
+	User                             User                                      `json:"user"`
+	UserSettings                     UserSettings                              `json:"user_settings"`
+	UserSettingsProto                string                                    `json:"user_settings_proto"`
+	NotificationSettings             NotificationSettings                      `json:"notification_settings"`
+	UserGuildSettings                json.RawMessage                           `json:"user_guild_settings"`
+	ReadState                        json.RawMessage                           `json:"read_state"`
+	Guilds                           []GatewayGuild                            `json:"guilds"`
+	GuildJoinRequests                []json.RawMessage                         `json:"guild_join_requests"`
+	Relationships                    []Relationship                            `json:"relationships"`
+	GameRelationships                []GameRelationship                        `json:"game_relationships"`
+	FriendSuggestionCount            int64                                     `json:"friend_suggestion_count,omitzero"`
+	PrivateChannels                  []Channel                                 `json:"private_channels"`
+	ConnectedAccounts                []Connection                              `json:"connected_accounts"`
+	Notes                            map[snowflake.ID]string                   `json:"notes"`
+	Presences                        []Presence                                `json:"presences"`
+	MergedPresences                  MergedPresences                           `json:"merged_presences"`
+	MergedMembers                    [][]GuildMember                           `json:"merged_members"`
+	Users                            []PartialUser                             `json:"users"`
+	LinkedUsers                      []LinkedUser                              `json:"linked_users"`
+	Application                      GatewayApplication                        `json:"application,omitzero"`
+	Scopes                           []string                                  `json:"scopes,omitempty"`
+	SessionID                        string                                    `json:"session_id"`
+	SessionType                      SessionType                               `json:"session_type"`
+	Sessions                         []Session                                 `json:"sessions"`
+	StaticClientSessionID            string                                    `json:"static_client_session_id"`
+	AuthSessionIDHash                string                                    `json:"auth_session_id_hash"`
+	AuthToken                        string                                    `json:"auth_token,omitzero"`
+	AnalyticsToken                   string                                    `json:"analytics_token"`
+	Auth                             GatewayAuth                               `json:"auth"`
+	RequiredAction                   RequiredActionType                        `json:"required_action,omitzero"`
+	CountryCode                      string                                    `json:"country_code"`
+	GeoOrderedRTCRegions             []string                                  `json:"geo_ordered_rtc_regions"`
+	Consents                         json.RawMessage                           `json:"consents"`
+	Tutorial                         *Tutorial                                 `json:"tutorial"`
+	Shard                            []int64                                   `json:"shard,omitempty"`
+	ResumeGatewayURL                 string                                    `json:"resume_gateway_url"`
+	APICodeVersion                   int64                                     `json:"api_code_version"`
+	Experiments                      []UserExperiment                          `json:"experiments"`
+	GuildExperiments                 []GuildExperiment                         `json:"guild_experiments"`
+	ApexExperiments                  ApexExperiments                           `json:"apex_experiments,omitzero"`
+	ExplicitContentScanVersion       int64                                     `json:"explicit_content_scan_version"`
+	PendingPayments                  []Payment                                 `json:"pending_payments,omitempty"`
+	AvSfProtocolFloor                int64                                     `json:"av_sf_protocol_floor,omitzero"`
+	FeatureFlags                     GatewayFeatureFlags                       `json:"feature_flags,omitzero"`
+	Lobbies                          []Lobby                                   `json:"lobbies,omitempty"`
+	UserApplicationProfiles          map[snowflake.ID][]UserApplicationProfile `json:"user_application_profiles,omitempty"`
+	ConnectionRequestData            ConsoleConnectionRequestData              `json:"connection_request_data,omitzero"`
+	AdPersonalizationTogglesDisabled bool                                      `json:"ad_personalization_toggles_disabled"`
+	BroadcasterUserIDs               []snowflake.ID                            `json:"broadcaster_user_ids"`
+	RegionalFeatureConfig            RegionalFeatureConfig                     `json:"regional_feature_config"`
+}
+
+type ReadySupplementalEvent struct {
+	Guilds              []SupplementalGuild `json:"guilds"`
+	MergedMembers       [][]json.RawMessage `json:"merged_members"`
+	MergedPresences     MergedPresences     `json:"merged_presences"`
+	LazyPrivateChannels []Channel           `json:"lazy_private_channels"`
+	Disclose            []string            `json:"disclose"`
+	GameInvites         []GameInvite        `json:"game_invites"`
+}
+
+type ResumedEvent struct {
+	Trace []string `json:"_trace"`
+}
+
+type RateLimitedEvent struct {
+	Opcode     int64             `json:"opcode"`
+	RetryAfter float64           `json:"retry_after"`
+	Meta       RateLimitMetadata `json:"meta"`
+}
+
+type ActivityInviteCreateEvent struct {
+	MessageID   snowflake.ID           `json:"message_id,omitzero"`
+	ChannelID   snowflake.ID           `json:"channel_id,omitzero"`
+	Author      PartialUser            `json:"author,omitzero"`
+	Application IntegrationApplication `json:"application,omitzero"`
+	Activity    MessageActivity        `json:"activity,omitzero"`
+}
+
+type AuthSessionChangeEvent struct {
+	AuthSessionIDHash string `json:"auth_session_id_hash"`
+}
+
+type AuthenticatorCreateEvent struct {
+	ID       string     `json:"id"`
+	Type     string     `json:"type"`
+	Name     string     `json:"name"`
+	LastUsed *time.Time `json:"last_used"`
+	CredID   string     `json:"cred_id,omitzero"`
+}
+
+type AuthenticatorUpdateEvent struct {
+	ID       string     `json:"id"`
+	Type     string     `json:"type"`
+	Name     string     `json:"name"`
+	LastUsed *time.Time `json:"last_used"`
+	CredID   string     `json:"cred_id,omitzero"`
+}
+
+type AuthenticatorDeleteEvent struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+type ApplicationCommandPermissionsUpdateEvent struct {
+	ID            snowflake.ID                    `json:"id"`
+	ApplicationID snowflake.ID                    `json:"application_id"`
+	GuildID       snowflake.ID                    `json:"guild_id"`
+	Permissions   []ApplicationCommandPermissions `json:"permissions"`
+}
+
+type AutoModerationRuleCreateEvent struct {
+	ID              snowflake.ID       `json:"id"`
+	GuildID         snowflake.ID       `json:"guild_id"`
+	Name            string             `json:"name"`
+	CreatorID       snowflake.ID       `json:"creator_id"`
+	EventType       AutomodEventType   `json:"event_type"`
+	TriggerType     AutomodTriggerType `json:"trigger_type"`
+	TriggerMetadata json.RawMessage    `json:"trigger_metadata"`
+	Actions         []Action           `json:"actions"`
+	Enabled         bool               `json:"enabled"`
+	ExemptRoles     []snowflake.ID     `json:"exempt_roles"`
+	ExemptChannels  []snowflake.ID     `json:"exempt_channels"`
+}
+
+type AutoModerationRuleUpdateEvent struct {
+	ID              snowflake.ID       `json:"id"`
+	GuildID         snowflake.ID       `json:"guild_id"`
+	Name            string             `json:"name"`
+	CreatorID       snowflake.ID       `json:"creator_id"`
+	EventType       AutomodEventType   `json:"event_type"`
+	TriggerType     AutomodTriggerType `json:"trigger_type"`
+	TriggerMetadata json.RawMessage    `json:"trigger_metadata"`
+	Actions         []Action           `json:"actions"`
+	Enabled         bool               `json:"enabled"`
+	ExemptRoles     []snowflake.ID     `json:"exempt_roles"`
+	ExemptChannels  []snowflake.ID     `json:"exempt_channels"`
+}
+
+type AutoModerationRuleDeleteEvent struct {
+	ID              snowflake.ID       `json:"id"`
+	GuildID         snowflake.ID       `json:"guild_id"`
+	Name            string             `json:"name"`
+	CreatorID       snowflake.ID       `json:"creator_id"`
+	EventType       AutomodEventType   `json:"event_type"`
+	TriggerType     AutomodTriggerType `json:"trigger_type"`
+	TriggerMetadata json.RawMessage    `json:"trigger_metadata"`
+	Actions         []Action           `json:"actions"`
+	Enabled         bool               `json:"enabled"`
+	ExemptRoles     []snowflake.ID     `json:"exempt_roles"`
+	ExemptChannels  []snowflake.ID     `json:"exempt_channels"`
+}
+
+type AutoModerationActionExecutionEvent struct {
+	GuildID              snowflake.ID  `json:"guild_id"`
+	Action               AutomodAction `json:"action"`
+	RuleID               snowflake.ID  `json:"rule_id"`
+	RuleTriggerType      int64         `json:"rule_trigger_type"`
+	UserID               snowflake.ID  `json:"user_id"`
+	ChannelID            snowflake.ID  `json:"channel_id,omitzero"`
+	MessageID            snowflake.ID  `json:"message_id,omitzero"`
+	AlertSystemMessageID snowflake.ID  `json:"alert_system_message_id,omitzero"`
+	Content              string        `json:"content"`
+	MatchedKeyword       *string       `json:"matched_keyword"`
+	MatchedContent       *string       `json:"matched_content"`
+}
+
+type AutoModerationMentionRaidDetectionEvent struct {
+	GuildID                        snowflake.ID `json:"guild_id"`
+	DecisionID                     string       `json:"decision_id"`
+	SuspiciousMentionActivityUntil time.Time    `json:"suspicious_mention_activity_until"`
+}
+
+type BillingPopupBridgeCallbackEvent struct {
+	PaymentSourceType PaymentSourceType `json:"payment_source_type,omitzero"`
+	State             string            `json:"state,omitzero"`
+	Path              string            `json:"path,omitzero"`
+	Query             map[string]string `json:"query,omitempty"`
+}
+
+type CallCreateEvent struct {
+	ChannelID   snowflake.ID   `json:"channel_id"`
+	MessageID   snowflake.ID   `json:"message_id"`
+	Region      string         `json:"region"`
+	Ringing     []snowflake.ID `json:"ringing"`
+	VoiceStates []VoiceState   `json:"voice_states"`
+}
+
+type CallUpdateEvent struct {
+	ChannelID snowflake.ID    `json:"channel_id"`
+	MessageID snowflake.ID    `json:"message_id"`
+	Region    string          `json:"region"`
+	Ringing   json.RawMessage `json:"ringing"`
+}
+
+type CallDeleteEvent struct {
+	ChannelID   snowflake.ID `json:"channel_id"`
+	Unavailable bool         `json:"unavailable,omitzero"`
+}
+
+type ChannelCreateEvent struct {
+	ID                                 snowflake.ID          `json:"id"`
+	Type                               ChannelType           `json:"type"`
+	GuildID                            snowflake.ID          `json:"guild_id,omitzero"`
+	Position                           int64                 `json:"position,omitzero"`
+	PermissionOverwrites               []PermissionOverwrite `json:"permission_overwrites,omitempty"`
+	Name                               *string               `json:"name,omitempty"`
+	Topic                              *string               `json:"topic,omitempty"`
+	NSFW                               bool                  `json:"nsfw,omitzero"`
+	LastMessageID                      *snowflake.ID         `json:"last_message_id,omitempty"`
+	LastPinTimestamp                   *time.Time            `json:"last_pin_timestamp,omitempty"`
+	Bitrate                            int64                 `json:"bitrate,omitzero"`
+	UserLimit                          int64                 `json:"user_limit,omitzero"`
+	RateLimitPerUser                   int64                 `json:"rate_limit_per_user,omitzero"`
+	Recipients                         []PartialUser         `json:"recipients,omitempty"`
+	RecipientFlags                     RecipientFlags        `json:"recipient_flags,omitzero"`
+	Icon                               *string               `json:"icon,omitempty"`
+	Nicks                              []ChannelNick         `json:"nicks,omitempty"`
+	Managed                            bool                  `json:"managed,omitzero"`
+	BlockedUserWarningDismissed        bool                  `json:"blocked_user_warning_dismissed,omitzero"`
+	SafetyWarnings                     []SafetyWarning       `json:"safety_warnings,omitempty"`
+	ApplicationID                      snowflake.ID          `json:"application_id,omitzero"`
+	OwnerID                            snowflake.ID          `json:"owner_id,omitzero"`
+	Owner                              *GuildMember          `json:"owner,omitempty"`
+	ParentID                           *snowflake.ID         `json:"parent_id,omitempty"`
+	RTCRegion                          *string               `json:"rtc_region,omitempty"`
+	VideoQualityMode                   VideoQualityMode      `json:"video_quality_mode,omitzero"`
+	TotalMessageSent                   int64                 `json:"total_message_sent,omitzero"`
+	MessageCount                       int64                 `json:"message_count,omitzero"`
+	MemberCount                        int64                 `json:"member_count,omitzero"`
+	MemberIDsPreview                   []snowflake.ID        `json:"member_ids_preview,omitempty"`
+	ThreadMetadata                     ThreadMetadata        `json:"thread_metadata,omitzero"`
+	Member                             ThreadMember          `json:"member,omitzero"`
+	DefaultAutoArchiveDuration         *int64                `json:"default_auto_archive_duration,omitempty"`
+	DefaultThreadRateLimitPerUser      int64                 `json:"default_thread_rate_limit_per_user,omitzero"`
+	Permissions                        Permissions           `json:"permissions,omitzero"`
+	Flags                              ChannelFlags          `json:"flags,omitzero"`
+	AvailableTags                      []json.RawMessage     `json:"available_tags,omitempty"`
+	AppliedTags                        []snowflake.ID        `json:"applied_tags,omitempty"`
+	DefaultReactionEmoji               *DefaultReaction      `json:"default_reaction_emoji,omitempty"`
+	DefaultForumLayout                 ForumLayoutType       `json:"default_forum_layout,omitzero"`
+	DefaultSortOrder                   *SortOrderType        `json:"default_sort_order,omitempty"`
+	DefaultTagSetting                  SearchTagSetting      `json:"default_tag_setting,omitzero"`
+	IconEmoji                          *IconEmoji            `json:"icon_emoji,omitempty"`
+	ThemeColor                         *int64                `json:"theme_color,omitempty"`
+	IsMessageRequest                   bool                  `json:"is_message_request,omitzero"`
+	IsMessageRequestTimestamp          *time.Time            `json:"is_message_request_timestamp,omitempty"`
+	IsSpam                             bool                  `json:"is_spam,omitzero"`
+	Status                             *string               `json:"status,omitempty"`
+	HdStreamingUntil                   *time.Time            `json:"hd_streaming_until,omitempty"`
+	HdStreamingBuyerID                 *snowflake.ID         `json:"hd_streaming_buyer_id,omitempty"`
+	LinkedLobby                        *LinkedLobby          `json:"linked_lobby,omitempty"`
+	IsLinkable                         bool                  `json:"is_linkable,omitzero"`
+	IsViewableAndWriteableByAllMembers bool                  `json:"is_viewable_and_writeable_by_all_members,omitzero"`
+	Template                           string                `json:"template,omitzero"`
+	Version                            string                `json:"version,omitzero"`
+	OriginChannelID                    snowflake.ID          `json:"origin_channel_id,omitzero"`
+}
+
+type ChannelUpdateEvent struct {
+	ID                                 snowflake.ID          `json:"id"`
+	Type                               ChannelType           `json:"type"`
+	GuildID                            snowflake.ID          `json:"guild_id,omitzero"`
+	Position                           int64                 `json:"position,omitzero"`
+	PermissionOverwrites               []PermissionOverwrite `json:"permission_overwrites,omitempty"`
+	Name                               *string               `json:"name,omitempty"`
+	Topic                              *string               `json:"topic,omitempty"`
+	NSFW                               bool                  `json:"nsfw,omitzero"`
+	LastMessageID                      *snowflake.ID         `json:"last_message_id,omitempty"`
+	LastPinTimestamp                   *time.Time            `json:"last_pin_timestamp,omitempty"`
+	Bitrate                            int64                 `json:"bitrate,omitzero"`
+	UserLimit                          int64                 `json:"user_limit,omitzero"`
+	RateLimitPerUser                   int64                 `json:"rate_limit_per_user,omitzero"`
+	Recipients                         []PartialUser         `json:"recipients,omitempty"`
+	RecipientFlags                     RecipientFlags        `json:"recipient_flags,omitzero"`
+	Icon                               *string               `json:"icon,omitempty"`
+	Nicks                              []ChannelNick         `json:"nicks,omitempty"`
+	Managed                            bool                  `json:"managed,omitzero"`
+	BlockedUserWarningDismissed        bool                  `json:"blocked_user_warning_dismissed,omitzero"`
+	SafetyWarnings                     []SafetyWarning       `json:"safety_warnings,omitempty"`
+	ApplicationID                      snowflake.ID          `json:"application_id,omitzero"`
+	OwnerID                            snowflake.ID          `json:"owner_id,omitzero"`
+	Owner                              *GuildMember          `json:"owner,omitempty"`
+	ParentID                           *snowflake.ID         `json:"parent_id,omitempty"`
+	RTCRegion                          *string               `json:"rtc_region,omitempty"`
+	VideoQualityMode                   VideoQualityMode      `json:"video_quality_mode,omitzero"`
+	TotalMessageSent                   int64                 `json:"total_message_sent,omitzero"`
+	MessageCount                       int64                 `json:"message_count,omitzero"`
+	MemberCount                        int64                 `json:"member_count,omitzero"`
+	MemberIDsPreview                   []snowflake.ID        `json:"member_ids_preview,omitempty"`
+	ThreadMetadata                     ThreadMetadata        `json:"thread_metadata,omitzero"`
+	Member                             ThreadMember          `json:"member,omitzero"`
+	DefaultAutoArchiveDuration         *int64                `json:"default_auto_archive_duration,omitempty"`
+	DefaultThreadRateLimitPerUser      int64                 `json:"default_thread_rate_limit_per_user,omitzero"`
+	Permissions                        Permissions           `json:"permissions,omitzero"`
+	Flags                              ChannelFlags          `json:"flags,omitzero"`
+	AvailableTags                      []json.RawMessage     `json:"available_tags,omitempty"`
+	AppliedTags                        []snowflake.ID        `json:"applied_tags,omitempty"`
+	DefaultReactionEmoji               *DefaultReaction      `json:"default_reaction_emoji,omitempty"`
+	DefaultForumLayout                 ForumLayoutType       `json:"default_forum_layout,omitzero"`
+	DefaultSortOrder                   *SortOrderType        `json:"default_sort_order,omitempty"`
+	DefaultTagSetting                  SearchTagSetting      `json:"default_tag_setting,omitzero"`
+	IconEmoji                          *IconEmoji            `json:"icon_emoji,omitempty"`
+	ThemeColor                         *int64                `json:"theme_color,omitempty"`
+	IsMessageRequest                   bool                  `json:"is_message_request,omitzero"`
+	IsMessageRequestTimestamp          *time.Time            `json:"is_message_request_timestamp,omitempty"`
+	IsSpam                             bool                  `json:"is_spam,omitzero"`
+	Status                             *string               `json:"status,omitempty"`
+	HdStreamingUntil                   *time.Time            `json:"hd_streaming_until,omitempty"`
+	HdStreamingBuyerID                 *snowflake.ID         `json:"hd_streaming_buyer_id,omitempty"`
+	LinkedLobby                        *LinkedLobby          `json:"linked_lobby,omitempty"`
+	IsLinkable                         bool                  `json:"is_linkable,omitzero"`
+	IsViewableAndWriteableByAllMembers bool                  `json:"is_viewable_and_writeable_by_all_members,omitzero"`
+	Template                           string                `json:"template,omitzero"`
+	Version                            string                `json:"version,omitzero"`
+}
+
+type ChannelDeleteEvent struct {
+	ID                                 snowflake.ID          `json:"id"`
+	Type                               ChannelType           `json:"type"`
+	GuildID                            snowflake.ID          `json:"guild_id,omitzero"`
+	Position                           int64                 `json:"position,omitzero"`
+	PermissionOverwrites               []PermissionOverwrite `json:"permission_overwrites,omitempty"`
+	Name                               *string               `json:"name,omitempty"`
+	Topic                              *string               `json:"topic,omitempty"`
+	NSFW                               bool                  `json:"nsfw,omitzero"`
+	LastMessageID                      *snowflake.ID         `json:"last_message_id,omitempty"`
+	LastPinTimestamp                   *time.Time            `json:"last_pin_timestamp,omitempty"`
+	Bitrate                            int64                 `json:"bitrate,omitzero"`
+	UserLimit                          int64                 `json:"user_limit,omitzero"`
+	RateLimitPerUser                   int64                 `json:"rate_limit_per_user,omitzero"`
+	Recipients                         []PartialUser         `json:"recipients,omitempty"`
+	RecipientFlags                     RecipientFlags        `json:"recipient_flags,omitzero"`
+	Icon                               *string               `json:"icon,omitempty"`
+	Nicks                              []ChannelNick         `json:"nicks,omitempty"`
+	Managed                            bool                  `json:"managed,omitzero"`
+	BlockedUserWarningDismissed        bool                  `json:"blocked_user_warning_dismissed,omitzero"`
+	SafetyWarnings                     []SafetyWarning       `json:"safety_warnings,omitempty"`
+	ApplicationID                      snowflake.ID          `json:"application_id,omitzero"`
+	OwnerID                            snowflake.ID          `json:"owner_id,omitzero"`
+	Owner                              *GuildMember          `json:"owner,omitempty"`
+	ParentID                           *snowflake.ID         `json:"parent_id,omitempty"`
+	RTCRegion                          *string               `json:"rtc_region,omitempty"`
+	VideoQualityMode                   VideoQualityMode      `json:"video_quality_mode,omitzero"`
+	TotalMessageSent                   int64                 `json:"total_message_sent,omitzero"`
+	MessageCount                       int64                 `json:"message_count,omitzero"`
+	MemberCount                        int64                 `json:"member_count,omitzero"`
+	MemberIDsPreview                   []snowflake.ID        `json:"member_ids_preview,omitempty"`
+	ThreadMetadata                     ThreadMetadata        `json:"thread_metadata,omitzero"`
+	Member                             ThreadMember          `json:"member,omitzero"`
+	DefaultAutoArchiveDuration         *int64                `json:"default_auto_archive_duration,omitempty"`
+	DefaultThreadRateLimitPerUser      int64                 `json:"default_thread_rate_limit_per_user,omitzero"`
+	Permissions                        Permissions           `json:"permissions,omitzero"`
+	Flags                              ChannelFlags          `json:"flags,omitzero"`
+	AvailableTags                      []json.RawMessage     `json:"available_tags,omitempty"`
+	AppliedTags                        []snowflake.ID        `json:"applied_tags,omitempty"`
+	DefaultReactionEmoji               *DefaultReaction      `json:"default_reaction_emoji,omitempty"`
+	DefaultForumLayout                 ForumLayoutType       `json:"default_forum_layout,omitzero"`
+	DefaultSortOrder                   *SortOrderType        `json:"default_sort_order,omitempty"`
+	DefaultTagSetting                  SearchTagSetting      `json:"default_tag_setting,omitzero"`
+	IconEmoji                          *IconEmoji            `json:"icon_emoji,omitempty"`
+	ThemeColor                         *int64                `json:"theme_color,omitempty"`
+	IsMessageRequest                   bool                  `json:"is_message_request,omitzero"`
+	IsMessageRequestTimestamp          *time.Time            `json:"is_message_request_timestamp,omitempty"`
+	IsSpam                             bool                  `json:"is_spam,omitzero"`
+	Status                             *string               `json:"status,omitempty"`
+	HdStreamingUntil                   *time.Time            `json:"hd_streaming_until,omitempty"`
+	HdStreamingBuyerID                 *snowflake.ID         `json:"hd_streaming_buyer_id,omitempty"`
+	LinkedLobby                        *LinkedLobby          `json:"linked_lobby,omitempty"`
+	IsLinkable                         bool                  `json:"is_linkable,omitzero"`
+	IsViewableAndWriteableByAllMembers bool                  `json:"is_viewable_and_writeable_by_all_members,omitzero"`
+	Template                           string                `json:"template,omitzero"`
+	Version                            string                `json:"version,omitzero"`
+}
+
+type ChannelSyncEvent struct {
+	GuildID        snowflake.ID `json:"guild_id"`
+	Channels       []Channel    `json:"channels"`
+	IntegrityCheck bool         `json:"integrity_check"`
+}
+
+type ChannelUpdatePartialEvent struct {
+	ID               snowflake.ID  `json:"id"`
+	LastMessageID    *snowflake.ID `json:"last_message_id"`
+	LastPinTimestamp *time.Time    `json:"last_pin_timestamp,omitempty"`
+}
+
+type ChannelInfoEvent struct {
+	GuildID  snowflake.ID      `json:"guild_id"`
+	Channels []ChannelMetadata `json:"channels"`
+}
+
+type ChannelStatusesEvent struct {
+	GuildID  snowflake.ID    `json:"guild_id"`
+	Channels []ChannelStatus `json:"channels"`
+}
+
+type ChannelMemberCountUpdateEvent struct {
+	GuildID       snowflake.ID `json:"guild_id"`
+	ChannelID     snowflake.ID `json:"channel_id"`
+	MemberCount   int64        `json:"member_count"`
+	PresenceCount int64        `json:"presence_count"`
+}
+
+type ChannelUnreadUpdateEvent struct {
+	GuildID              snowflake.ID    `json:"guild_id"`
+	ChannelUnreadUpdates []ChannelUnread `json:"channel_unread_updates"`
+}
+
+type ChannelPinsUpdateEvent struct {
+	GuildID          snowflake.ID `json:"guild_id,omitzero"`
+	ChannelID        snowflake.ID `json:"channel_id"`
+	LastPinTimestamp *time.Time   `json:"last_pin_timestamp,omitempty"`
+}
+
+type ChannelPinsAckEvent struct {
+	ChannelID snowflake.ID `json:"channel_id"`
+	Timestamp time.Time    `json:"timestamp"`
+	Version   int64        `json:"version"`
+}
+
+type ChannelRecipientAddEvent struct {
+	ChannelID snowflake.ID `json:"channel_id"`
+	User      PartialUser  `json:"user"`
+	Nick      string       `json:"nick,omitzero"`
+}
+
+type ChannelRecipientRemoveEvent struct {
+	ChannelID snowflake.ID `json:"channel_id"`
+	User      PartialUser  `json:"user"`
+}
+
+type ConsoleCommandUpdateEvent struct {
+	ID     snowflake.ID    `json:"id"`
+	Result string          `json:"result"`
+	Error  json.RawMessage `json:"error"`
+}
+
+type ConversationSummaryUpdateEvent struct {
+	GuildID   snowflake.ID          `json:"guild_id"`
+	ChannelID snowflake.ID          `json:"channel_id"`
+	Summaries []ConversationSummary `json:"summaries"`
+}
+
+type DeletedEntityIDsEvent struct {
+	GuildID  snowflake.ID   `json:"guild_id"`
+	Stickers []snowflake.ID `json:"stickers,omitempty"`
+	Roles    []snowflake.ID `json:"roles,omitempty"`
+	Emojis   []snowflake.ID `json:"emojis,omitempty"`
+	Channels []snowflake.ID `json:"channels,omitempty"`
+}
+
+type DMSettingsUpsellShowEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+}
+
+type ThreadCreateEvent struct {
+	ID                                 snowflake.ID          `json:"id"`
+	Type                               ChannelType           `json:"type"`
+	GuildID                            snowflake.ID          `json:"guild_id,omitzero"`
+	Position                           int64                 `json:"position,omitzero"`
+	PermissionOverwrites               []PermissionOverwrite `json:"permission_overwrites,omitempty"`
+	Name                               *string               `json:"name,omitempty"`
+	Topic                              *string               `json:"topic,omitempty"`
+	NSFW                               bool                  `json:"nsfw,omitzero"`
+	LastMessageID                      *snowflake.ID         `json:"last_message_id,omitempty"`
+	LastPinTimestamp                   *time.Time            `json:"last_pin_timestamp,omitempty"`
+	Bitrate                            int64                 `json:"bitrate,omitzero"`
+	UserLimit                          int64                 `json:"user_limit,omitzero"`
+	RateLimitPerUser                   int64                 `json:"rate_limit_per_user,omitzero"`
+	Recipients                         []PartialUser         `json:"recipients,omitempty"`
+	RecipientFlags                     RecipientFlags        `json:"recipient_flags,omitzero"`
+	Icon                               *string               `json:"icon,omitempty"`
+	Nicks                              []ChannelNick         `json:"nicks,omitempty"`
+	Managed                            bool                  `json:"managed,omitzero"`
+	BlockedUserWarningDismissed        bool                  `json:"blocked_user_warning_dismissed,omitzero"`
+	SafetyWarnings                     []SafetyWarning       `json:"safety_warnings,omitempty"`
+	ApplicationID                      snowflake.ID          `json:"application_id,omitzero"`
+	OwnerID                            snowflake.ID          `json:"owner_id,omitzero"`
+	Owner                              *GuildMember          `json:"owner,omitempty"`
+	ParentID                           *snowflake.ID         `json:"parent_id,omitempty"`
+	RTCRegion                          *string               `json:"rtc_region,omitempty"`
+	VideoQualityMode                   VideoQualityMode      `json:"video_quality_mode,omitzero"`
+	TotalMessageSent                   int64                 `json:"total_message_sent,omitzero"`
+	MessageCount                       int64                 `json:"message_count,omitzero"`
+	MemberCount                        int64                 `json:"member_count,omitzero"`
+	MemberIDsPreview                   []snowflake.ID        `json:"member_ids_preview,omitempty"`
+	ThreadMetadata                     ThreadMetadata        `json:"thread_metadata,omitzero"`
+	Member                             ThreadMember          `json:"member,omitzero"`
+	DefaultAutoArchiveDuration         *int64                `json:"default_auto_archive_duration,omitempty"`
+	DefaultThreadRateLimitPerUser      int64                 `json:"default_thread_rate_limit_per_user,omitzero"`
+	Permissions                        Permissions           `json:"permissions,omitzero"`
+	Flags                              ChannelFlags          `json:"flags,omitzero"`
+	AvailableTags                      []json.RawMessage     `json:"available_tags,omitempty"`
+	AppliedTags                        []snowflake.ID        `json:"applied_tags,omitempty"`
+	DefaultReactionEmoji               *DefaultReaction      `json:"default_reaction_emoji,omitempty"`
+	DefaultForumLayout                 ForumLayoutType       `json:"default_forum_layout,omitzero"`
+	DefaultSortOrder                   *SortOrderType        `json:"default_sort_order,omitempty"`
+	DefaultTagSetting                  SearchTagSetting      `json:"default_tag_setting,omitzero"`
+	IconEmoji                          *IconEmoji            `json:"icon_emoji,omitempty"`
+	ThemeColor                         *int64                `json:"theme_color,omitempty"`
+	IsMessageRequest                   bool                  `json:"is_message_request,omitzero"`
+	IsMessageRequestTimestamp          *time.Time            `json:"is_message_request_timestamp,omitempty"`
+	IsSpam                             bool                  `json:"is_spam,omitzero"`
+	Status                             *string               `json:"status,omitempty"`
+	HdStreamingUntil                   *time.Time            `json:"hd_streaming_until,omitempty"`
+	HdStreamingBuyerID                 *snowflake.ID         `json:"hd_streaming_buyer_id,omitempty"`
+	LinkedLobby                        *LinkedLobby          `json:"linked_lobby,omitempty"`
+	IsLinkable                         bool                  `json:"is_linkable,omitzero"`
+	IsViewableAndWriteableByAllMembers bool                  `json:"is_viewable_and_writeable_by_all_members,omitzero"`
+	Template                           string                `json:"template,omitzero"`
+	Version                            string                `json:"version,omitzero"`
+	NewlyCreated                       bool                  `json:"newly_created,omitzero"`
+}
+
+type ThreadUpdateEvent struct {
+	ID                                 snowflake.ID          `json:"id"`
+	Type                               ChannelType           `json:"type"`
+	GuildID                            snowflake.ID          `json:"guild_id,omitzero"`
+	Position                           int64                 `json:"position,omitzero"`
+	PermissionOverwrites               []PermissionOverwrite `json:"permission_overwrites,omitempty"`
+	Name                               *string               `json:"name,omitempty"`
+	Topic                              *string               `json:"topic,omitempty"`
+	NSFW                               bool                  `json:"nsfw,omitzero"`
+	LastMessageID                      *snowflake.ID         `json:"last_message_id,omitempty"`
+	LastPinTimestamp                   *time.Time            `json:"last_pin_timestamp,omitempty"`
+	Bitrate                            int64                 `json:"bitrate,omitzero"`
+	UserLimit                          int64                 `json:"user_limit,omitzero"`
+	RateLimitPerUser                   int64                 `json:"rate_limit_per_user,omitzero"`
+	Recipients                         []PartialUser         `json:"recipients,omitempty"`
+	RecipientFlags                     RecipientFlags        `json:"recipient_flags,omitzero"`
+	Icon                               *string               `json:"icon,omitempty"`
+	Nicks                              []ChannelNick         `json:"nicks,omitempty"`
+	Managed                            bool                  `json:"managed,omitzero"`
+	BlockedUserWarningDismissed        bool                  `json:"blocked_user_warning_dismissed,omitzero"`
+	SafetyWarnings                     []SafetyWarning       `json:"safety_warnings,omitempty"`
+	ApplicationID                      snowflake.ID          `json:"application_id,omitzero"`
+	OwnerID                            snowflake.ID          `json:"owner_id,omitzero"`
+	Owner                              *GuildMember          `json:"owner,omitempty"`
+	ParentID                           *snowflake.ID         `json:"parent_id,omitempty"`
+	RTCRegion                          *string               `json:"rtc_region,omitempty"`
+	VideoQualityMode                   VideoQualityMode      `json:"video_quality_mode,omitzero"`
+	TotalMessageSent                   int64                 `json:"total_message_sent,omitzero"`
+	MessageCount                       int64                 `json:"message_count,omitzero"`
+	MemberCount                        int64                 `json:"member_count,omitzero"`
+	MemberIDsPreview                   []snowflake.ID        `json:"member_ids_preview,omitempty"`
+	ThreadMetadata                     ThreadMetadata        `json:"thread_metadata,omitzero"`
+	Member                             ThreadMember          `json:"member,omitzero"`
+	DefaultAutoArchiveDuration         *int64                `json:"default_auto_archive_duration,omitempty"`
+	DefaultThreadRateLimitPerUser      int64                 `json:"default_thread_rate_limit_per_user,omitzero"`
+	Permissions                        Permissions           `json:"permissions,omitzero"`
+	Flags                              ChannelFlags          `json:"flags,omitzero"`
+	AvailableTags                      []json.RawMessage     `json:"available_tags,omitempty"`
+	AppliedTags                        []snowflake.ID        `json:"applied_tags,omitempty"`
+	DefaultReactionEmoji               *DefaultReaction      `json:"default_reaction_emoji,omitempty"`
+	DefaultForumLayout                 ForumLayoutType       `json:"default_forum_layout,omitzero"`
+	DefaultSortOrder                   *SortOrderType        `json:"default_sort_order,omitempty"`
+	DefaultTagSetting                  SearchTagSetting      `json:"default_tag_setting,omitzero"`
+	IconEmoji                          *IconEmoji            `json:"icon_emoji,omitempty"`
+	ThemeColor                         *int64                `json:"theme_color,omitempty"`
+	IsMessageRequest                   bool                  `json:"is_message_request,omitzero"`
+	IsMessageRequestTimestamp          *time.Time            `json:"is_message_request_timestamp,omitempty"`
+	IsSpam                             bool                  `json:"is_spam,omitzero"`
+	Status                             *string               `json:"status,omitempty"`
+	HdStreamingUntil                   *time.Time            `json:"hd_streaming_until,omitempty"`
+	HdStreamingBuyerID                 *snowflake.ID         `json:"hd_streaming_buyer_id,omitempty"`
+	LinkedLobby                        *LinkedLobby          `json:"linked_lobby,omitempty"`
+	IsLinkable                         bool                  `json:"is_linkable,omitzero"`
+	IsViewableAndWriteableByAllMembers bool                  `json:"is_viewable_and_writeable_by_all_members,omitzero"`
+	Template                           string                `json:"template,omitzero"`
+	Version                            string                `json:"version,omitzero"`
+}
+
+type ThreadDeleteEvent struct {
+	ID                                 snowflake.ID          `json:"id"`
+	Type                               ChannelType           `json:"type"`
+	GuildID                            snowflake.ID          `json:"guild_id,omitzero"`
+	Position                           int64                 `json:"position,omitzero"`
+	PermissionOverwrites               []PermissionOverwrite `json:"permission_overwrites,omitempty"`
+	Name                               *string               `json:"name,omitempty"`
+	Topic                              *string               `json:"topic,omitempty"`
+	NSFW                               bool                  `json:"nsfw,omitzero"`
+	LastMessageID                      *snowflake.ID         `json:"last_message_id,omitempty"`
+	LastPinTimestamp                   *time.Time            `json:"last_pin_timestamp,omitempty"`
+	Bitrate                            int64                 `json:"bitrate,omitzero"`
+	UserLimit                          int64                 `json:"user_limit,omitzero"`
+	RateLimitPerUser                   int64                 `json:"rate_limit_per_user,omitzero"`
+	Recipients                         []PartialUser         `json:"recipients,omitempty"`
+	RecipientFlags                     RecipientFlags        `json:"recipient_flags,omitzero"`
+	Icon                               *string               `json:"icon,omitempty"`
+	Nicks                              []ChannelNick         `json:"nicks,omitempty"`
+	Managed                            bool                  `json:"managed,omitzero"`
+	BlockedUserWarningDismissed        bool                  `json:"blocked_user_warning_dismissed,omitzero"`
+	SafetyWarnings                     []SafetyWarning       `json:"safety_warnings,omitempty"`
+	ApplicationID                      snowflake.ID          `json:"application_id,omitzero"`
+	OwnerID                            snowflake.ID          `json:"owner_id,omitzero"`
+	Owner                              *GuildMember          `json:"owner,omitempty"`
+	ParentID                           *snowflake.ID         `json:"parent_id,omitempty"`
+	RTCRegion                          *string               `json:"rtc_region,omitempty"`
+	VideoQualityMode                   VideoQualityMode      `json:"video_quality_mode,omitzero"`
+	TotalMessageSent                   int64                 `json:"total_message_sent,omitzero"`
+	MessageCount                       int64                 `json:"message_count,omitzero"`
+	MemberCount                        int64                 `json:"member_count,omitzero"`
+	MemberIDsPreview                   []snowflake.ID        `json:"member_ids_preview,omitempty"`
+	ThreadMetadata                     ThreadMetadata        `json:"thread_metadata,omitzero"`
+	Member                             ThreadMember          `json:"member,omitzero"`
+	DefaultAutoArchiveDuration         *int64                `json:"default_auto_archive_duration,omitempty"`
+	DefaultThreadRateLimitPerUser      int64                 `json:"default_thread_rate_limit_per_user,omitzero"`
+	Permissions                        Permissions           `json:"permissions,omitzero"`
+	Flags                              ChannelFlags          `json:"flags,omitzero"`
+	AvailableTags                      []json.RawMessage     `json:"available_tags,omitempty"`
+	AppliedTags                        []snowflake.ID        `json:"applied_tags,omitempty"`
+	DefaultReactionEmoji               *DefaultReaction      `json:"default_reaction_emoji,omitempty"`
+	DefaultForumLayout                 ForumLayoutType       `json:"default_forum_layout,omitzero"`
+	DefaultSortOrder                   *SortOrderType        `json:"default_sort_order,omitempty"`
+	DefaultTagSetting                  SearchTagSetting      `json:"default_tag_setting,omitzero"`
+	IconEmoji                          *IconEmoji            `json:"icon_emoji,omitempty"`
+	ThemeColor                         *int64                `json:"theme_color,omitempty"`
+	IsMessageRequest                   bool                  `json:"is_message_request,omitzero"`
+	IsMessageRequestTimestamp          *time.Time            `json:"is_message_request_timestamp,omitempty"`
+	IsSpam                             bool                  `json:"is_spam,omitzero"`
+	Status                             *string               `json:"status,omitempty"`
+	HdStreamingUntil                   *time.Time            `json:"hd_streaming_until,omitempty"`
+	HdStreamingBuyerID                 *snowflake.ID         `json:"hd_streaming_buyer_id,omitempty"`
+	LinkedLobby                        *LinkedLobby          `json:"linked_lobby,omitempty"`
+	IsLinkable                         bool                  `json:"is_linkable,omitzero"`
+	IsViewableAndWriteableByAllMembers bool                  `json:"is_viewable_and_writeable_by_all_members,omitzero"`
+	Template                           string                `json:"template,omitzero"`
+	Version                            string                `json:"version,omitzero"`
+}
+
+type ThreadListSyncEvent struct {
+	GuildID    snowflake.ID   `json:"guild_id"`
+	ChannelIDs []snowflake.ID `json:"channel_ids,omitempty"`
+	Threads    []Channel      `json:"threads"`
+	Members    []ThreadMember `json:"members"`
+}
+
+type ThreadMemberUpdateEvent struct {
+	ID            snowflake.ID      `json:"id,omitzero"`
+	UserID        snowflake.ID      `json:"user_id,omitzero"`
+	JoinTimestamp time.Time         `json:"join_timestamp"`
+	Flags         ThreadMemberFlags `json:"flags"`
+	Muted         bool              `json:"muted,omitzero"`
+	MuteConfig    *MuteConfig       `json:"mute_config,omitempty"`
+	Member        GuildMember       `json:"member,omitzero"`
+	GuildID       snowflake.ID      `json:"guild_id"`
+}
+
+type ThreadMembersUpdateEvent struct {
+	ID               snowflake.ID    `json:"id"`
+	GuildID          snowflake.ID    `json:"guild_id"`
+	MemberCount      int64           `json:"member_count"`
+	AddedMembers     []ThreadMember  `json:"added_members,omitempty"`
+	RemovedMemberIDs json.RawMessage `json:"removed_member_ids,omitempty"`
+}
+
+type EmbeddedActivityUpdateV2Event struct {
+	ApplicationID       snowflake.ID                  `json:"application_id"`
+	CompositeInstanceID string                        `json:"composite_instance_id"`
+	InstanceID          snowflake.ID                  `json:"instance_id"`
+	LaunchID            snowflake.ID                  `json:"launch_id"`
+	Location            EmbeddedActivityLocation      `json:"location"`
+	Participants        []EmbeddedActivityParticipant `json:"participants"`
+}
+
+type EntitlementCreateEvent struct {
+	ID                snowflake.ID                 `json:"id"`
+	Type              EntitlementType              `json:"type"`
+	SKUID             snowflake.ID                 `json:"sku_id"`
+	ApplicationID     snowflake.ID                 `json:"application_id"`
+	UserID            snowflake.ID                 `json:"user_id"`
+	User              PartialUser                  `json:"user,omitzero"`
+	GuildID           snowflake.ID                 `json:"guild_id,omitzero"`
+	ParentID          snowflake.ID                 `json:"parent_id,omitzero"`
+	Deleted           bool                         `json:"deleted"`
+	Consumed          bool                         `json:"consumed,omitzero"`
+	Branches          []snowflake.ID               `json:"branches,omitempty"`
+	StartsAt          *time.Time                   `json:"starts_at"`
+	EndsAt            *time.Time                   `json:"ends_at"`
+	PromotionID       *snowflake.ID                `json:"promotion_id"`
+	SubscriptionID    snowflake.ID                 `json:"subscription_id,omitzero"`
+	GiftCodeFlags     GiftCodeFlags                `json:"gift_code_flags"`
+	GiftCodeBatchID   snowflake.ID                 `json:"gift_code_batch_id,omitzero"`
+	GifterUserID      snowflake.ID                 `json:"gifter_user_id,omitzero"`
+	GiftStyle         GiftStyle                    `json:"gift_style,omitzero"`
+	FulfillmentStatus EntitlementFulfillmentStatus `json:"fulfillment_status,omitzero"`
+	FulfilledAt       time.Time                    `json:"fulfilled_at,omitzero"`
+	SourceType        EntitlementSourceType        `json:"source_type,omitzero"`
+	TenantMetadata    TenantMetadata               `json:"tenant_metadata,omitzero"`
+	SKU               SKU                          `json:"sku,omitzero"`
+	SubscriptionPlan  PartialSubscriptionPlan      `json:"subscription_plan,omitzero"`
+}
+
+type EntitlementUpdateEvent struct {
+	ID                snowflake.ID                 `json:"id"`
+	Type              EntitlementType              `json:"type"`
+	SKUID             snowflake.ID                 `json:"sku_id"`
+	ApplicationID     snowflake.ID                 `json:"application_id"`
+	UserID            snowflake.ID                 `json:"user_id"`
+	User              PartialUser                  `json:"user,omitzero"`
+	GuildID           snowflake.ID                 `json:"guild_id,omitzero"`
+	ParentID          snowflake.ID                 `json:"parent_id,omitzero"`
+	Deleted           bool                         `json:"deleted"`
+	Consumed          bool                         `json:"consumed,omitzero"`
+	Branches          []snowflake.ID               `json:"branches,omitempty"`
+	StartsAt          *time.Time                   `json:"starts_at"`
+	EndsAt            *time.Time                   `json:"ends_at"`
+	PromotionID       *snowflake.ID                `json:"promotion_id"`
+	SubscriptionID    snowflake.ID                 `json:"subscription_id,omitzero"`
+	GiftCodeFlags     GiftCodeFlags                `json:"gift_code_flags"`
+	GiftCodeBatchID   snowflake.ID                 `json:"gift_code_batch_id,omitzero"`
+	GifterUserID      snowflake.ID                 `json:"gifter_user_id,omitzero"`
+	GiftStyle         GiftStyle                    `json:"gift_style,omitzero"`
+	FulfillmentStatus EntitlementFulfillmentStatus `json:"fulfillment_status,omitzero"`
+	FulfilledAt       time.Time                    `json:"fulfilled_at,omitzero"`
+	SourceType        EntitlementSourceType        `json:"source_type,omitzero"`
+	TenantMetadata    TenantMetadata               `json:"tenant_metadata,omitzero"`
+	SKU               SKU                          `json:"sku,omitzero"`
+	SubscriptionPlan  PartialSubscriptionPlan      `json:"subscription_plan,omitzero"`
+}
+
+type EntitlementDeleteEvent struct {
+	ID                snowflake.ID                 `json:"id"`
+	Type              EntitlementType              `json:"type"`
+	SKUID             snowflake.ID                 `json:"sku_id"`
+	ApplicationID     snowflake.ID                 `json:"application_id"`
+	UserID            snowflake.ID                 `json:"user_id"`
+	User              PartialUser                  `json:"user,omitzero"`
+	GuildID           snowflake.ID                 `json:"guild_id,omitzero"`
+	ParentID          snowflake.ID                 `json:"parent_id,omitzero"`
+	Deleted           bool                         `json:"deleted"`
+	Consumed          bool                         `json:"consumed,omitzero"`
+	Branches          []snowflake.ID               `json:"branches,omitempty"`
+	StartsAt          *time.Time                   `json:"starts_at"`
+	EndsAt            *time.Time                   `json:"ends_at"`
+	PromotionID       *snowflake.ID                `json:"promotion_id"`
+	SubscriptionID    snowflake.ID                 `json:"subscription_id,omitzero"`
+	GiftCodeFlags     GiftCodeFlags                `json:"gift_code_flags"`
+	GiftCodeBatchID   snowflake.ID                 `json:"gift_code_batch_id,omitzero"`
+	GifterUserID      snowflake.ID                 `json:"gifter_user_id,omitzero"`
+	GiftStyle         GiftStyle                    `json:"gift_style,omitzero"`
+	FulfillmentStatus EntitlementFulfillmentStatus `json:"fulfillment_status,omitzero"`
+	FulfilledAt       time.Time                    `json:"fulfilled_at,omitzero"`
+	SourceType        EntitlementSourceType        `json:"source_type,omitzero"`
+	TenantMetadata    TenantMetadata               `json:"tenant_metadata,omitzero"`
+	SKU               SKU                          `json:"sku,omitzero"`
+	SubscriptionPlan  PartialSubscriptionPlan      `json:"subscription_plan,omitzero"`
+}
+
+type ExperimentSessionOverrideCreateEvent struct {
+	ExperimentName string `json:"experiment_name"`
+	VariantID      int64  `json:"variant_id"`
+}
+
+type ExperimentSessionOverrideDeleteEvent struct {
+	ExperimentName string `json:"experiment_name"`
+}
+
+type FriendSuggestionCreateEvent struct {
+	SuggestedUser             PartialUser              `json:"suggested_user"`
+	Reasons                   []FriendSuggestionReason `json:"reasons"`
+	FromSuggestedUserContacts bool                     `json:"from_suggested_user_contacts,omitzero"`
+	MutualFriendsCount        int64                    `json:"mutual_friends_count,omitzero"`
+	ContactNames              []string                 `json:"contact_names,omitempty"`
+}
+
+type FriendSuggestionDeleteEvent struct {
+	SuggestedUserID snowflake.ID `json:"suggested_user_id"`
+}
+
+type GameServerCreateEvent struct {
+	GuildID    snowflake.ID `json:"guild_id"`
+	GameServer GameServer   `json:"game_server"`
+}
+
+type GameServerUpdateEvent struct {
+	GuildID    snowflake.ID `json:"guild_id"`
+	GameServer GameServer   `json:"game_server"`
+}
+
+type GameServerDeleteEvent struct {
+	GuildID      snowflake.ID `json:"guild_id"`
+	GameServerID snowflake.ID `json:"game_server_id"`
+}
+
+type GiftCodeCreateEvent struct {
+	Code      string       `json:"code"`
+	SKUID     snowflake.ID `json:"sku_id"`
+	Uses      int64        `json:"uses"`
+	ChannelID snowflake.ID `json:"channel_id,omitzero"`
+	GuildID   snowflake.ID `json:"guild_id,omitzero"`
+}
+
+type GiftCodeUpdateEvent struct {
+	Code      string       `json:"code"`
+	SKUID     snowflake.ID `json:"sku_id"`
+	Uses      int64        `json:"uses"`
+	ChannelID snowflake.ID `json:"channel_id,omitzero"`
+	GuildID   snowflake.ID `json:"guild_id,omitzero"`
+}
+
+type GuildCreateEvent struct {
+	ID                       snowflake.ID               `json:"id"`
+	JoinedAt                 time.Time                  `json:"joined_at"`
+	Large                    bool                       `json:"large"`
+	Unavailable              bool                       `json:"unavailable,omitzero"`
+	GeoRestricted            bool                       `json:"geo_restricted,omitzero"`
+	MemberCount              int64                      `json:"member_count"`
+	Members                  []GuildMember              `json:"members"`
+	Channels                 []Channel                  `json:"channels"`
+	Threads                  []Channel                  `json:"threads"`
+	Presences                []Presence                 `json:"presences"`
+	VoiceStates              []VoiceState               `json:"voice_states"`
+	ActivityInstances        []EmbeddedActivityInstance `json:"activity_instances"`
+	StageInstances           []StageInstance            `json:"stage_instances"`
+	GuildScheduledEvents     []GuildScheduledEvent      `json:"guild_scheduled_events"`
+	DataMode                 DataMode                   `json:"data_mode"`
+	PartialUpdates           PartialGuildUpdates        `json:"partial_updates,omitzero"`
+	ChannelUpdates           []ChannelUnread            `json:"channel_updates,omitempty"`
+	UnableToSyncDeletes      bool                       `json:"unable_to_sync_deletes,omitzero"`
+	Properties               PartialGuild               `json:"properties"`
+	Stickers                 []Sticker                  `json:"stickers"`
+	Roles                    []Role                     `json:"roles"`
+	Emojis                   []Emoji                    `json:"emojis"`
+	SoundboardSounds         []SoundboardSound          `json:"soundboard_sounds"`
+	PremiumSubscriptionCount int64                      `json:"premium_subscription_count"`
+}
+
+type GuildUpdateEvent struct {
+	ID                                     snowflake.ID                    `json:"id"`
+	Name                                   string                          `json:"name"`
+	Icon                                   *string                         `json:"icon"`
+	Banner                                 *string                         `json:"banner"`
+	HomeHeader                             *string                         `json:"home_header"`
+	Splash                                 *string                         `json:"splash"`
+	DiscoverySplash                        *string                         `json:"discovery_splash"`
+	OwnerID                                snowflake.ID                    `json:"owner_id"`
+	ApplicationID                          *snowflake.ID                   `json:"application_id"`
+	Description                            *string                         `json:"description"`
+	Region                                 *string                         `json:"region,omitempty"`
+	AFKChannelID                           *snowflake.ID                   `json:"afk_channel_id"`
+	AFKTimeout                             int64                           `json:"afk_timeout"`
+	WidgetEnabled                          bool                            `json:"widget_enabled,omitzero"`
+	WidgetChannelID                        *snowflake.ID                   `json:"widget_channel_id,omitempty"`
+	VerificationLevel                      VerificationLevel               `json:"verification_level"`
+	DefaultMessageNotifications            MessageNotificationLevel        `json:"default_message_notifications"`
+	ExplicitContentFilter                  GuildExplicitContentFilterLevel `json:"explicit_content_filter"`
+	Features                               []string                        `json:"features"`
+	Roles                                  []Role                          `json:"roles"`
+	Emojis                                 []Emoji                         `json:"emojis"`
+	Stickers                               []Sticker                       `json:"stickers"`
+	MFALevel                               MFALevel                        `json:"mfa_level"`
+	SystemChannelID                        *snowflake.ID                   `json:"system_channel_id"`
+	SystemChannelFlags                     SystemChannelFlags              `json:"system_channel_flags"`
+	RulesChannelID                         *snowflake.ID                   `json:"rules_channel_id"`
+	PublicUpdatesChannelID                 *snowflake.ID                   `json:"public_updates_channel_id"`
+	SafetyAlertsChannelID                  *snowflake.ID                   `json:"safety_alerts_channel_id"`
+	MaxPresences                           *int64                          `json:"max_presences,omitempty"`
+	MaxMembers                             int64                           `json:"max_members,omitzero"`
+	VanityURLCode                          *string                         `json:"vanity_url_code"`
+	PremiumTier                            PremiumTier                     `json:"premium_tier"`
+	PremiumSubscriptionCount               int64                           `json:"premium_subscription_count"`
+	PreferredLocale                        string                          `json:"preferred_locale"`
+	MaxVideoChannelUsers                   int64                           `json:"max_video_channel_users,omitzero"`
+	MaxStageVideoChannelUsers              int64                           `json:"max_stage_video_channel_users,omitzero"`
+	NSFW                                   bool                            `json:"nsfw"`
+	NSFWLevel                              NSFWLevel                       `json:"nsfw_level"`
+	OwnerConfiguredContentLevel            *NSFWLevel                      `json:"owner_configured_content_level"`
+	HubType                                *HubType                        `json:"hub_type"`
+	PremiumProgressBarEnabled              bool                            `json:"premium_progress_bar_enabled"`
+	PremiumProgressBarEnabledUserUpdatedAt *time.Time                      `json:"premium_progress_bar_enabled_user_updated_at"`
+	LatestOnboardingQuestionID             *snowflake.ID                   `json:"latest_onboarding_question_id"`
+	IncidentsData                          *AutomodIncidentsData           `json:"incidents_data"`
+	InventorySettings                      *GuildInventorySettings         `json:"inventory_settings"`
+	PremiumFeatures                        *GuildPremiumFeatures           `json:"premium_features"`
+	Profile                                *GuildIdentity                  `json:"profile"`
+	ApproximateMemberCount                 int64                           `json:"approximate_member_count,omitzero"`
+	ApproximatePresenceCount               int64                           `json:"approximate_presence_count,omitzero"`
+	OfficialMessageColor                   *int64                          `json:"official_message_color"`
+	Version                                string                          `json:"version,omitzero"`
+}
+
+type GuildDeleteEvent struct {
+	ID            snowflake.ID `json:"id"`
+	Unavailable   bool         `json:"unavailable,omitzero"`
+	GeoRestricted bool         `json:"geo_restricted,omitzero"`
+	Name          string       `json:"name,omitzero"`
+	Icon          *string      `json:"icon,omitempty"`
+}
+
+type GuildApplicationCommandIndexUpdateEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+}
+
+type GuildAppliedBoostsUpdateEvent struct {
+	ID          snowflake.ID `json:"id"`
+	GuildID     snowflake.ID `json:"guild_id"`
+	UserID      snowflake.ID `json:"user_id"`
+	Ended       bool         `json:"ended"`
+	EndsAt      time.Time    `json:"ends_at,omitzero"`
+	PauseEndsAt *time.Time   `json:"pause_ends_at"`
+	User        PartialUser  `json:"user"`
+}
+
+type GuildAuditLogEntryCreateEvent struct {
+	TargetID   *snowflake.ID      `json:"target_id"`
+	Changes    []AuditLogChange   `json:"changes,omitempty"`
+	UserID     *snowflake.ID      `json:"user_id"`
+	ID         snowflake.ID       `json:"id"`
+	ActionType AuditLogActionType `json:"action_type"`
+	Options    json.RawMessage    `json:"options,omitempty"`
+	Reason     string             `json:"reason,omitzero"`
+}
+
+type GuildBanAddEvent struct {
+	GuildID           snowflake.ID `json:"guild_id"`
+	User              PartialUser  `json:"user"`
+	DeleteMessageSecs int64        `json:"delete_message_secs"`
+}
+
+type GuildBanRemoveEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	User    PartialUser  `json:"user"`
+}
+
+type GuildBulkBanUpdateEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	BulkBan GuildBulkBan `json:"bulk_ban"`
+}
+
+type GuildDirectoryEntryCreateEvent struct {
+	Type                DirectoryEntryType           `json:"type"`
+	DirectoryChannelID  snowflake.ID                 `json:"directory_channel_id"`
+	EntityID            snowflake.ID                 `json:"entity_id"`
+	CreatedAt           string                       `json:"created_at"`
+	PrimaryCategoryID   DirectoryCategory            `json:"primary_category_id,omitzero"`
+	Description         *string                      `json:"description"`
+	AuthorID            snowflake.ID                 `json:"author_id"`
+	Guild               DirectoryGuild               `json:"guild,omitzero"`
+	GuildScheduledEvent DirectoryGuildScheduledEvent `json:"guild_scheduled_event,omitzero"`
+}
+
+type GuildDirectoryEntryUpdateEvent struct {
+	Type                DirectoryEntryType           `json:"type"`
+	DirectoryChannelID  snowflake.ID                 `json:"directory_channel_id"`
+	EntityID            snowflake.ID                 `json:"entity_id"`
+	CreatedAt           string                       `json:"created_at"`
+	PrimaryCategoryID   DirectoryCategory            `json:"primary_category_id,omitzero"`
+	Description         *string                      `json:"description"`
+	AuthorID            snowflake.ID                 `json:"author_id"`
+	Guild               DirectoryGuild               `json:"guild,omitzero"`
+	GuildScheduledEvent DirectoryGuildScheduledEvent `json:"guild_scheduled_event,omitzero"`
+}
+
+type GuildDirectoryEntryDeleteEvent struct {
+	Type               DirectoryEntryType `json:"type"`
+	DirectoryChannelID snowflake.ID       `json:"directory_channel_id"`
+	GuildID            snowflake.ID       `json:"guild_id"`
+	EntityID           snowflake.ID       `json:"entity_id"`
+	CreatedAt          string             `json:"created_at"`
+	PrimaryCategoryID  DirectoryCategory  `json:"primary_category_id,omitzero"`
+	Description        *string            `json:"description"`
+	AuthorID           snowflake.ID       `json:"author_id"`
+}
+
+type GuildEmojisUpdateEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	Emojis  []Emoji      `json:"emojis"`
+}
+
+type GuildStickersUpdateEvent struct {
+	GuildID  snowflake.ID `json:"guild_id"`
+	Stickers []Sticker    `json:"stickers"`
+}
+
+type GuildFeatureAckEvent struct {
+	AckType    ReadStateType `json:"ack_type"`
+	ResourceID snowflake.ID  `json:"resource_id"`
+	EntityID   snowflake.ID  `json:"entity_id"`
+	Version    int64         `json:"version"`
+}
+
+type GuildJoinRequestCreateEvent struct {
+	GuildID snowflake.ID           `json:"guild_id"`
+	Request GuildJoinRequest       `json:"request"`
+	Status  GuildJoinRequestStatus `json:"status"`
+}
+
+type GuildJoinRequestUpdateEvent struct {
+	GuildID snowflake.ID           `json:"guild_id"`
+	Request GuildJoinRequest       `json:"request"`
+	Status  GuildJoinRequestStatus `json:"status"`
+}
+
+type GuildJoinRequestDeleteEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	ID      snowflake.ID `json:"id"`
+	UserID  snowflake.ID `json:"user_id"`
+}
+
+type GuildMemberAddEvent struct {
+	User                       PartialUser           `json:"user"`
+	Nick                       *string               `json:"nick,omitempty"`
+	Avatar                     *string               `json:"avatar,omitempty"`
+	AvatarDecorationData       *AvatarDecorationData `json:"avatar_decoration_data,omitempty"`
+	Collectibles               *GuildCollectibles    `json:"collectibles,omitempty"`
+	DisplayNameStyles          *DisplayNameStyle     `json:"display_name_styles,omitempty"`
+	Banner                     *string               `json:"banner,omitempty"`
+	Bio                        *string               `json:"bio,omitempty"`
+	Roles                      []snowflake.ID        `json:"roles"`
+	JoinedAt                   time.Time             `json:"joined_at"`
+	PremiumSince               *time.Time            `json:"premium_since,omitempty"`
+	Deaf                       bool                  `json:"deaf,omitzero"`
+	Mute                       bool                  `json:"mute,omitzero"`
+	Pending                    bool                  `json:"pending,omitzero"`
+	CommunicationDisabledUntil *time.Time            `json:"communication_disabled_until,omitempty"`
+	UnusualDMActivityUntil     *time.Time            `json:"unusual_dm_activity_until,omitempty"`
+	Flags                      GuildMemberFlags      `json:"flags"`
+	Permissions                Permissions           `json:"permissions,omitzero"`
+	GuildID                    snowflake.ID          `json:"guild_id"`
+}
+
+type GuildMemberUpdateEvent struct {
+	GuildID                    snowflake.ID          `json:"guild_id"`
+	User                       PartialUser           `json:"user"`
+	Nick                       *string               `json:"nick,omitempty"`
+	Avatar                     *string               `json:"avatar"`
+	AvatarDecorationData       *AvatarDecorationData `json:"avatar_decoration_data,omitempty"`
+	Roles                      []snowflake.ID        `json:"roles"`
+	JoinedAt                   time.Time             `json:"joined_at"`
+	PremiumSince               *time.Time            `json:"premium_since"`
+	Deaf                       bool                  `json:"deaf,omitzero"`
+	Mute                       bool                  `json:"mute,omitzero"`
+	Pending                    bool                  `json:"pending,omitzero"`
+	CommunicationDisabledUntil *time.Time            `json:"communication_disabled_until"`
+	Flags                      GuildMemberFlags      `json:"flags"`
+}
+
+type GuildMemberRemoveEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	User    User         `json:"user"`
+}
+
+type GuildMembersChunkEvent struct {
+	GuildID    snowflake.ID    `json:"guild_id"`
+	Members    []GuildMember   `json:"members"`
+	ChunkIndex int64           `json:"chunk_index"`
+	ChunkCount int64           `json:"chunk_count"`
+	NotFound   json.RawMessage `json:"not_found,omitempty"`
+	Presences  []Presence      `json:"presences,omitempty"`
+	Nonce      string          `json:"nonce,omitzero"`
+}
+
+type GuildOfficialGameApplicationsUpdateEvent struct {
+	GuildID            snowflake.ID   `json:"guild_id"`
+	GameApplicationIDs []snowflake.ID `json:"game_application_ids"`
+}
+
+type GuildPowerupEntitlementsCreateEvent struct {
+	GuildID      snowflake.ID  `json:"guild_id"`
+	Entitlements []Entitlement `json:"entitlements"`
+}
+
+type GuildPowerupEntitlementsDeleteEvent struct {
+	GuildID      snowflake.ID  `json:"guild_id"`
+	Entitlements []Entitlement `json:"entitlements"`
+}
+
+type GuildRoleCreateEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	Role    Role         `json:"role"`
+}
+
+type GuildRoleUpdateEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	Role    Role         `json:"role"`
+}
+
+type GuildRoleDeleteEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	RoleID  snowflake.ID `json:"role_id"`
+}
+
+type GuildScheduledEventCreateEvent struct {
+	ID                            snowflake.ID                  `json:"id"`
+	GuildID                       snowflake.ID                  `json:"guild_id"`
+	ChannelID                     *snowflake.ID                 `json:"channel_id"`
+	CreatorID                     *snowflake.ID                 `json:"creator_id,omitempty"`
+	Creator                       PartialUser                   `json:"creator,omitzero"`
+	Name                          string                        `json:"name"`
+	Description                   *string                       `json:"description,omitempty"`
+	ScheduledStartTime            time.Time                     `json:"scheduled_start_time"`
+	ScheduledEndTime              *time.Time                    `json:"scheduled_end_time"`
+	AutoStart                     bool                          `json:"auto_start,omitzero"`
+	PrivacyLevel                  PrivacyLevel                  `json:"privacy_level"`
+	Status                        GuildScheduledEventStatus     `json:"status"`
+	EntityType                    GuildScheduledEventEntityType `json:"entity_type"`
+	EntityID                      *snowflake.ID                 `json:"entity_id"`
+	EntityMetadata                json.RawMessage               `json:"entity_metadata"`
+	UserCount                     int64                         `json:"user_count,omitzero"`
+	Image                         *string                       `json:"image,omitempty"`
+	RecurrenceRule                json.RawMessage               `json:"recurrence_rule"`
+	GuildScheduledEventExceptions []json.RawMessage             `json:"guild_scheduled_event_exceptions"`
+}
+
+type GuildScheduledEventUpdateEvent struct {
+	ID                            snowflake.ID                  `json:"id"`
+	GuildID                       snowflake.ID                  `json:"guild_id"`
+	ChannelID                     *snowflake.ID                 `json:"channel_id"`
+	CreatorID                     *snowflake.ID                 `json:"creator_id,omitempty"`
+	Creator                       PartialUser                   `json:"creator,omitzero"`
+	Name                          string                        `json:"name"`
+	Description                   *string                       `json:"description,omitempty"`
+	ScheduledStartTime            time.Time                     `json:"scheduled_start_time"`
+	ScheduledEndTime              *time.Time                    `json:"scheduled_end_time"`
+	AutoStart                     bool                          `json:"auto_start,omitzero"`
+	PrivacyLevel                  PrivacyLevel                  `json:"privacy_level"`
+	Status                        GuildScheduledEventStatus     `json:"status"`
+	EntityType                    GuildScheduledEventEntityType `json:"entity_type"`
+	EntityID                      *snowflake.ID                 `json:"entity_id"`
+	EntityMetadata                json.RawMessage               `json:"entity_metadata"`
+	UserCount                     int64                         `json:"user_count,omitzero"`
+	Image                         *string                       `json:"image,omitempty"`
+	RecurrenceRule                json.RawMessage               `json:"recurrence_rule"`
+	GuildScheduledEventExceptions []json.RawMessage             `json:"guild_scheduled_event_exceptions"`
+}
+
+type GuildScheduledEventDeleteEvent struct {
+	ID                            snowflake.ID                  `json:"id"`
+	GuildID                       snowflake.ID                  `json:"guild_id"`
+	ChannelID                     *snowflake.ID                 `json:"channel_id"`
+	CreatorID                     *snowflake.ID                 `json:"creator_id,omitempty"`
+	Creator                       PartialUser                   `json:"creator,omitzero"`
+	Name                          string                        `json:"name"`
+	Description                   *string                       `json:"description,omitempty"`
+	ScheduledStartTime            time.Time                     `json:"scheduled_start_time"`
+	ScheduledEndTime              *time.Time                    `json:"scheduled_end_time"`
+	AutoStart                     bool                          `json:"auto_start,omitzero"`
+	PrivacyLevel                  PrivacyLevel                  `json:"privacy_level"`
+	Status                        GuildScheduledEventStatus     `json:"status"`
+	EntityType                    GuildScheduledEventEntityType `json:"entity_type"`
+	EntityID                      *snowflake.ID                 `json:"entity_id"`
+	EntityMetadata                json.RawMessage               `json:"entity_metadata"`
+	UserCount                     int64                         `json:"user_count,omitzero"`
+	Image                         *string                       `json:"image,omitempty"`
+	RecurrenceRule                json.RawMessage               `json:"recurrence_rule"`
+	GuildScheduledEventExceptions []json.RawMessage             `json:"guild_scheduled_event_exceptions"`
+}
+
+type GuildScheduledEventExceptionCreateEvent struct {
+	EventID            snowflake.ID `json:"event_id"`
+	EventExceptionID   snowflake.ID `json:"event_exception_id"`
+	IsCanceled         bool         `json:"is_canceled"`
+	ScheduledStartTime *time.Time   `json:"scheduled_start_time"`
+	ScheduledEndTime   *time.Time   `json:"scheduled_end_time"`
+}
+
+type GuildScheduledEventExceptionUpdateEvent struct {
+	EventID            snowflake.ID `json:"event_id"`
+	EventExceptionID   snowflake.ID `json:"event_exception_id"`
+	IsCanceled         bool         `json:"is_canceled"`
+	ScheduledStartTime *time.Time   `json:"scheduled_start_time"`
+	ScheduledEndTime   *time.Time   `json:"scheduled_end_time"`
+}
+
+type GuildScheduledEventExceptionDeleteEvent struct {
+	EventID            snowflake.ID `json:"event_id"`
+	EventExceptionID   snowflake.ID `json:"event_exception_id"`
+	IsCanceled         bool         `json:"is_canceled"`
+	ScheduledStartTime *time.Time   `json:"scheduled_start_time"`
+	ScheduledEndTime   *time.Time   `json:"scheduled_end_time"`
+}
+
+type GuildScheduledEventExceptionsDeleteEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	EventID snowflake.ID `json:"event_id"`
+}
+
+type GuildScheduledEventUserAddEvent struct {
+	GuildScheduledEventID          snowflake.ID                    `json:"guild_scheduled_event_id"`
+	GuildScheduledEventExceptionID snowflake.ID                    `json:"guild_scheduled_event_exception_id,omitzero"`
+	Response                       GuildScheduledEventUserResponse `json:"response"`
+	UserID                         snowflake.ID                    `json:"user_id"`
+	User                           PartialUser                     `json:"user,omitzero"`
+	Member                         GuildMember                     `json:"member,omitzero"`
+}
+
+type GuildScheduledEventUserRemoveEvent struct {
+	GuildScheduledEventID          snowflake.ID                    `json:"guild_scheduled_event_id"`
+	GuildScheduledEventExceptionID snowflake.ID                    `json:"guild_scheduled_event_exception_id,omitzero"`
+	Response                       GuildScheduledEventUserResponse `json:"response"`
+	UserID                         snowflake.ID                    `json:"user_id"`
+	User                           PartialUser                     `json:"user,omitzero"`
+	Member                         GuildMember                     `json:"member,omitzero"`
+}
+
+type GuildSoundboardSoundCreateEvent struct {
+	SoundID   snowflake.ID  `json:"sound_id"`
+	Name      string        `json:"name"`
+	Volume    float64       `json:"volume"`
+	EmojiID   *snowflake.ID `json:"emoji_id"`
+	EmojiName *string       `json:"emoji_name"`
+	GuildID   snowflake.ID  `json:"guild_id,omitzero"`
+	Available bool          `json:"available"`
+	User      PartialUser   `json:"user,omitzero"`
+	UserID    snowflake.ID  `json:"user_id,omitzero"`
+}
+
+type GuildSoundboardSoundUpdateEvent struct {
+	SoundID   snowflake.ID  `json:"sound_id"`
+	Name      string        `json:"name"`
+	Volume    float64       `json:"volume"`
+	EmojiID   *snowflake.ID `json:"emoji_id"`
+	EmojiName *string       `json:"emoji_name"`
+	GuildID   snowflake.ID  `json:"guild_id,omitzero"`
+	Available bool          `json:"available"`
+	User      PartialUser   `json:"user,omitzero"`
+	UserID    snowflake.ID  `json:"user_id,omitzero"`
+}
+
+type GuildSoundboardSoundDeleteEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+	SoundID snowflake.ID `json:"sound_id"`
+}
+
+type GuildSoundboardSoundsUpdateEvent struct {
+	GuildID          snowflake.ID      `json:"guild_id"`
+	SoundboardSounds []SoundboardSound `json:"soundboard_sounds"`
+}
+
+type GuildIntegrationsUpdateEvent struct {
+	GuildID snowflake.ID `json:"guild_id"`
+}
+
+type IntegrationCreateEvent struct {
+	ID                      snowflake.ID                        `json:"id"`
+	Name                    string                              `json:"name"`
+	Type                    IntegrationType                     `json:"type"`
+	Enabled                 bool                                `json:"enabled"`
+	Account                 IntegrationAccount                  `json:"account"`
+	Syncing                 bool                                `json:"syncing,omitzero"`
+	RoleID                  *snowflake.ID                       `json:"role_id,omitempty"`
+	EnableEmoticons         bool                                `json:"enable_emoticons,omitzero"`
+	ExpireBehavior          IntegrationExpireBehavior           `json:"expire_behavior,omitzero"`
+	ExpireGracePeriod       int64                               `json:"expire_grace_period,omitzero"`
+	SyncedAt                time.Time                           `json:"synced_at,omitzero"`
+	SubscriberCount         int64                               `json:"subscriber_count,omitzero"`
+	Revoked                 bool                                `json:"revoked,omitzero"`
+	Application             IntegrationApplication              `json:"application,omitzero"`
+	Scopes                  []string                            `json:"scopes,omitempty"`
+	RoleConnectionsMetadata []ApplicationRoleConnectionMetadata `json:"role_connections_metadata"`
+	User                    PartialUser                         `json:"user,omitzero"`
+	GuildID                 snowflake.ID                        `json:"guild_id"`
+}
+
+type IntegrationUpdateEvent struct {
+	ID                      snowflake.ID                        `json:"id"`
+	Name                    string                              `json:"name"`
+	Type                    IntegrationType                     `json:"type"`
+	Enabled                 bool                                `json:"enabled"`
+	Account                 IntegrationAccount                  `json:"account"`
+	Syncing                 bool                                `json:"syncing,omitzero"`
+	RoleID                  *snowflake.ID                       `json:"role_id,omitempty"`
+	EnableEmoticons         bool                                `json:"enable_emoticons,omitzero"`
+	ExpireBehavior          IntegrationExpireBehavior           `json:"expire_behavior,omitzero"`
+	ExpireGracePeriod       int64                               `json:"expire_grace_period,omitzero"`
+	SyncedAt                time.Time                           `json:"synced_at,omitzero"`
+	SubscriberCount         int64                               `json:"subscriber_count,omitzero"`
+	Revoked                 bool                                `json:"revoked,omitzero"`
+	Application             IntegrationApplication              `json:"application,omitzero"`
+	Scopes                  []string                            `json:"scopes,omitempty"`
+	RoleConnectionsMetadata []ApplicationRoleConnectionMetadata `json:"role_connections_metadata"`
+	User                    PartialUser                         `json:"user,omitzero"`
+	GuildID                 snowflake.ID                        `json:"guild_id"`
+}
+
+type IntegrationDeleteEvent struct {
+	ID            snowflake.ID `json:"id"`
+	GuildID       snowflake.ID `json:"guild_id"`
+	ApplicationID snowflake.ID `json:"application_id,omitzero"`
+}
+
+type InteractionCreateEvent struct {
+	ID    snowflake.ID `json:"id"`
+	Nonce string       `json:"nonce,omitzero"`
+}
+
+type InteractionFailureEvent struct {
+	ID         snowflake.ID             `json:"id"`
+	Nonce      string                   `json:"nonce,omitzero"`
+	ReasonCode InteractionFailureReason `json:"reason_code"`
+}
+
+type InteractionSuccessEvent struct {
+	ID    snowflake.ID `json:"id"`
+	Nonce *string      `json:"nonce"`
+}
+
+type ApplicationCommandAutocompleteResponseEvent struct {
+	Choices []ApplicationCommandOptionChoice `json:"choices"`
+	Nonce   *string                          `json:"nonce"`
+}
+
+type InteractionModalCreateEvent struct {
+	ID          snowflake.ID           `json:"id"`
+	ChannelID   snowflake.ID           `json:"channel_id"`
+	CustomID    string                 `json:"custom_id"`
+	Application IntegrationApplication `json:"application"`
+	Title       string                 `json:"title"`
+	Components  []json.RawMessage      `json:"components"`
+	Nonce       *string                `json:"nonce"`
+	Resolved    ResolvedData           `json:"resolved,omitzero"`
+}
+
+type InteractionIframeModalCreateEvent struct {
+	ID          snowflake.ID           `json:"id"`
+	ChannelID   snowflake.ID           `json:"channel_id"`
+	CustomID    string                 `json:"custom_id"`
+	Application IntegrationApplication `json:"application"`
+	Title       string                 `json:"title"`
+	IframePath  string                 `json:"iframe_path"`
+	ModalSize   IframeModalSize        `json:"modal_size"`
+	Nonce       *string                `json:"nonce"`
+}
+
+type SocialLayerSKUPurchaseEligibilityResponseEvent struct {
+	InteractionID snowflake.ID `json:"interaction_id"`
+	ApplicationID snowflake.ID `json:"application_id"`
+	SKUID         snowflake.ID `json:"sku_id"`
+	RecipientID   snowflake.ID `json:"recipient_id"`
+	Eligible      snowflake.ID `json:"eligible"`
+}
+
+type InviteCreateEvent struct {
+	Code              string             `json:"code"`
+	Type              InviteType         `json:"type"`
+	ChannelID         snowflake.ID       `json:"channel_id"`
+	GuildID           snowflake.ID       `json:"guild_id"`
+	Inviter           PartialUser        `json:"inviter,omitzero"`
+	TargetType        InviteTargetType   `json:"target_type,omitzero"`
+	TargetUser        PartialUser        `json:"target_user,omitzero"`
+	TargetApplication PartialApplication `json:"target_application,omitzero"`
+	RoleIDs           []snowflake.ID     `json:"role_ids,omitempty"`
+	ExpiresAt         *time.Time         `json:"expires_at"`
+	CreatedAt         time.Time          `json:"created_at"`
+	Uses              int64              `json:"uses"`
+	MaxUses           int64              `json:"max_uses"`
+	MaxAge            int64              `json:"max_age"`
+	Temporary         bool               `json:"temporary"`
+}
+
+type InviteDeleteEvent struct {
+	Code      string       `json:"code"`
+	ChannelID snowflake.ID `json:"channel_id"`
+	GuildID   snowflake.ID `json:"guild_id"`
+}
+
+type MessageCreateEvent struct {
+	ID                   snowflake.ID                `json:"id"`
+	ChannelID            snowflake.ID                `json:"channel_id"`
+	LobbyID              snowflake.ID                `json:"lobby_id,omitzero"`
+	Author               PartialUser                 `json:"author"`
+	Content              string                      `json:"content"`
+	Timestamp            time.Time                   `json:"timestamp"`
+	EditedTimestamp      *time.Time                  `json:"edited_timestamp"`
+	TTS                  bool                        `json:"tts"`
+	MentionEveryone      bool                        `json:"mention_everyone"`
+	Mentions             []PartialUser               `json:"mentions"`
+	MentionRoles         []snowflake.ID              `json:"mention_roles"`
+	MentionChannels      []PartialChannel            `json:"mention_channels,omitempty"`
+	Attachments          []Attachment                `json:"attachments"`
+	Embeds               []Embed                     `json:"embeds"`
+	Reactions            []Reaction                  `json:"reactions,omitempty"`
+	Nonce                int64                       `json:"nonce,omitzero"`
+	Pinned               bool                        `json:"pinned"`
+	WebhookID            snowflake.ID                `json:"webhook_id,omitzero"`
+	Type                 MessageType                 `json:"type"`
+	Activity             MessageActivity             `json:"activity,omitzero"`
+	Application          IntegrationApplication      `json:"application,omitzero"`
+	ApplicationID        snowflake.ID                `json:"application_id,omitzero"`
+	Flags                MessageFlags                `json:"flags"`
+	MessageReference     MessageReference            `json:"message_reference,omitzero"`
+	ReferencedMessage    *Message                    `json:"referenced_message,omitempty"`
+	MessageSnapshots     []MessageSnapshot           `json:"message_snapshots,omitempty"`
+	Call                 MessageCall                 `json:"call,omitzero"`
+	Interaction          PartialMessageInteraction   `json:"interaction,omitzero"`
+	InteractionMetadata  MessageInteraction          `json:"interaction_metadata,omitzero"`
+	Resolved             ResolvedData                `json:"resolved,omitzero"`
+	Thread               Channel                     `json:"thread,omitzero"`
+	RoleSubscriptionData MessageRoleSubscription     `json:"role_subscription_data,omitzero"`
+	PurchaseNotification MessagePurchaseNotification `json:"purchase_notification,omitzero"`
+	GiftInfo             MessageGiftInfo             `json:"gift_info,omitzero"`
+	Components           []json.RawMessage           `json:"components"`
+	StickerItems         []StickerItem               `json:"sticker_items,omitempty"`
+	Stickers             []Sticker                   `json:"stickers,omitempty"`
+	Poll                 Poll                        `json:"poll,omitzero"`
+	ChangelogID          snowflake.ID                `json:"changelog_id,omitzero"`
+	SoundboardSounds     []SoundboardSound           `json:"soundboard_sounds,omitempty"`
+	Potions              []Potion                    `json:"potions,omitempty"`
+	SharedClientTheme    SharedClientTheme           `json:"shared_client_theme,omitzero"`
+	ChannelType          ChannelType                 `json:"channel_type"`
+	GuildID              snowflake.ID                `json:"guild_id,omitzero"`
+	Member               GuildMember                 `json:"member,omitzero"`
+	Metadata             map[string]string           `json:"metadata,omitempty"`
+	ModerationMetadata   map[string]string           `json:"moderation_metadata,omitempty"`
+}
+
+type MessageUpdateEvent struct {
+	ID                   snowflake.ID                `json:"id"`
+	ChannelID            snowflake.ID                `json:"channel_id"`
+	LobbyID              snowflake.ID                `json:"lobby_id,omitzero"`
+	Author               PartialUser                 `json:"author"`
+	Content              string                      `json:"content"`
+	Timestamp            time.Time                   `json:"timestamp"`
+	EditedTimestamp      *time.Time                  `json:"edited_timestamp"`
+	TTS                  bool                        `json:"tts"`
+	MentionEveryone      bool                        `json:"mention_everyone"`
+	Mentions             []PartialUser               `json:"mentions"`
+	MentionRoles         []snowflake.ID              `json:"mention_roles"`
+	MentionChannels      []PartialChannel            `json:"mention_channels,omitempty"`
+	Attachments          []Attachment                `json:"attachments"`
+	Embeds               []Embed                     `json:"embeds"`
+	Reactions            []Reaction                  `json:"reactions,omitempty"`
+	Nonce                int64                       `json:"nonce,omitzero"`
+	Pinned               bool                        `json:"pinned"`
+	WebhookID            snowflake.ID                `json:"webhook_id,omitzero"`
+	Type                 MessageType                 `json:"type"`
+	Activity             MessageActivity             `json:"activity,omitzero"`
+	Application          IntegrationApplication      `json:"application,omitzero"`
+	ApplicationID        snowflake.ID                `json:"application_id,omitzero"`
+	Flags                MessageFlags                `json:"flags"`
+	MessageReference     MessageReference            `json:"message_reference,omitzero"`
+	ReferencedMessage    *Message                    `json:"referenced_message,omitempty"`
+	MessageSnapshots     []MessageSnapshot           `json:"message_snapshots,omitempty"`
+	Call                 MessageCall                 `json:"call,omitzero"`
+	Interaction          PartialMessageInteraction   `json:"interaction,omitzero"`
+	InteractionMetadata  MessageInteraction          `json:"interaction_metadata,omitzero"`
+	Resolved             ResolvedData                `json:"resolved,omitzero"`
+	Thread               Channel                     `json:"thread,omitzero"`
+	RoleSubscriptionData MessageRoleSubscription     `json:"role_subscription_data,omitzero"`
+	PurchaseNotification MessagePurchaseNotification `json:"purchase_notification,omitzero"`
+	GiftInfo             MessageGiftInfo             `json:"gift_info,omitzero"`
+	Components           []json.RawMessage           `json:"components"`
+	StickerItems         []StickerItem               `json:"sticker_items,omitempty"`
+	Stickers             []Sticker                   `json:"stickers,omitempty"`
+	Poll                 Poll                        `json:"poll,omitzero"`
+	ChangelogID          snowflake.ID                `json:"changelog_id,omitzero"`
+	SoundboardSounds     []SoundboardSound           `json:"soundboard_sounds,omitempty"`
+	Potions              []Potion                    `json:"potions,omitempty"`
+	SharedClientTheme    SharedClientTheme           `json:"shared_client_theme,omitzero"`
+	ChannelType          ChannelType                 `json:"channel_type"`
+	GuildID              snowflake.ID                `json:"guild_id,omitzero"`
+	Member               GuildMember                 `json:"member,omitzero"`
+	Metadata             map[string]string           `json:"metadata,omitempty"`
+	ModerationMetadata   map[string]string           `json:"moderation_metadata,omitempty"`
+}
+
+type MessageDeleteEvent struct {
+	ID        snowflake.ID `json:"id"`
+	ChannelID snowflake.ID `json:"channel_id"`
+	GuildID   snowflake.ID `json:"guild_id,omitzero"`
+}
+
+type MessageDeleteBulkEvent struct {
+	IDs       []snowflake.ID `json:"ids"`
+	ChannelID snowflake.ID   `json:"channel_id"`
+	GuildID   snowflake.ID   `json:"guild_id,omitzero"`
+}
+
+type MessageAckEvent struct {
+	AckType      ReadStateType   `json:"ack_type,omitzero"`
+	ChannelID    snowflake.ID    `json:"channel_id"`
+	MessageID    snowflake.ID    `json:"message_id"`
+	Manual       bool            `json:"manual,omitzero"`
+	MentionCount int64           `json:"mention_count,omitzero"`
+	Flags        *ReadStateFlags `json:"flags,omitempty"`
+	LastViewed   *int64          `json:"last_viewed,omitempty"`
+	Version      int64           `json:"version"`
+}
+
+type MessagePollVoteAddEvent struct {
+	UserID    snowflake.ID `json:"user_id"`
+	ChannelID snowflake.ID `json:"channel_id"`
+	MessageID snowflake.ID `json:"message_id"`
+	GuildID   snowflake.ID `json:"guild_id,omitzero"`
+	AnswerID  int64        `json:"answer_id"`
+}
+
+type MessagePollVoteRemoveEvent struct {
+	UserID    snowflake.ID `json:"user_id"`
+	ChannelID snowflake.ID `json:"channel_id"`
+	MessageID snowflake.ID `json:"message_id"`
+	GuildID   snowflake.ID `json:"guild_id,omitzero"`
+	AnswerID  int64        `json:"answer_id"`
+}
+
+type MessageReactionAddEvent struct {
+	UserID          snowflake.ID    `json:"user_id"`
+	ChannelID       snowflake.ID    `json:"channel_id"`
+	MessageID       snowflake.ID    `json:"message_id"`
+	MessageAuthorID snowflake.ID    `json:"message_author_id"`
+	GuildID         snowflake.ID    `json:"guild_id,omitzero"`
+	Member          json.RawMessage `json:"member,omitempty"`
+	Emoji           Emoji           `json:"emoji"`
+	Type            ReactionType    `json:"type"`
+	BurstColors     []string        `json:"burst_colors,omitempty"`
+}
+
+type MessageReactionAddManyEvent struct {
+	ChannelID snowflake.ID        `json:"channel_id"`
+	MessageID snowflake.ID        `json:"message_id"`
+	GuildID   snowflake.ID        `json:"guild_id,omitzero"`
+	Reactions []DebouncedReaction `json:"reactions"`
+}
+
+type MessageReactionRemoveEvent struct {
+	UserID    snowflake.ID    `json:"user_id"`
+	ChannelID snowflake.ID    `json:"channel_id"`
+	MessageID snowflake.ID    `json:"message_id"`
+	GuildID   snowflake.ID    `json:"guild_id,omitzero"`
+	Emoji     json.RawMessage `json:"emoji"`
+	Type      ReactionType    `json:"type"`
+}
+
+type MessageReactionRemoveAllEvent struct {
+	ChannelID snowflake.ID `json:"channel_id"`
+	MessageID snowflake.ID `json:"message_id"`
+	GuildID   snowflake.ID `json:"guild_id,omitzero"`
+}
+
+type MessageReactionRemoveEmojiEvent struct {
+	ChannelID snowflake.ID `json:"channel_id"`
+	MessageID snowflake.ID `json:"message_id"`
+	GuildID   snowflake.ID `json:"guild_id,omitzero"`
+	Emoji     Emoji        `json:"emoji"`
+}
+
+type ReactionNotificationSentEvent struct {
+	Message       Message      `json:"message"`
+	ReactorUserID snowflake.ID `json:"reactor_user_id"`
+	Emoji         Emoji        `json:"emoji"`
+	Title         string       `json:"title"`
+	Body          string       `json:"body"`
+	Icon          string       `json:"icon"`
+	Route         string       `json:"route"`
+	TrackingType  string       `json:"tracking_type"`
+}
+
+type RecentMentionDeleteEvent struct {
+	MessageID snowflake.ID `json:"message_id"`
+}
+
+type LastMessagesEvent struct {
+	GuildID  snowflake.ID `json:"guild_id"`
+	Messages []Message    `json:"messages"`
+}
+
+type NotificationCenterItemCreateEvent struct {
+	ID                     snowflake.ID                `json:"id"`
+	BundleID               string                      `json:"bundle_id"`
+	Type                   NotificationCenterItemType  `json:"type"`
+	ItemEnum               *NotificationCenterItemEnum `json:"item_enum"`
+	Body                   string                      `json:"body"`
+	Acked                  bool                        `json:"acked"`
+	Deeplink               string                      `json:"deeplink"`
+	IconURL                *string                     `json:"icon_url"`
+	IconName               *string                     `json:"icon_name"`
+	OtherUser              *PartialUser                `json:"other_user"`
+	Message                *Message                    `json:"message"`
+	Completed              bool                        `json:"completed"`
+	GuildID                *snowflake.ID               `json:"guild_id"`
+	MessageID              *snowflake.ID               `json:"message_id"`
+	MessageChannelID       *snowflake.ID               `json:"message_channel_id"`
+	GuildScheduledEventID  *snowflake.ID               `json:"guild_scheduled_event_id"`
+	DisableAction          bool                        `json:"disable_action"`
+	Callout                *string                     `json:"callout"`
+	Application            *PartialApplication         `json:"application"`
+	EmojiID                *snowflake.ID               `json:"emoji_id"`
+	EmojiName              *string                     `json:"emoji_name"`
+	MessageContent         *string                     `json:"message_content"`
+	MessageEmbedCount      *int64                      `json:"message_embed_count"`
+	MessageAttachmentCount *int64                      `json:"message_attachment_count"`
+	MessageStickerCount    *int64                      `json:"message_sticker_count"`
+	IsVoiceMessage         bool                        `json:"is_voice_message"`
+}
+
+type NotificationCenterItemDeleteEvent struct {
+	ID     snowflake.ID `json:"id"`
+	UserID snowflake.ID `json:"user_id"`
+}
+
+type NotificationCenterItemsAckEvent struct {
+	ID snowflake.ID `json:"id"`
+}
+
+type NotificationCenterItemCompletedEvent struct {
+	ItemEnum NotificationCenterItemEnum `json:"item_enum"`
+}
+
+type NotificationSettingsUpdateEvent struct {
+	Flags NotificationSettingsFlags `json:"flags"`
+}
+
+type OAuth2TokenCreateEvent struct {
+	ID          snowflake.ID       `json:"id"`
+	Scopes      []string           `json:"scopes"`
+	Application PartialApplication `json:"application"`
+	Disclosures []int64            `json:"disclosures,omitempty"`
+}
+
+type OAuth2TokenDeleteEvent struct {
+	ID            snowflake.ID `json:"id"`
+	ApplicationID snowflake.ID `json:"application_id"`
+}
+
+type OAuth2TokenRevokeEvent struct {
+	AccessToken   string       `json:"access_token"`
+	ApplicationID snowflake.ID `json:"application_id,omitzero"`
+}
+
+type PaymentUpdateEvent struct {
+	ID                            snowflake.ID        `json:"id"`
+	Amount                        int64               `json:"amount"`
+	Tax                           int64               `json:"tax"`
+	TaxInclusive                  bool                `json:"tax_inclusive"`
+	Currency                      string              `json:"currency"`
+	AmountRefunded                int64               `json:"amount_refunded"`
+	Description                   string              `json:"description"`
+	Status                        PaymentStatus       `json:"status"`
+	CreatedAt                     time.Time           `json:"created_at"`
+	SKUID                         snowflake.ID        `json:"sku_id,omitzero"`
+	SKUPrice                      int64               `json:"sku_price,omitzero"`
+	SKUSubscriptionPlanID         snowflake.ID        `json:"sku_subscription_plan_id,omitzero"`
+	PaymentGateway                PaymentGateway      `json:"payment_gateway,omitzero"`
+	PaymentGatewayPaymentID       string              `json:"payment_gateway_payment_id,omitzero"`
+	HasInvoiceURL                 bool                `json:"has_invoice_url,omitzero"`
+	HasRefundInvoiceURLs          bool                `json:"has_refund_invoice_urls,omitzero"`
+	DownloadableInvoice           string              `json:"downloadable_invoice,omitzero"`
+	DownloadableRefundInvoices    []string            `json:"downloadable_refund_invoices,omitempty"`
+	RefundDisqualificationReasons []int64             `json:"refund_disqualification_reasons,omitempty"`
+	Flags                         PaymentFlags        `json:"flags"`
+	SKU                           SKU                 `json:"sku,omitzero"`
+	PaymentSource                 PaymentSource       `json:"payment_source,omitzero"`
+	Subscription                  PartialSubscription `json:"subscription,omitzero"`
+	Metadata                      PaymentMetadata     `json:"metadata"`
+}
+
+type PresenceUpdateEvent struct {
+	User             PartialUser  `json:"user"`
+	GuildID          snowflake.ID `json:"guild_id,omitzero"`
+	Status           StatusType   `json:"status"`
+	Activities       []Activity   `json:"activities"`
+	HiddenActivities []Activity   `json:"hidden_activities,omitempty"`
+	ClientStatus     ClientStatus `json:"client_status"`
+	HasPlayedGame    bool         `json:"has_played_game,omitzero"`
+}
+
+type QuestsUserStatusUpdateEvent struct {
+	UserStatus QuestUserStatus `json:"user_status"`
+}
+
+type QuestsUserCompletionUpdateEvent struct {
+	QuestEnrollmentBlockedUntil *time.Time `json:"quest_enrollment_blocked_until"`
+}
+
+type RelationshipAddEvent struct {
+	ID                  string           `json:"id"`
+	Type                RelationshipType `json:"type"`
+	User                PartialUser      `json:"user"`
+	Nickname            *string          `json:"nickname"`
+	IsSpamRequest       bool             `json:"is_spam_request,omitzero"`
+	StrangerRequest     bool             `json:"stranger_request,omitzero"`
+	UserIgnored         bool             `json:"user_ignored"`
+	OriginApplicationID *snowflake.ID    `json:"origin_application_id,omitempty"`
+	Since               time.Time        `json:"since,omitzero"`
+	HasPlayedGame       bool             `json:"has_played_game,omitzero"`
+	Note                string           `json:"note,omitzero"`
+	ShouldNotify        bool             `json:"should_notify,omitzero"`
+}
+
+type RelationshipUpdateEvent struct {
+	ID              snowflake.ID     `json:"id"`
+	Type            RelationshipType `json:"type"`
+	Nickname        *string          `json:"nickname"`
+	Since           time.Time        `json:"since,omitzero"`
+	StrangerRequest bool             `json:"stranger_request,omitzero"`
+	UserIgnored     bool             `json:"user_ignored"`
+}
+
+type RelationshipRemoveEvent struct {
+	ID              snowflake.ID     `json:"id"`
+	Type            RelationshipType `json:"type"`
+	Nickname        *string          `json:"nickname"`
+	Since           time.Time        `json:"since,omitzero"`
+	StrangerRequest bool             `json:"stranger_request,omitzero"`
+	UserIgnored     bool             `json:"user_ignored"`
+}
+
+type GameRelationshipAddEvent struct {
+	ID            string       `json:"id"`
+	ApplicationID snowflake.ID `json:"application_id"`
+	Type          int64        `json:"type"`
+	User          PartialUser  `json:"user"`
+	Since         time.Time    `json:"since"`
+	DMAccessType  int64        `json:"dm_access_type"`
+	UserID        snowflake.ID `json:"user_id"`
+}
+
+type GameRelationshipRemoveEvent struct {
+	ID            string       `json:"id"`
+	ApplicationID snowflake.ID `json:"application_id"`
+	Type          int64        `json:"type"`
+	Since         time.Time    `json:"since"`
+	DMAccessType  int64        `json:"dm_access_type"`
+	UserID        snowflake.ID `json:"user_id"`
+}
+
+type GameInviteCreateEvent struct {
+	InviteID         snowflake.ID   `json:"invite_id"`
+	CreatedAt        time.Time      `json:"created_at"`
+	TTL              int64          `json:"ttl"`
+	InviterID        snowflake.ID   `json:"inviter_id"`
+	RecipientID      snowflake.ID   `json:"recipient_id"`
+	PlatformType     ConnectionType `json:"platform_type"`
+	LaunchParameters string         `json:"launch_parameters"`
+	Installed        bool           `json:"installed,omitzero"`
+	Joinable         bool           `json:"joinable,omitzero"`
+	FallbackURL      *string        `json:"fallback_url"`
+	ApplicationAsset string         `json:"application_asset"`
+	ApplicationName  string         `json:"application_name"`
+}
+
+type GameInviteDeleteEvent struct {
+	InviteID snowflake.ID `json:"invite_id"`
+}
+
+type GameInviteDeleteManyEvent struct {
+	InviteIDs []snowflake.ID `json:"invite_ids"`
+}
+
+type GatewayLobbyObjectEvent struct {
+	VoiceStates []json.RawMessage `json:"voice_states"`
+	Region      string            `json:"region"`
+	Metadata    map[string]string `json:"metadata"`
+}
+
+type LobbyDeleteEvent struct {
+	ID     snowflake.ID        `json:"id"`
+	Reason LobbyDeletionReason `json:"reason"`
+}
+
+type LobbyMemberAddEvent struct {
+	Member        LobbyMember  `json:"member"`
+	LobbyID       snowflake.ID `json:"lobby_id"`
+	ApplicationID snowflake.ID `json:"application_id"`
+}
+
+type LobbyMemberConnectEvent struct {
+	Member  LobbyMember  `json:"member"`
+	LobbyID snowflake.ID `json:"lobby_id"`
+}
+
+type LobbyMemberDisconnectEvent struct {
+	Member  LobbyMember  `json:"member"`
+	LobbyID snowflake.ID `json:"lobby_id"`
+}
+
+type LobbyMemberUpdateEvent struct {
+	Member        LobbyMember  `json:"member"`
+	LobbyID       snowflake.ID `json:"lobby_id"`
+	ApplicationID snowflake.ID `json:"application_id"`
+}
+
+type LobbyMemberRemoveEvent struct {
+	Member        LobbyMember  `json:"member"`
+	LobbyID       snowflake.ID `json:"lobby_id"`
+	ApplicationID snowflake.ID `json:"application_id"`
+}
+
+type LobbyMessageCreateEvent struct {
+	ID                   snowflake.ID                `json:"id"`
+	ChannelID            snowflake.ID                `json:"channel_id"`
+	LobbyID              snowflake.ID                `json:"lobby_id,omitzero"`
+	Author               PartialUser                 `json:"author"`
+	Content              string                      `json:"content"`
+	Timestamp            time.Time                   `json:"timestamp"`
+	EditedTimestamp      *time.Time                  `json:"edited_timestamp"`
+	TTS                  bool                        `json:"tts"`
+	MentionEveryone      bool                        `json:"mention_everyone"`
+	Mentions             []PartialUser               `json:"mentions"`
+	MentionRoles         []snowflake.ID              `json:"mention_roles"`
+	MentionChannels      []PartialChannel            `json:"mention_channels,omitempty"`
+	Attachments          []Attachment                `json:"attachments"`
+	Embeds               []Embed                     `json:"embeds"`
+	Reactions            []Reaction                  `json:"reactions,omitempty"`
+	Nonce                int64                       `json:"nonce,omitzero"`
+	Pinned               bool                        `json:"pinned"`
+	WebhookID            snowflake.ID                `json:"webhook_id,omitzero"`
+	Type                 MessageType                 `json:"type"`
+	Activity             MessageActivity             `json:"activity,omitzero"`
+	Application          IntegrationApplication      `json:"application,omitzero"`
+	ApplicationID        snowflake.ID                `json:"application_id,omitzero"`
+	Flags                MessageFlags                `json:"flags"`
+	MessageReference     MessageReference            `json:"message_reference,omitzero"`
+	ReferencedMessage    *Message                    `json:"referenced_message,omitempty"`
+	MessageSnapshots     []MessageSnapshot           `json:"message_snapshots,omitempty"`
+	Call                 MessageCall                 `json:"call,omitzero"`
+	Interaction          PartialMessageInteraction   `json:"interaction,omitzero"`
+	InteractionMetadata  MessageInteraction          `json:"interaction_metadata,omitzero"`
+	Resolved             ResolvedData                `json:"resolved,omitzero"`
+	Thread               Channel                     `json:"thread,omitzero"`
+	RoleSubscriptionData MessageRoleSubscription     `json:"role_subscription_data,omitzero"`
+	PurchaseNotification MessagePurchaseNotification `json:"purchase_notification,omitzero"`
+	GiftInfo             MessageGiftInfo             `json:"gift_info,omitzero"`
+	Components           []json.RawMessage           `json:"components"`
+	StickerItems         []StickerItem               `json:"sticker_items,omitempty"`
+	Stickers             []Sticker                   `json:"stickers,omitempty"`
+	Poll                 Poll                        `json:"poll,omitzero"`
+	ChangelogID          snowflake.ID                `json:"changelog_id,omitzero"`
+	SoundboardSounds     []SoundboardSound           `json:"soundboard_sounds,omitempty"`
+	Potions              []Potion                    `json:"potions,omitempty"`
+	SharedClientTheme    SharedClientTheme           `json:"shared_client_theme,omitzero"`
+	ChannelType          ChannelType                 `json:"channel_type"`
+	GuildID              snowflake.ID                `json:"guild_id,omitzero"`
+	Member               GuildMember                 `json:"member,omitzero"`
+	Metadata             map[string]string           `json:"metadata,omitempty"`
+	ModerationMetadata   map[string]string           `json:"moderation_metadata,omitempty"`
+}
+
+type LobbyMessageUpdateEvent struct {
+	ID                   snowflake.ID                `json:"id"`
+	ChannelID            snowflake.ID                `json:"channel_id"`
+	LobbyID              snowflake.ID                `json:"lobby_id,omitzero"`
+	Author               PartialUser                 `json:"author"`
+	Content              string                      `json:"content"`
+	Timestamp            time.Time                   `json:"timestamp"`
+	EditedTimestamp      *time.Time                  `json:"edited_timestamp"`
+	TTS                  bool                        `json:"tts"`
+	MentionEveryone      bool                        `json:"mention_everyone"`
+	Mentions             []PartialUser               `json:"mentions"`
+	MentionRoles         []snowflake.ID              `json:"mention_roles"`
+	MentionChannels      []PartialChannel            `json:"mention_channels,omitempty"`
+	Attachments          []Attachment                `json:"attachments"`
+	Embeds               []Embed                     `json:"embeds"`
+	Reactions            []Reaction                  `json:"reactions,omitempty"`
+	Nonce                int64                       `json:"nonce,omitzero"`
+	Pinned               bool                        `json:"pinned"`
+	WebhookID            snowflake.ID                `json:"webhook_id,omitzero"`
+	Type                 MessageType                 `json:"type"`
+	Activity             MessageActivity             `json:"activity,omitzero"`
+	Application          IntegrationApplication      `json:"application,omitzero"`
+	ApplicationID        snowflake.ID                `json:"application_id,omitzero"`
+	Flags                MessageFlags                `json:"flags"`
+	MessageReference     MessageReference            `json:"message_reference,omitzero"`
+	ReferencedMessage    *Message                    `json:"referenced_message,omitempty"`
+	MessageSnapshots     []MessageSnapshot           `json:"message_snapshots,omitempty"`
+	Call                 MessageCall                 `json:"call,omitzero"`
+	Interaction          PartialMessageInteraction   `json:"interaction,omitzero"`
+	InteractionMetadata  MessageInteraction          `json:"interaction_metadata,omitzero"`
+	Resolved             ResolvedData                `json:"resolved,omitzero"`
+	Thread               Channel                     `json:"thread,omitzero"`
+	RoleSubscriptionData MessageRoleSubscription     `json:"role_subscription_data,omitzero"`
+	PurchaseNotification MessagePurchaseNotification `json:"purchase_notification,omitzero"`
+	GiftInfo             MessageGiftInfo             `json:"gift_info,omitzero"`
+	Components           []json.RawMessage           `json:"components"`
+	StickerItems         []StickerItem               `json:"sticker_items,omitempty"`
+	Stickers             []Sticker                   `json:"stickers,omitempty"`
+	Poll                 Poll                        `json:"poll,omitzero"`
+	ChangelogID          snowflake.ID                `json:"changelog_id,omitzero"`
+	SoundboardSounds     []SoundboardSound           `json:"soundboard_sounds,omitempty"`
+	Potions              []Potion                    `json:"potions,omitempty"`
+	SharedClientTheme    SharedClientTheme           `json:"shared_client_theme,omitzero"`
+	ChannelType          ChannelType                 `json:"channel_type"`
+	GuildID              snowflake.ID                `json:"guild_id,omitzero"`
+	Member               GuildMember                 `json:"member,omitzero"`
+	Metadata             map[string]string           `json:"metadata,omitempty"`
+	ModerationMetadata   map[string]string           `json:"moderation_metadata,omitempty"`
+}
+
+type LobbyVoiceServerUpdateEvent struct {
+	Token    string       `json:"token"`
+	LobbyID  snowflake.ID `json:"lobby_id"`
+	Endpoint *string      `json:"endpoint"`
+}
+
+type PassiveUpdateV1Event struct {
+	GuildID     snowflake.ID    `json:"guild_id"`
+	Channels    []ChannelUnread `json:"channels"`
+	VoiceStates []VoiceState    `json:"voice_states,omitempty"`
+	Members     []GuildMember   `json:"members,omitempty"`
+}
+
+type PassiveUpdateV2Event struct {
+	GuildID            snowflake.ID    `json:"guild_id"`
+	UpdatedChannels    []ChannelUnread `json:"updated_channels"`
+	UpdatedVoiceStates []VoiceState    `json:"updated_voice_states"`
+	RemovedVoiceStates []snowflake.ID  `json:"removed_voice_states"`
+	UpdatedMembers     []GuildMember   `json:"updated_members"`
+}
+
+type SavedMessageCreateEvent struct {
+	Message  *Message `json:"message"`
+	SaveData SaveData `json:"save_data"`
+}
+
+type SavedMessageDeleteEvent struct {
+	ChannelID snowflake.ID `json:"channel_id"`
+	MessageID snowflake.ID `json:"message_id"`
+}
+
+type SessionsReplaceEvent []Session
+
+type StageInstanceCreateEvent struct {
+	ID                    snowflake.ID  `json:"id"`
+	GuildID               snowflake.ID  `json:"guild_id"`
+	ChannelID             snowflake.ID  `json:"channel_id"`
+	Topic                 string        `json:"topic"`
+	PrivacyLevel          PrivacyLevel  `json:"privacy_level"`
+	InviteCode            *string       `json:"invite_code"`
+	DiscoverableDisabled  bool          `json:"discoverable_disabled"`
+	GuildScheduledEventID *snowflake.ID `json:"guild_scheduled_event_id"`
+}
+
+type StageInstanceUpdateEvent struct {
+	ID                    snowflake.ID  `json:"id"`
+	GuildID               snowflake.ID  `json:"guild_id"`
+	ChannelID             snowflake.ID  `json:"channel_id"`
+	Topic                 string        `json:"topic"`
+	PrivacyLevel          PrivacyLevel  `json:"privacy_level"`
+	InviteCode            *string       `json:"invite_code"`
+	DiscoverableDisabled  bool          `json:"discoverable_disabled"`
+	GuildScheduledEventID *snowflake.ID `json:"guild_scheduled_event_id"`
+}
+
+type StageInstanceDeleteEvent struct {
+	ID                    snowflake.ID  `json:"id"`
+	GuildID               snowflake.ID  `json:"guild_id"`
+	ChannelID             snowflake.ID  `json:"channel_id"`
+	Topic                 string        `json:"topic"`
+	PrivacyLevel          PrivacyLevel  `json:"privacy_level"`
+	InviteCode            *string       `json:"invite_code"`
+	DiscoverableDisabled  bool          `json:"discoverable_disabled"`
+	GuildScheduledEventID *snowflake.ID `json:"guild_scheduled_event_id"`
+}
+
+type StreamCreateEvent struct {
+	StreamKey    string          `json:"stream_key"`
+	RTCServerID  snowflake.ID    `json:"rtc_server_id"`
+	RTCChannelID snowflake.ID    `json:"rtc_channel_id"`
+	Region       string          `json:"region"`
+	ViewerIDs    json.RawMessage `json:"viewer_ids"`
+	Paused       bool            `json:"paused"`
+}
+
+type StreamServerUpdateEvent struct {
+	Token     string  `json:"token"`
+	StreamKey string  `json:"stream_key"`
+	Endpoint  *string `json:"endpoint"`
+}
+
+type StreamUpdateEvent struct {
+	StreamKey    string          `json:"stream_key"`
+	RTCServerID  snowflake.ID    `json:"rtc_server_id"`
+	RTCChannelID snowflake.ID    `json:"rtc_channel_id"`
+	Region       string          `json:"region"`
+	ViewerIDs    json.RawMessage `json:"viewer_ids"`
+	Paused       bool            `json:"paused"`
+}
+
+type StreamDeleteEvent struct {
+	StreamKey   string             `json:"stream_key"`
+	Reason      StreamDeleteReason `json:"reason"`
+	Unavailable bool               `json:"unavailable,omitzero"`
+}
+
+type TypingStartEvent struct {
+	ChannelID snowflake.ID    `json:"channel_id"`
+	GuildID   snowflake.ID    `json:"guild_id,omitzero"`
+	UserID    snowflake.ID    `json:"user_id"`
+	Timestamp int64           `json:"timestamp"`
+	Member    json.RawMessage `json:"member,omitempty"`
+}
+
+type UserUpdateEvent struct {
+	ID                    snowflake.ID          `json:"id"`
+	Username              string                `json:"username"`
+	Discriminator         string                `json:"discriminator"`
+	GlobalName            *string               `json:"global_name"`
+	Avatar                *string               `json:"avatar"`
+	AvatarDecorationData  *AvatarDecorationData `json:"avatar_decoration_data"`
+	Collectibles          *Collectibles         `json:"collectibles,omitempty"`
+	DisplayNameStyles     *DisplayNameStyle     `json:"display_name_styles,omitempty"`
+	PrimaryGuild          *PrimaryGuild         `json:"primary_guild,omitempty"`
+	LinkedUsers           []LinkedUser          `json:"linked_users"`
+	Bot                   bool                  `json:"bot,omitzero"`
+	System                bool                  `json:"system,omitzero"`
+	MFAEnabled            bool                  `json:"mfa_enabled"`
+	NSFWAllowed           *bool                 `json:"nsfw_allowed,omitempty"`
+	AgeVerificationStatus AgeVerificationStatus `json:"age_verification_status"`
+	Pronouns              string                `json:"pronouns,omitzero"`
+	Bio                   string                `json:"bio"`
+	Banner                *string               `json:"banner"`
+	AccentColor           *int64                `json:"accent_color"`
+	Locale                string                `json:"locale,omitzero"`
+	Verified              bool                  `json:"verified"`
+	Email                 *string               `json:"email"`
+	Phone                 *string               `json:"phone,omitempty"`
+	Premium               bool                  `json:"premium"`
+	PremiumType           PremiumType           `json:"premium_type"`
+	PremiumState          PremiumState          `json:"premium_state,omitzero"`
+	PersonalConnectionID  snowflake.ID          `json:"personal_connection_id,omitzero"`
+	Flags                 UserFlags             `json:"flags"`
+	PublicFlags           UserFlags             `json:"public_flags,omitzero"`
+	PurchasedFlags        PurchasedFlags        `json:"purchased_flags,omitzero"`
+	PremiumUsageFlags     PremiumUsageFlags     `json:"premium_usage_flags,omitzero"`
+	Desktop               bool                  `json:"desktop,omitzero"`
+	Mobile                bool                  `json:"mobile,omitzero"`
+	HasBouncedEmail       bool                  `json:"has_bounced_email,omitzero"`
+	AuthenticatorTypes    []int64               `json:"authenticator_types,omitempty"`
+	AnalyticsToken        string                `json:"analytics_token"`
+}
+
+type UserApplicationRemoveEvent struct {
+	ApplicationID snowflake.ID `json:"application_id"`
+}
+
+type UserApplicationIdentityUpdateEvent struct {
+	Username    *string                          `json:"username"`
+	Metadata    *string                          `json:"metadata"`
+	Data        *UserApplicationProfileData      `json:"data,omitempty"`
+	DataTrusted *bool                            `json:"data_trusted,omitempty"`
+	ExternalID  UserApplicationProfileExternalID `json:"external_id"`
+	AvatarHash  *string                          `json:"avatar_hash"`
+}
+
+type UserApplicationIdentityRemoveEvent struct {
+	UserID        snowflake.ID `json:"user_id"`
+	ApplicationID snowflake.ID `json:"application_id"`
+}
+
+type UserConnectionsUpdateEvent struct {
+	UserID snowflake.ID `json:"user_id"`
+}
+
+type UserGuildSettingsUpdateEvent struct {
+	ChannelOverrides     []ChannelOverride        `json:"channel_overrides"`
+	Flags                UserGuildSettingsFlags   `json:"flags"`
+	GuildID              *snowflake.ID            `json:"guild_id"`
+	HideMutedChannels    bool                     `json:"hide_muted_channels"`
+	MessageNotifications MessageNotificationLevel `json:"message_notifications"`
+	MobilePush           bool                     `json:"mobile_push"`
+	MuteScheduledEvents  bool                     `json:"mute_scheduled_events"`
+	Muted                bool                     `json:"muted"`
+	MuteConfig           *MuteConfig              `json:"mute_config"`
+	NotifyHighlights     HighlightLevel           `json:"notify_highlights"`
+	SuppressEveryone     bool                     `json:"suppress_everyone"`
+	SuppressRoles        bool                     `json:"suppress_roles"`
+	Version              int64                    `json:"version"`
+}
+
+type UserMergeOperationCompletedEvent struct {
+	MergeOperationID snowflake.ID `json:"merge_operation_id"`
+	SourceUserID     snowflake.ID `json:"source_user_id"`
+}
+
+type UserNonChannelAckEvent struct {
+	AckType    ReadStateType `json:"ack_type"`
+	ResourceID snowflake.ID  `json:"resource_id"`
+	EntityID   snowflake.ID  `json:"entity_id"`
+	Version    int64         `json:"version"`
+}
+
+type UserNoteUpdateEvent struct {
+	ID   snowflake.ID `json:"id"`
+	Note string       `json:"note"`
+}
+
+type UserPremiumGuildSubscriptionSlotCreateEvent struct {
+	ID                       snowflake.ID              `json:"id"`
+	SubscriptionID           snowflake.ID              `json:"subscription_id"`
+	Canceled                 bool                      `json:"canceled"`
+	CooldownEndsAt           *string                   `json:"cooldown_ends_at"`
+	PremiumGuildSubscription *PremiumGuildSubscription `json:"premium_guild_subscription"`
+}
+
+type UserPremiumGuildSubscriptionSlotUpdateEvent struct {
+	ID                       snowflake.ID              `json:"id"`
+	SubscriptionID           snowflake.ID              `json:"subscription_id"`
+	Canceled                 bool                      `json:"canceled"`
+	CooldownEndsAt           *string                   `json:"cooldown_ends_at"`
+	PremiumGuildSubscription *PremiumGuildSubscription `json:"premium_guild_subscription"`
+}
+
+type UserPremiumGuildSubscriptionSlotDeleteEvent struct {
+	ID                       snowflake.ID              `json:"id"`
+	SubscriptionID           snowflake.ID              `json:"subscription_id"`
+	Canceled                 bool                      `json:"canceled"`
+	CooldownEndsAt           *string                   `json:"cooldown_ends_at"`
+	PremiumGuildSubscription *PremiumGuildSubscription `json:"premium_guild_subscription"`
+}
+
+type UserSettingsProtoUpdateEvent struct {
+	Settings UserSettingsProto `json:"settings"`
+	Partial  bool              `json:"partial"`
+}
+
+type UserSettingsUpdateEvent struct {
+	ActivityRestrictedGuildIDs            []snowflake.ID            `json:"activity_restricted_guild_ids"`
+	ActivityJoiningRestrictedGuildIDs     []snowflake.ID            `json:"activity_joining_restricted_guild_ids"`
+	AFKTimeout                            int64                     `json:"afk_timeout"`
+	AllowAccessibilityDetection           bool                      `json:"allow_accessibility_detection"`
+	AllowActivityPartyPrivacyFriends      bool                      `json:"allow_activity_party_privacy_friends"`
+	AllowActivityPartyPrivacyVoiceChannel bool                      `json:"allow_activity_party_privacy_voice_channel"`
+	AnimateEmoji                          bool                      `json:"animate_emoji"`
+	AnimateStickers                       StickerAnimationOption    `json:"animate_stickers"`
+	ContactSyncEnabled                    bool                      `json:"contact_sync_enabled"`
+	ConvertEmoticons                      bool                      `json:"convert_emoticons"`
+	CustomStatus                          *CustomStatus             `json:"custom_status"`
+	DefaultGuildsRestricted               bool                      `json:"default_guilds_restricted"`
+	DetectPlatformAccounts                bool                      `json:"detect_platform_accounts"`
+	DeveloperMode                         bool                      `json:"developer_mode"`
+	DisableGamesTab                       bool                      `json:"disable_games_tab"`
+	EnableTTSCommand                      bool                      `json:"enable_tts_command"`
+	ExplicitContentFilter                 ExplicitContentFilter     `json:"explicit_content_filter"`
+	FriendDiscoveryFlags                  FriendDiscoveryFlags      `json:"friend_discovery_flags"`
+	FriendSourceFlags                     *FriendSourceFlags        `json:"friend_source_flags"`
+	GIFAutoPlay                           bool                      `json:"gif_auto_play"`
+	GuildFolders                          []GuildFolder             `json:"guild_folders"`
+	InlineAttachmentMedia                 bool                      `json:"inline_attachment_media"`
+	InlineEmbedMedia                      bool                      `json:"inline_embed_media"`
+	Locale                                string                    `json:"locale"`
+	MessageDisplayCompact                 bool                      `json:"message_display_compact"`
+	NativePhoneIntegrationEnabled         bool                      `json:"native_phone_integration_enabled"`
+	Passwordless                          bool                      `json:"passwordless"`
+	RenderEmbeds                          bool                      `json:"render_embeds"`
+	RenderReactions                       bool                      `json:"render_reactions"`
+	RestrictedGuilds                      []snowflake.ID            `json:"restricted_guilds"`
+	ShowCurrentGame                       bool                      `json:"show_current_game"`
+	SlayerSdkReceiveDMsInGame             SlayerSdkReceiveInGameDMs `json:"slayer_sdk_receive_dms_in_game"`
+	SoundboardVolume                      float64                   `json:"soundboard_volume"`
+	Status                                StatusType                `json:"status"`
+	StreamNotificationsEnabled            bool                      `json:"stream_notifications_enabled"`
+	Theme                                 Theme                     `json:"theme"`
+	TimezoneOffset                        int64                     `json:"timezone_offset"`
+	ViewNSFWCommands                      bool                      `json:"view_nsfw_commands"`
+	ViewNSFWGuilds                        bool                      `json:"view_nsfw_guilds"`
+}
+
+type AudioSettingsUpdateEvent struct {
+	User   map[snowflake.ID]json.RawMessage `json:"user"`
+	Stream map[snowflake.ID]json.RawMessage `json:"stream"`
+}
+
+type UserPaymentBrowserCheckoutDoneEvent struct {
+	LoadID                *string       `json:"load_id"`
+	SKUID                 *snowflake.ID `json:"sku_id"`
+	SKUSubscriptionPlanID *snowflake.ID `json:"sku_subscription_plan_id"`
+}
+
+type UserPaymentClientAddEvent struct {
+	PurchaseTokenHash string    `json:"purchase_token_hash"`
+	ExpiresAt         time.Time `json:"expires_at"`
+}
+
+type UserRequiredActionUpdateEvent struct {
+	RequiredAction *RequiredActionType `json:"required_action"`
+}
+
+type VoiceStateUpdateEvent struct {
+	GuildID                 *snowflake.ID `json:"guild_id,omitempty"`
+	ChannelID               *snowflake.ID `json:"channel_id"`
+	LobbyID                 snowflake.ID  `json:"lobby_id,omitzero"`
+	UserID                  snowflake.ID  `json:"user_id"`
+	Member                  GuildMember   `json:"member,omitzero"`
+	SessionID               string        `json:"session_id"`
+	ConnectedAt             int64         `json:"connected_at,omitzero"`
+	Deaf                    bool          `json:"deaf"`
+	Mute                    bool          `json:"mute"`
+	SelfDeaf                bool          `json:"self_deaf"`
+	SelfMute                bool          `json:"self_mute"`
+	SelfStream              bool          `json:"self_stream,omitzero"`
+	SelfVideo               bool          `json:"self_video"`
+	Suppress                bool          `json:"suppress"`
+	RequestToSpeakTimestamp *time.Time    `json:"request_to_speak_timestamp"`
+	Discoverable            bool          `json:"discoverable,omitzero"`
+	UserVolume              float64       `json:"user_volume,omitzero"`
+}
+
+type VoiceServerUpdateEvent struct {
+	Token     string        `json:"token"`
+	GuildID   *snowflake.ID `json:"guild_id"`
+	ChannelID snowflake.ID  `json:"channel_id,omitzero"`
+	Endpoint  *string       `json:"endpoint"`
+}
+
+type VoiceChannelEffectSendEvent struct {
+	ChannelID     snowflake.ID                     `json:"channel_id"`
+	GuildID       snowflake.ID                     `json:"guild_id"`
+	UserID        snowflake.ID                     `json:"user_id"`
+	AnimationType *VoiceChannelEffectAnimationType `json:"animation_type"`
+	AnimationID   int64                            `json:"animation_id"`
+	Emoji         *Emoji                           `json:"emoji"`
+	SoundID       snowflake.ID                     `json:"sound_id,omitzero"`
+	SoundVolume   float64                          `json:"sound_volume,omitzero"`
+}
+
+type VoiceChannelStartTimeUpdateEvent struct {
+	ID             snowflake.ID `json:"id"`
+	GuildID        snowflake.ID `json:"guild_id"`
+	VoiceStartTime *int64       `json:"voice_start_time"`
+}
+
+type VoiceChannelStatusUpdateEvent struct {
+	ID      snowflake.ID `json:"id"`
+	GuildID snowflake.ID `json:"guild_id"`
+	Status  *string      `json:"status"`
+}
+
+type VirtualCurrencyBalanceUpdateEvent struct {
+	Balance int64 `json:"balance"`
+}
+
+type WebhooksUpdateEvent struct {
+	GuildID   snowflake.ID `json:"guild_id"`
+	ChannelID snowflake.ID `json:"channel_id"`
+}
+
+var Events = map[string]func() any{
+	"ACTIVITY_INVITE_CREATE":                         func() any { return new(ActivityInviteCreateEvent) },
+	"APPLICATION_COMMAND_AUTOCOMPLETE_RESPONSE":      func() any { return new(ApplicationCommandAutocompleteResponseEvent) },
+	"APPLICATION_COMMAND_PERMISSIONS_UPDATE":         func() any { return new(ApplicationCommandPermissionsUpdateEvent) },
+	"AUDIO_SETTINGS_UPDATE":                          func() any { return new(AudioSettingsUpdateEvent) },
+	"AUTHENTICATOR_CREATE":                           func() any { return new(AuthenticatorCreateEvent) },
+	"AUTHENTICATOR_DELETE":                           func() any { return new(AuthenticatorDeleteEvent) },
+	"AUTHENTICATOR_UPDATE":                           func() any { return new(AuthenticatorUpdateEvent) },
+	"AUTH_SESSION_CHANGE":                            func() any { return new(AuthSessionChangeEvent) },
+	"AUTO_MODERATION_ACTION_EXECUTION":               func() any { return new(AutoModerationActionExecutionEvent) },
+	"AUTO_MODERATION_MENTION_RAID_DETECTION":         func() any { return new(AutoModerationMentionRaidDetectionEvent) },
+	"AUTO_MODERATION_RULE_CREATE":                    func() any { return new(AutoModerationRuleCreateEvent) },
+	"AUTO_MODERATION_RULE_DELETE":                    func() any { return new(AutoModerationRuleDeleteEvent) },
+	"AUTO_MODERATION_RULE_UPDATE":                    func() any { return new(AutoModerationRuleUpdateEvent) },
+	"BILLING_POPUP_BRIDGE_CALLBACK":                  func() any { return new(BillingPopupBridgeCallbackEvent) },
+	"CALL_CREATE":                                    func() any { return new(CallCreateEvent) },
+	"CALL_DELETE":                                    func() any { return new(CallDeleteEvent) },
+	"CALL_UPDATE":                                    func() any { return new(CallUpdateEvent) },
+	"CHANNEL_CREATE":                                 func() any { return new(ChannelCreateEvent) },
+	"CHANNEL_DELETE":                                 func() any { return new(ChannelDeleteEvent) },
+	"CHANNEL_INFO":                                   func() any { return new(ChannelInfoEvent) },
+	"CHANNEL_MEMBER_COUNT_UPDATE":                    func() any { return new(ChannelMemberCountUpdateEvent) },
+	"CHANNEL_PINS_ACK":                               func() any { return new(ChannelPinsAckEvent) },
+	"CHANNEL_PINS_UPDATE":                            func() any { return new(ChannelPinsUpdateEvent) },
+	"CHANNEL_RECIPIENT_ADD":                          func() any { return new(ChannelRecipientAddEvent) },
+	"CHANNEL_RECIPIENT_REMOVE":                       func() any { return new(ChannelRecipientRemoveEvent) },
+	"CHANNEL_STATUSES":                               func() any { return new(ChannelStatusesEvent) },
+	"CHANNEL_SYNC":                                   func() any { return new(ChannelSyncEvent) },
+	"CHANNEL_UNREAD_UPDATE":                          func() any { return new(ChannelUnreadUpdateEvent) },
+	"CHANNEL_UPDATE":                                 func() any { return new(ChannelUpdateEvent) },
+	"CHANNEL_UPDATE_PARTIAL":                         func() any { return new(ChannelUpdatePartialEvent) },
+	"CONSOLE_COMMAND_UPDATE":                         func() any { return new(ConsoleCommandUpdateEvent) },
+	"CONVERSATION_SUMMARY_UPDATE":                    func() any { return new(ConversationSummaryUpdateEvent) },
+	"CREATE_SPEED_TEST":                              func() any { return new(CreateSpeedTestEvent) },
+	"CREATE_STREAM":                                  func() any { return new(CreateStreamEvent) },
+	"DELETED_ENTITY_IDS":                             func() any { return new(DeletedEntityIDsEvent) },
+	"DELETE_STREAM":                                  func() any { return new(DeleteStreamEvent) },
+	"DM_SETTINGS_UPSELL_SHOW":                        func() any { return new(DMSettingsUpsellShowEvent) },
+	"EMBEDDED_ACTIVITY_UPDATE_V2":                    func() any { return new(EmbeddedActivityUpdateV2Event) },
+	"ENTITLEMENT_CREATE":                             func() any { return new(EntitlementCreateEvent) },
+	"ENTITLEMENT_DELETE":                             func() any { return new(EntitlementDeleteEvent) },
+	"ENTITLEMENT_UPDATE":                             func() any { return new(EntitlementUpdateEvent) },
+	"EXPERIMENT_SESSION_OVERRIDE_CREATE":             func() any { return new(ExperimentSessionOverrideCreateEvent) },
+	"EXPERIMENT_SESSION_OVERRIDE_DELETE":             func() any { return new(ExperimentSessionOverrideDeleteEvent) },
+	"FRIEND_SUGGESTION_CREATE":                       func() any { return new(FriendSuggestionCreateEvent) },
+	"FRIEND_SUGGESTION_DELETE":                       func() any { return new(FriendSuggestionDeleteEvent) },
+	"GAME_INVITE_CREATE":                             func() any { return new(GameInviteCreateEvent) },
+	"GAME_INVITE_DELETE":                             func() any { return new(GameInviteDeleteEvent) },
+	"GAME_INVITE_DELETE_MANY":                        func() any { return new(GameInviteDeleteManyEvent) },
+	"GAME_RELATIONSHIP_ADD":                          func() any { return new(GameRelationshipAddEvent) },
+	"GAME_RELATIONSHIP_REMOVE":                       func() any { return new(GameRelationshipRemoveEvent) },
+	"GAME_SERVER_CREATE":                             func() any { return new(GameServerCreateEvent) },
+	"GAME_SERVER_DELETE":                             func() any { return new(GameServerDeleteEvent) },
+	"GAME_SERVER_UPDATE":                             func() any { return new(GameServerUpdateEvent) },
+	"GATEWAY_LOBBY_OBJECT":                           func() any { return new(GatewayLobbyObjectEvent) },
+	"GET_DELETED_ENTITY_IDS_NOT_MATCHING_HASH":       func() any { return new(GetDeletedEntityIDsNotMatchingHashEvent) },
+	"GIFT_CODE_CREATE":                               func() any { return new(GiftCodeCreateEvent) },
+	"GIFT_CODE_UPDATE":                               func() any { return new(GiftCodeUpdateEvent) },
+	"GUILD_APPLICATION_COMMAND_INDEX_UPDATE":         func() any { return new(GuildApplicationCommandIndexUpdateEvent) },
+	"GUILD_APPLIED_BOOSTS_UPDATE":                    func() any { return new(GuildAppliedBoostsUpdateEvent) },
+	"GUILD_AUDIT_LOG_ENTRY_CREATE":                   func() any { return new(GuildAuditLogEntryCreateEvent) },
+	"GUILD_BAN_ADD":                                  func() any { return new(GuildBanAddEvent) },
+	"GUILD_BAN_REMOVE":                               func() any { return new(GuildBanRemoveEvent) },
+	"GUILD_BULK_BAN_UPDATE":                          func() any { return new(GuildBulkBanUpdateEvent) },
+	"GUILD_CREATE":                                   func() any { return new(GuildCreateEvent) },
+	"GUILD_DELETE":                                   func() any { return new(GuildDeleteEvent) },
+	"GUILD_DIRECTORY_ENTRY_CREATE":                   func() any { return new(GuildDirectoryEntryCreateEvent) },
+	"GUILD_DIRECTORY_ENTRY_DELETE":                   func() any { return new(GuildDirectoryEntryDeleteEvent) },
+	"GUILD_DIRECTORY_ENTRY_UPDATE":                   func() any { return new(GuildDirectoryEntryUpdateEvent) },
+	"GUILD_EMOJIS_UPDATE":                            func() any { return new(GuildEmojisUpdateEvent) },
+	"GUILD_FEATURE_ACK":                              func() any { return new(GuildFeatureAckEvent) },
+	"GUILD_INTEGRATIONS_UPDATE":                      func() any { return new(GuildIntegrationsUpdateEvent) },
+	"GUILD_JOIN_REQUEST_CREATE":                      func() any { return new(GuildJoinRequestCreateEvent) },
+	"GUILD_JOIN_REQUEST_DELETE":                      func() any { return new(GuildJoinRequestDeleteEvent) },
+	"GUILD_JOIN_REQUEST_UPDATE":                      func() any { return new(GuildJoinRequestUpdateEvent) },
+	"GUILD_MEMBERS_CHUNK":                            func() any { return new(GuildMembersChunkEvent) },
+	"GUILD_MEMBER_ADD":                               func() any { return new(GuildMemberAddEvent) },
+	"GUILD_MEMBER_REMOVE":                            func() any { return new(GuildMemberRemoveEvent) },
+	"GUILD_MEMBER_UPDATE":                            func() any { return new(GuildMemberUpdateEvent) },
+	"GUILD_OFFICIAL_GAME_APPLICATIONS_UPDATE":        func() any { return new(GuildOfficialGameApplicationsUpdateEvent) },
+	"GUILD_POWERUP_ENTITLEMENTS_CREATE":              func() any { return new(GuildPowerupEntitlementsCreateEvent) },
+	"GUILD_POWERUP_ENTITLEMENTS_DELETE":              func() any { return new(GuildPowerupEntitlementsDeleteEvent) },
+	"GUILD_ROLE_CREATE":                              func() any { return new(GuildRoleCreateEvent) },
+	"GUILD_ROLE_DELETE":                              func() any { return new(GuildRoleDeleteEvent) },
+	"GUILD_ROLE_UPDATE":                              func() any { return new(GuildRoleUpdateEvent) },
+	"GUILD_SCHEDULED_EVENT_CREATE":                   func() any { return new(GuildScheduledEventCreateEvent) },
+	"GUILD_SCHEDULED_EVENT_DELETE":                   func() any { return new(GuildScheduledEventDeleteEvent) },
+	"GUILD_SCHEDULED_EVENT_EXCEPTIONS_DELETE":        func() any { return new(GuildScheduledEventExceptionsDeleteEvent) },
+	"GUILD_SCHEDULED_EVENT_EXCEPTION_CREATE":         func() any { return new(GuildScheduledEventExceptionCreateEvent) },
+	"GUILD_SCHEDULED_EVENT_EXCEPTION_DELETE":         func() any { return new(GuildScheduledEventExceptionDeleteEvent) },
+	"GUILD_SCHEDULED_EVENT_EXCEPTION_UPDATE":         func() any { return new(GuildScheduledEventExceptionUpdateEvent) },
+	"GUILD_SCHEDULED_EVENT_UPDATE":                   func() any { return new(GuildScheduledEventUpdateEvent) },
+	"GUILD_SCHEDULED_EVENT_USER_ADD":                 func() any { return new(GuildScheduledEventUserAddEvent) },
+	"GUILD_SCHEDULED_EVENT_USER_REMOVE":              func() any { return new(GuildScheduledEventUserRemoveEvent) },
+	"GUILD_SOUNDBOARD_SOUNDS_UPDATE":                 func() any { return new(GuildSoundboardSoundsUpdateEvent) },
+	"GUILD_SOUNDBOARD_SOUND_CREATE":                  func() any { return new(GuildSoundboardSoundCreateEvent) },
+	"GUILD_SOUNDBOARD_SOUND_DELETE":                  func() any { return new(GuildSoundboardSoundDeleteEvent) },
+	"GUILD_SOUNDBOARD_SOUND_UPDATE":                  func() any { return new(GuildSoundboardSoundUpdateEvent) },
+	"GUILD_STICKERS_UPDATE":                          func() any { return new(GuildStickersUpdateEvent) },
+	"GUILD_UPDATE":                                   func() any { return new(GuildUpdateEvent) },
+	"HELLO":                                          func() any { return new(HelloEvent) },
+	"IDENTIFY":                                       func() any { return new(IdentifyEvent) },
+	"INITIAL_GUILD":                                  func() any { return new(InitialGuildEvent) },
+	"INTEGRATION_CREATE":                             func() any { return new(IntegrationCreateEvent) },
+	"INTEGRATION_DELETE":                             func() any { return new(IntegrationDeleteEvent) },
+	"INTEGRATION_UPDATE":                             func() any { return new(IntegrationUpdateEvent) },
+	"INTERACTION_CREATE":                             func() any { return new(InteractionCreateEvent) },
+	"INTERACTION_FAILURE":                            func() any { return new(InteractionFailureEvent) },
+	"INTERACTION_IFRAME_MODAL_CREATE":                func() any { return new(InteractionIframeModalCreateEvent) },
+	"INTERACTION_MODAL_CREATE":                       func() any { return new(InteractionModalCreateEvent) },
+	"INTERACTION_SUCCESS":                            func() any { return new(InteractionSuccessEvent) },
+	"INVITE_CREATE":                                  func() any { return new(InviteCreateEvent) },
+	"INVITE_DELETE":                                  func() any { return new(InviteDeleteEvent) },
+	"LAST_MESSAGES":                                  func() any { return new(LastMessagesEvent) },
+	"LOBBY_DELETE":                                   func() any { return new(LobbyDeleteEvent) },
+	"LOBBY_MEMBER_ADD":                               func() any { return new(LobbyMemberAddEvent) },
+	"LOBBY_MEMBER_CONNECT":                           func() any { return new(LobbyMemberConnectEvent) },
+	"LOBBY_MEMBER_DISCONNECT":                        func() any { return new(LobbyMemberDisconnectEvent) },
+	"LOBBY_MEMBER_REMOVE":                            func() any { return new(LobbyMemberRemoveEvent) },
+	"LOBBY_MEMBER_UPDATE":                            func() any { return new(LobbyMemberUpdateEvent) },
+	"LOBBY_MESSAGE_CREATE":                           func() any { return new(LobbyMessageCreateEvent) },
+	"LOBBY_MESSAGE_UPDATE":                           func() any { return new(LobbyMessageUpdateEvent) },
+	"LOBBY_VOICE_SERVER_UPDATE":                      func() any { return new(LobbyVoiceServerUpdateEvent) },
+	"MESSAGE_ACK":                                    func() any { return new(MessageAckEvent) },
+	"MESSAGE_CREATE":                                 func() any { return new(MessageCreateEvent) },
+	"MESSAGE_DELETE":                                 func() any { return new(MessageDeleteEvent) },
+	"MESSAGE_DELETE_BULK":                            func() any { return new(MessageDeleteBulkEvent) },
+	"MESSAGE_POLL_VOTE_ADD":                          func() any { return new(MessagePollVoteAddEvent) },
+	"MESSAGE_POLL_VOTE_REMOVE":                       func() any { return new(MessagePollVoteRemoveEvent) },
+	"MESSAGE_REACTION_ADD":                           func() any { return new(MessageReactionAddEvent) },
+	"MESSAGE_REACTION_ADD_MANY":                      func() any { return new(MessageReactionAddManyEvent) },
+	"MESSAGE_REACTION_REMOVE":                        func() any { return new(MessageReactionRemoveEvent) },
+	"MESSAGE_REACTION_REMOVE_ALL":                    func() any { return new(MessageReactionRemoveAllEvent) },
+	"MESSAGE_REACTION_REMOVE_EMOJI":                  func() any { return new(MessageReactionRemoveEmojiEvent) },
+	"MESSAGE_UPDATE":                                 func() any { return new(MessageUpdateEvent) },
+	"NOTIFICATION_CENTER_ITEMS_ACK":                  func() any { return new(NotificationCenterItemsAckEvent) },
+	"NOTIFICATION_CENTER_ITEM_COMPLETED":             func() any { return new(NotificationCenterItemCompletedEvent) },
+	"NOTIFICATION_CENTER_ITEM_CREATE":                func() any { return new(NotificationCenterItemCreateEvent) },
+	"NOTIFICATION_CENTER_ITEM_DELETE":                func() any { return new(NotificationCenterItemDeleteEvent) },
+	"NOTIFICATION_SETTINGS_UPDATE":                   func() any { return new(NotificationSettingsUpdateEvent) },
+	"OAUTH2_TOKEN_CREATE":                            func() any { return new(OAuth2TokenCreateEvent) },
+	"OAUTH2_TOKEN_DELETE":                            func() any { return new(OAuth2TokenDeleteEvent) },
+	"OAUTH2_TOKEN_REVOKE":                            func() any { return new(OAuth2TokenRevokeEvent) },
+	"PASSIVE_UPDATE_V1":                              func() any { return new(PassiveUpdateV1Event) },
+	"PASSIVE_UPDATE_V2":                              func() any { return new(PassiveUpdateV2Event) },
+	"PAYMENT_UPDATE":                                 func() any { return new(PaymentUpdateEvent) },
+	"PING_LOBBY_VOICE_SERVER":                        func() any { return new(PingLobbyVoiceServerEvent) },
+	"PING_STREAM_SERVER":                             func() any { return new(PingStreamServerEvent) },
+	"PRESENCE_UPDATE":                                func() any { return new(PresenceUpdateEvent) },
+	"QOS_HEARTBEAT":                                  func() any { return new(QoSHeartbeatEvent) },
+	"QUESTS_USER_COMPLETION_UPDATE":                  func() any { return new(QuestsUserCompletionUpdateEvent) },
+	"QUESTS_USER_STATUS_UPDATE":                      func() any { return new(QuestsUserStatusUpdateEvent) },
+	"RATE_LIMITED":                                   func() any { return new(RateLimitedEvent) },
+	"REACTION_NOTIFICATION_SENT":                     func() any { return new(ReactionNotificationSentEvent) },
+	"READY":                                          func() any { return new(ReadyEvent) },
+	"READY_SUPPLEMENTAL":                             func() any { return new(ReadySupplementalEvent) },
+	"RECENT_MENTION_DELETE":                          func() any { return new(RecentMentionDeleteEvent) },
+	"RELATIONSHIP_ADD":                               func() any { return new(RelationshipAddEvent) },
+	"RELATIONSHIP_REMOVE":                            func() any { return new(RelationshipRemoveEvent) },
+	"RELATIONSHIP_UPDATE":                            func() any { return new(RelationshipUpdateEvent) },
+	"REQUEST_CALL_CONNECT":                           func() any { return new(RequestCallConnectEvent) },
+	"REQUEST_CHANNEL_INFO":                           func() any { return new(RequestChannelInfoEvent) },
+	"REQUEST_CHANNEL_MEMBER_COUNT":                   func() any { return new(RequestChannelMemberCountEvent) },
+	"REQUEST_CHANNEL_STATUSES":                       func() any { return new(RequestChannelStatusesEvent) },
+	"REQUEST_GUILD_MEMBERS":                          func() any { return new(RequestGuildMembersEvent) },
+	"REQUEST_LAST_MESSAGES":                          func() any { return new(RequestLastMessagesEvent) },
+	"REQUEST_SOUNDBOARD_SOUNDS":                      func() any { return new(RequestSoundboardSoundsEvent) },
+	"RESUME":                                         func() any { return new(ResumeEvent) },
+	"RESUMED":                                        func() any { return new(ResumedEvent) },
+	"RESYNC_GUILD_CHANNELS":                          func() any { return new(ResyncGuildChannelsEvent) },
+	"SAVED_MESSAGE_CREATE":                           func() any { return new(SavedMessageCreateEvent) },
+	"SAVED_MESSAGE_DELETE":                           func() any { return new(SavedMessageDeleteEvent) },
+	"SEARCH_RECENT_MEMBERS":                          func() any { return new(SearchRecentMembersEvent) },
+	"SESSIONS_REPLACE":                               func() any { return new(SessionsReplaceEvent) },
+	"SET_STREAM_PAUSED":                              func() any { return new(SetStreamPausedEvent) },
+	"SOCIAL_LAYER_SKU_PURCHASE_ELIGIBILITY_RESPONSE": func() any { return new(SocialLayerSKUPurchaseEligibilityResponseEvent) },
+	"STAGE_INSTANCE_CREATE":                          func() any { return new(StageInstanceCreateEvent) },
+	"STAGE_INSTANCE_DELETE":                          func() any { return new(StageInstanceDeleteEvent) },
+	"STAGE_INSTANCE_UPDATE":                          func() any { return new(StageInstanceUpdateEvent) },
+	"STREAM_CREATE":                                  func() any { return new(StreamCreateEvent) },
+	"STREAM_DELETE":                                  func() any { return new(StreamDeleteEvent) },
+	"STREAM_SERVER_UPDATE":                           func() any { return new(StreamServerUpdateEvent) },
+	"STREAM_UPDATE":                                  func() any { return new(StreamUpdateEvent) },
+	"THREAD_CREATE":                                  func() any { return new(ThreadCreateEvent) },
+	"THREAD_DELETE":                                  func() any { return new(ThreadDeleteEvent) },
+	"THREAD_LIST_SYNC":                               func() any { return new(ThreadListSyncEvent) },
+	"THREAD_MEMBERS_UPDATE":                          func() any { return new(ThreadMembersUpdateEvent) },
+	"THREAD_MEMBER_UPDATE":                           func() any { return new(ThreadMemberUpdateEvent) },
+	"THREAD_UPDATE":                                  func() any { return new(ThreadUpdateEvent) },
+	"TYPING_START":                                   func() any { return new(TypingStartEvent) },
+	"UPDATE_PRESENCE":                                func() any { return new(UpdatePresenceEvent) },
+	"UPDATE_VOICE_STATE":                             func() any { return new(UpdateVoiceStateEvent) },
+	"USER_APPLICATION_IDENTITY_REMOVE":               func() any { return new(UserApplicationIdentityRemoveEvent) },
+	"USER_APPLICATION_IDENTITY_UPDATE":               func() any { return new(UserApplicationIdentityUpdateEvent) },
+	"USER_APPLICATION_REMOVE":                        func() any { return new(UserApplicationRemoveEvent) },
+	"USER_CONNECTIONS_UPDATE":                        func() any { return new(UserConnectionsUpdateEvent) },
+	"USER_GUILD_SETTINGS_UPDATE":                     func() any { return new(UserGuildSettingsUpdateEvent) },
+	"USER_MERGE_OPERATION_COMPLETED":                 func() any { return new(UserMergeOperationCompletedEvent) },
+	"USER_NON_CHANNEL_ACK":                           func() any { return new(UserNonChannelAckEvent) },
+	"USER_NOTE_UPDATE":                               func() any { return new(UserNoteUpdateEvent) },
+	"USER_PAYMENT_BROWSER_CHECKOUT_DONE":             func() any { return new(UserPaymentBrowserCheckoutDoneEvent) },
+	"USER_PAYMENT_CLIENT_ADD":                        func() any { return new(UserPaymentClientAddEvent) },
+	"USER_PREMIUM_GUILD_SUBSCRIPTION_SLOT_CREATE":    func() any { return new(UserPremiumGuildSubscriptionSlotCreateEvent) },
+	"USER_PREMIUM_GUILD_SUBSCRIPTION_SLOT_DELETE":    func() any { return new(UserPremiumGuildSubscriptionSlotDeleteEvent) },
+	"USER_PREMIUM_GUILD_SUBSCRIPTION_SLOT_UPDATE":    func() any { return new(UserPremiumGuildSubscriptionSlotUpdateEvent) },
+	"USER_REQUIRED_ACTION_UPDATE":                    func() any { return new(UserRequiredActionUpdateEvent) },
+	"USER_SETTINGS_PROTO_UPDATE":                     func() any { return new(UserSettingsProtoUpdateEvent) },
+	"USER_SETTINGS_UPDATE":                           func() any { return new(UserSettingsUpdateEvent) },
+	"USER_UPDATE":                                    func() any { return new(UserUpdateEvent) },
+	"VIRTUAL_CURRENCY_BALANCE_UPDATE":                func() any { return new(VirtualCurrencyBalanceUpdateEvent) },
+	"VOICE_CHANNEL_EFFECT_SEND":                      func() any { return new(VoiceChannelEffectSendEvent) },
+	"VOICE_CHANNEL_START_TIME_UPDATE":                func() any { return new(VoiceChannelStartTimeUpdateEvent) },
+	"VOICE_CHANNEL_STATUS_UPDATE":                    func() any { return new(VoiceChannelStatusUpdateEvent) },
+	"VOICE_SERVER_UPDATE":                            func() any { return new(VoiceServerUpdateEvent) },
+	"VOICE_STATE_UPDATE":                             func() any { return new(VoiceStateUpdateEvent) },
+	"WEBHOOKS_UPDATE":                                func() any { return new(WebhooksUpdateEvent) },
 }
