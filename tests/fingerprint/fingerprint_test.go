@@ -33,17 +33,36 @@ func TestChromiumWeights(t *testing.T) {
 	}
 }
 
-func TestHeaderOrder(t *testing.T) {
+func headerNames(o fingerprint.HeaderOrder, keys ...string) []string {
 	h := http.Header{}
-	for _, k := range []string{"Priority", "User-Agent", "X-Zeta", "Authorization", "Sec-Ch-Ua-Platform", "X-Alpha", "Connection", "X-Super-Properties", "Accept"} {
+	for _, k := range keys {
 		h.Set(k, "v")
 	}
-	var got []string
-	for _, f := range fingerprint.ChromiumRendererOrder().Fields(h) {
-		got = append(got, f.Name)
+	var out []string
+	for _, f := range o.Fields(h) {
+		out = append(out, f.Name)
 	}
-	want := []string{"sec-ch-ua-platform", "authorization", "x-super-properties", "x-alpha", "x-zeta", "user-agent", "accept", "priority"}
+	return out
+}
+
+func TestDesktopHeaderOrder(t *testing.T) {
+	got := headerNames(fingerprint.DiscordDesktopOrder(),
+		"Priority", "User-Agent", "X-Zeta", "Authorization", "Sec-Ch-Ua-Platform", "X-Alpha", "Connection",
+		"X-Super-Properties", "Accept", "Content-Type", "X-Context-Properties", "Accept-Language", "X-Discord-Locale", "Cookie")
+	want := []string{
+		"sec-ch-ua-platform", "content-type", "x-alpha", "x-zeta", "x-context-properties",
+		"authorization", "x-super-properties", "accept-language", "x-discord-locale",
+		"user-agent", "accept", "cookie", "priority",
+	}
 	if !slices.Equal(got, want) {
-		t.Fatalf("got %v\nwant %v", got, want)
+		t.Fatalf("got  %v\nwant %v", got, want)
+	}
+}
+
+func TestWebHeaderOrder(t *testing.T) {
+	got := headerNames(fingerprint.DiscordWebOrder(), "Accept-Language", "Authorization", "Accept-Encoding", "X-Discord-Locale")
+	want := []string{"authorization", "x-discord-locale", "accept-encoding", "accept-language"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("got  %v\nwant %v", got, want)
 	}
 }

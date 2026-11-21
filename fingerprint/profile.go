@@ -12,6 +12,6 @@ func Electron44() Profile {
 		Name:    "electron44",
 		Hello:   Chromium152,
 		H2:      Chromium152H2(),
-		Headers: ChromiumRendererOrder(),
+		Headers: DiscordDesktopOrder(),
 	}
 }

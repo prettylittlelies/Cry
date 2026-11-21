@@ -96,7 +96,9 @@ func rendererHeaders(ref peet) http.Header {
 
 func TestElectron44Fingerprint(t *testing.T) {
 	fresh, renderer := reference(t, "electron44-main.json"), reference(t, "electron44-renderer.json")
-	tr := transport.New(fingerprint.Electron44())
+	profile := fingerprint.Electron44()
+	profile.Headers = fingerprint.DiscordWebOrder()
+	tr := transport.New(profile)
 	header := rendererHeaders(renderer)
 
 	first := capture(t, tr, header)
