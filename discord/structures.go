@@ -4343,7 +4343,6 @@ type GatewayGiftCode struct {
 }
 
 type GatewayGuild struct {
-	ID                       snowflake.ID               `json:"id"`
 	JoinedAt                 time.Time                  `json:"joined_at"`
 	Large                    bool                       `json:"large"`
 	Unavailable              bool                       `json:"unavailable,omitzero"`
@@ -4367,6 +4366,7 @@ type GatewayGuild struct {
 	Emojis                   []Emoji                    `json:"emojis"`
 	SoundboardSounds         []SoundboardSound          `json:"soundboard_sounds"`
 	PremiumSubscriptionCount int64                      `json:"premium_subscription_count"`
+	ID                       snowflake.ID               `json:"id"`
 }
 
 type GatewayLobbyExtraFields struct {
@@ -5683,6 +5683,7 @@ type GuildMember struct {
 	UnusualDMActivityUntil     *time.Time            `json:"unusual_dm_activity_until,omitempty"`
 	Flags                      GuildMemberFlags      `json:"flags"`
 	Permissions                Permissions           `json:"permissions,omitzero"`
+	UserID                     snowflake.ID          `json:"user_id,omitzero"`
 }
 
 type GuildMemberAddExtraFields struct {
@@ -13533,10 +13534,32 @@ type IdentifyEvent struct {
 	ClientState    ClientState      `json:"client_state,omitzero"`
 }
 
+func (e *IdentifyEvent) AsIdentify() Identify {
+	return Identify{
+		Token:          e.Token,
+		Properties:     e.Properties,
+		Compress:       e.Compress,
+		LargeThreshold: e.LargeThreshold,
+		Shard:          e.Shard,
+		Presence:       e.Presence,
+		Intents:        e.Intents,
+		Capabilities:   e.Capabilities,
+		ClientState:    e.ClientState,
+	}
+}
+
 type ResumeEvent struct {
 	Token     string `json:"token"`
 	SessionID string `json:"session_id"`
 	Seq       int64  `json:"seq"`
+}
+
+func (e *ResumeEvent) AsResume() Resume {
+	return Resume{
+		Token:     e.Token,
+		SessionID: e.SessionID,
+		Seq:       e.Seq,
+	}
 }
 
 type QoSHeartbeatEvent struct {
@@ -13544,11 +13567,27 @@ type QoSHeartbeatEvent struct {
 	QoS QoSPayload `json:"qos"`
 }
 
+func (e *QoSHeartbeatEvent) AsQoSHeartbeat() QoSHeartbeat {
+	return QoSHeartbeat{
+		Seq: e.Seq,
+		QoS: e.QoS,
+	}
+}
+
 type UpdatePresenceEvent struct {
 	Activities []Activity `json:"activities"`
 	Status     StatusType `json:"status"`
 	Since      int64      `json:"since"`
 	AFK        bool       `json:"afk"`
+}
+
+func (e *UpdatePresenceEvent) AsUpdatePresence() UpdatePresence {
+	return UpdatePresence{
+		Activities: e.Activities,
+		Status:     e.Status,
+		Since:      e.Since,
+		AFK:        e.AFK,
+	}
 }
 
 type UpdateVoiceStateEvent struct {
@@ -13562,6 +13601,19 @@ type UpdateVoiceStateEvent struct {
 	Flags            VoiceFlags    `json:"flags,omitzero"`
 }
 
+func (e *UpdateVoiceStateEvent) AsUpdateVoiceState() UpdateVoiceState {
+	return UpdateVoiceState{
+		GuildID:          e.GuildID,
+		ChannelID:        e.ChannelID,
+		SelfMute:         e.SelfMute,
+		SelfDeaf:         e.SelfDeaf,
+		SelfVideo:        e.SelfVideo,
+		PreferredRegion:  e.PreferredRegion,
+		PreferredRegions: e.PreferredRegions,
+		Flags:            e.Flags,
+	}
+}
+
 type CreateStreamEvent struct {
 	Type            StreamType    `json:"type"`
 	GuildID         *snowflake.ID `json:"guild_id,omitempty"`
@@ -13569,21 +13621,55 @@ type CreateStreamEvent struct {
 	PreferredRegion *string       `json:"preferred_region,omitempty"`
 }
 
+func (e *CreateStreamEvent) AsCreateStream() CreateStream {
+	return CreateStream{
+		Type:            e.Type,
+		GuildID:         e.GuildID,
+		ChannelID:       e.ChannelID,
+		PreferredRegion: e.PreferredRegion,
+	}
+}
+
 type SetStreamPausedEvent struct {
 	StreamKey string `json:"stream_key"`
 	Paused    bool   `json:"paused"`
+}
+
+func (e *SetStreamPausedEvent) AsSetStreamPaused() SetStreamPaused {
+	return SetStreamPaused{
+		StreamKey: e.StreamKey,
+		Paused:    e.Paused,
+	}
 }
 
 type DeleteStreamEvent struct {
 	StreamKey string `json:"stream_key"`
 }
 
+func (e *DeleteStreamEvent) AsDeleteStream() DeleteStream {
+	return DeleteStream{
+		StreamKey: e.StreamKey,
+	}
+}
+
 type PingStreamServerEvent struct {
 	StreamKey string `json:"stream_key"`
 }
 
+func (e *PingStreamServerEvent) AsPingStreamServer() PingStreamServer {
+	return PingStreamServer{
+		StreamKey: e.StreamKey,
+	}
+}
+
 type PingLobbyVoiceServerEvent struct {
 	LobbyID snowflake.ID `json:"lobby_id"`
+}
+
+func (e *PingLobbyVoiceServerEvent) AsPingLobbyVoiceServer() PingLobbyVoiceServer {
+	return PingLobbyVoiceServer{
+		LobbyID: e.LobbyID,
+	}
 }
 
 type RequestGuildMembersEvent struct {
@@ -13595,8 +13681,25 @@ type RequestGuildMembersEvent struct {
 	Nonce     string       `json:"nonce,omitzero"`
 }
 
+func (e *RequestGuildMembersEvent) AsRequestGuildMembers() RequestGuildMembers {
+	return RequestGuildMembers{
+		GuildID:   e.GuildID,
+		Query:     e.Query,
+		Limit:     e.Limit,
+		Presences: e.Presences,
+		UserIDs:   e.UserIDs,
+		Nonce:     e.Nonce,
+	}
+}
+
 type RequestCallConnectEvent struct {
 	ChannelID snowflake.ID `json:"channel_id"`
+}
+
+func (e *RequestCallConnectEvent) AsRequestCallConnect() RequestCallConnect {
+	return RequestCallConnect{
+		ChannelID: e.ChannelID,
+	}
 }
 
 type GetDeletedEntityIDsNotMatchingHashEvent struct {
@@ -13607,17 +13710,46 @@ type GetDeletedEntityIDsNotMatchingHashEvent struct {
 	StickerIDsHash string       `json:"sticker_ids_hash"`
 }
 
+func (e *GetDeletedEntityIDsNotMatchingHashEvent) AsGetDeletedEntityIDsNotMatchingHash() GetDeletedEntityIDsNotMatchingHash {
+	return GetDeletedEntityIDsNotMatchingHash{
+		GuildID:        e.GuildID,
+		ChannelIDsHash: e.ChannelIDsHash,
+		RoleIDsHash:    e.RoleIDsHash,
+		EmojiIDsHash:   e.EmojiIDsHash,
+		StickerIDsHash: e.StickerIDsHash,
+	}
+}
+
 type RequestSoundboardSoundsEvent struct {
 	GuildIDs []snowflake.ID `json:"guild_ids"`
+}
+
+func (e *RequestSoundboardSoundsEvent) AsRequestSoundboardSounds() RequestSoundboardSounds {
+	return RequestSoundboardSounds{
+		GuildIDs: e.GuildIDs,
+	}
 }
 
 type CreateSpeedTestEvent struct {
 	PreferredRegion *string `json:"preferred_region,omitempty"`
 }
 
+func (e *CreateSpeedTestEvent) AsCreateSpeedTest() CreateSpeedTest {
+	return CreateSpeedTest{
+		PreferredRegion: e.PreferredRegion,
+	}
+}
+
 type RequestLastMessagesEvent struct {
 	GuildID    snowflake.ID   `json:"guild_id"`
 	ChannelIDs []snowflake.ID `json:"channel_ids"`
+}
+
+func (e *RequestLastMessagesEvent) AsRequestLastMessages() RequestLastMessages {
+	return RequestLastMessages{
+		GuildID:    e.GuildID,
+		ChannelIDs: e.ChannelIDs,
+	}
 }
 
 type SearchRecentMembersEvent struct {
@@ -13627,13 +13759,35 @@ type SearchRecentMembersEvent struct {
 	Nonce             string        `json:"nonce,omitzero"`
 }
 
+func (e *SearchRecentMembersEvent) AsSearchRecentMembers() SearchRecentMembers {
+	return SearchRecentMembers{
+		GuildID:           e.GuildID,
+		Query:             e.Query,
+		ContinuationToken: e.ContinuationToken,
+		Nonce:             e.Nonce,
+	}
+}
+
 type ResyncGuildChannelsEvent struct {
 	GuildID              snowflake.ID   `json:"guild_id"`
 	ObfuscatedChannelIDs []snowflake.ID `json:"obfuscated_channel_ids"`
 }
 
+func (e *ResyncGuildChannelsEvent) AsResyncGuildChannels() ResyncGuildChannels {
+	return ResyncGuildChannels{
+		GuildID:              e.GuildID,
+		ObfuscatedChannelIDs: e.ObfuscatedChannelIDs,
+	}
+}
+
 type RequestChannelStatusesEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
+}
+
+func (e *RequestChannelStatusesEvent) AsRequestChannelStatuses() RequestChannelStatuses {
+	return RequestChannelStatuses{
+		GuildID: e.GuildID,
+	}
 }
 
 type RequestChannelMemberCountEvent struct {
@@ -13641,9 +13795,23 @@ type RequestChannelMemberCountEvent struct {
 	ChannelID snowflake.ID `json:"channel_id"`
 }
 
+func (e *RequestChannelMemberCountEvent) AsRequestChannelMemberCount() RequestChannelMemberCount {
+	return RequestChannelMemberCount{
+		GuildID:   e.GuildID,
+		ChannelID: e.ChannelID,
+	}
+}
+
 type RequestChannelInfoEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
 	Fields  []string     `json:"fields"`
+}
+
+func (e *RequestChannelInfoEvent) AsRequestChannelInfo() RequestChannelInfo {
+	return RequestChannelInfo{
+		GuildID: e.GuildID,
+		Fields:  e.Fields,
+	}
 }
 
 type HelloEvent struct {
@@ -13651,8 +13819,14 @@ type HelloEvent struct {
 	HeartbeatInterval int64    `json:"heartbeat_interval"`
 }
 
+func (e *HelloEvent) AsHello() Hello {
+	return Hello{
+		Trace:             e.Trace,
+		HeartbeatInterval: e.HeartbeatInterval,
+	}
+}
+
 type InitialGuildEvent struct {
-	ID                       snowflake.ID               `json:"id"`
 	JoinedAt                 time.Time                  `json:"joined_at"`
 	Large                    bool                       `json:"large"`
 	Unavailable              bool                       `json:"unavailable,omitzero"`
@@ -13676,6 +13850,36 @@ type InitialGuildEvent struct {
 	Emojis                   []Emoji                    `json:"emojis"`
 	SoundboardSounds         []SoundboardSound          `json:"soundboard_sounds"`
 	PremiumSubscriptionCount int64                      `json:"premium_subscription_count"`
+	ID                       snowflake.ID               `json:"id"`
+}
+
+func (e *InitialGuildEvent) AsGatewayGuild() GatewayGuild {
+	return GatewayGuild{
+		JoinedAt:                 e.JoinedAt,
+		Large:                    e.Large,
+		Unavailable:              e.Unavailable,
+		GeoRestricted:            e.GeoRestricted,
+		MemberCount:              e.MemberCount,
+		Members:                  e.Members,
+		Channels:                 e.Channels,
+		Threads:                  e.Threads,
+		Presences:                e.Presences,
+		VoiceStates:              e.VoiceStates,
+		ActivityInstances:        e.ActivityInstances,
+		StageInstances:           e.StageInstances,
+		GuildScheduledEvents:     e.GuildScheduledEvents,
+		DataMode:                 e.DataMode,
+		PartialUpdates:           e.PartialUpdates,
+		ChannelUpdates:           e.ChannelUpdates,
+		UnableToSyncDeletes:      e.UnableToSyncDeletes,
+		Properties:               e.Properties,
+		Stickers:                 e.Stickers,
+		Roles:                    e.Roles,
+		Emojis:                   e.Emojis,
+		SoundboardSounds:         e.SoundboardSounds,
+		PremiumSubscriptionCount: e.PremiumSubscriptionCount,
+		ID:                       e.ID,
+	}
 }
 
 type ReadyEvent struct {
@@ -13733,6 +13937,63 @@ type ReadyEvent struct {
 	RegionalFeatureConfig            RegionalFeatureConfig                     `json:"regional_feature_config"`
 }
 
+func (e *ReadyEvent) AsReady() Ready {
+	return Ready{
+		Trace:                            e.Trace,
+		V:                                e.V,
+		User:                             e.User,
+		UserSettings:                     e.UserSettings,
+		UserSettingsProto:                e.UserSettingsProto,
+		NotificationSettings:             e.NotificationSettings,
+		UserGuildSettings:                e.UserGuildSettings,
+		ReadState:                        e.ReadState,
+		Guilds:                           e.Guilds,
+		GuildJoinRequests:                e.GuildJoinRequests,
+		Relationships:                    e.Relationships,
+		GameRelationships:                e.GameRelationships,
+		FriendSuggestionCount:            e.FriendSuggestionCount,
+		PrivateChannels:                  e.PrivateChannels,
+		ConnectedAccounts:                e.ConnectedAccounts,
+		Notes:                            e.Notes,
+		Presences:                        e.Presences,
+		MergedPresences:                  e.MergedPresences,
+		MergedMembers:                    e.MergedMembers,
+		Users:                            e.Users,
+		LinkedUsers:                      e.LinkedUsers,
+		Application:                      e.Application,
+		Scopes:                           e.Scopes,
+		SessionID:                        e.SessionID,
+		SessionType:                      e.SessionType,
+		Sessions:                         e.Sessions,
+		StaticClientSessionID:            e.StaticClientSessionID,
+		AuthSessionIDHash:                e.AuthSessionIDHash,
+		AuthToken:                        e.AuthToken,
+		AnalyticsToken:                   e.AnalyticsToken,
+		Auth:                             e.Auth,
+		RequiredAction:                   e.RequiredAction,
+		CountryCode:                      e.CountryCode,
+		GeoOrderedRTCRegions:             e.GeoOrderedRTCRegions,
+		Consents:                         e.Consents,
+		Tutorial:                         e.Tutorial,
+		Shard:                            e.Shard,
+		ResumeGatewayURL:                 e.ResumeGatewayURL,
+		APICodeVersion:                   e.APICodeVersion,
+		Experiments:                      e.Experiments,
+		GuildExperiments:                 e.GuildExperiments,
+		ApexExperiments:                  e.ApexExperiments,
+		ExplicitContentScanVersion:       e.ExplicitContentScanVersion,
+		PendingPayments:                  e.PendingPayments,
+		AvSfProtocolFloor:                e.AvSfProtocolFloor,
+		FeatureFlags:                     e.FeatureFlags,
+		Lobbies:                          e.Lobbies,
+		UserApplicationProfiles:          e.UserApplicationProfiles,
+		ConnectionRequestData:            e.ConnectionRequestData,
+		AdPersonalizationTogglesDisabled: e.AdPersonalizationTogglesDisabled,
+		BroadcasterUserIDs:               e.BroadcasterUserIDs,
+		RegionalFeatureConfig:            e.RegionalFeatureConfig,
+	}
+}
+
 type ReadySupplementalEvent struct {
 	Guilds              []SupplementalGuild `json:"guilds"`
 	MergedMembers       [][]json.RawMessage `json:"merged_members"`
@@ -13742,14 +14003,39 @@ type ReadySupplementalEvent struct {
 	GameInvites         []GameInvite        `json:"game_invites"`
 }
 
+func (e *ReadySupplementalEvent) AsReadySupplemental() ReadySupplemental {
+	return ReadySupplemental{
+		Guilds:              e.Guilds,
+		MergedMembers:       e.MergedMembers,
+		MergedPresences:     e.MergedPresences,
+		LazyPrivateChannels: e.LazyPrivateChannels,
+		Disclose:            e.Disclose,
+		GameInvites:         e.GameInvites,
+	}
+}
+
 type ResumedEvent struct {
 	Trace []string `json:"_trace"`
+}
+
+func (e *ResumedEvent) AsResumed() Resumed {
+	return Resumed{
+		Trace: e.Trace,
+	}
 }
 
 type RateLimitedEvent struct {
 	Opcode     int64             `json:"opcode"`
 	RetryAfter float64           `json:"retry_after"`
 	Meta       RateLimitMetadata `json:"meta"`
+}
+
+func (e *RateLimitedEvent) AsRateLimited() RateLimited {
+	return RateLimited{
+		Opcode:     e.Opcode,
+		RetryAfter: e.RetryAfter,
+		Meta:       e.Meta,
+	}
 }
 
 type ActivityInviteCreateEvent struct {
@@ -13760,8 +14046,24 @@ type ActivityInviteCreateEvent struct {
 	Activity    MessageActivity        `json:"activity,omitzero"`
 }
 
+func (e *ActivityInviteCreateEvent) AsActivityInviteCreate() ActivityInviteCreate {
+	return ActivityInviteCreate{
+		MessageID:   e.MessageID,
+		ChannelID:   e.ChannelID,
+		Author:      e.Author,
+		Application: e.Application,
+		Activity:    e.Activity,
+	}
+}
+
 type AuthSessionChangeEvent struct {
 	AuthSessionIDHash string `json:"auth_session_id_hash"`
+}
+
+func (e *AuthSessionChangeEvent) AsAuthSessionChange() AuthSessionChange {
+	return AuthSessionChange{
+		AuthSessionIDHash: e.AuthSessionIDHash,
+	}
 }
 
 type AuthenticatorCreateEvent struct {
@@ -13772,6 +14074,16 @@ type AuthenticatorCreateEvent struct {
 	CredID   string     `json:"cred_id,omitzero"`
 }
 
+func (e *AuthenticatorCreateEvent) AsAuthenticator() Authenticator {
+	return Authenticator{
+		ID:       e.ID,
+		Type:     e.Type,
+		Name:     e.Name,
+		LastUsed: e.LastUsed,
+		CredID:   e.CredID,
+	}
+}
+
 type AuthenticatorUpdateEvent struct {
 	ID       string     `json:"id"`
 	Type     string     `json:"type"`
@@ -13780,9 +14092,26 @@ type AuthenticatorUpdateEvent struct {
 	CredID   string     `json:"cred_id,omitzero"`
 }
 
+func (e *AuthenticatorUpdateEvent) AsAuthenticator() Authenticator {
+	return Authenticator{
+		ID:       e.ID,
+		Type:     e.Type,
+		Name:     e.Name,
+		LastUsed: e.LastUsed,
+		CredID:   e.CredID,
+	}
+}
+
 type AuthenticatorDeleteEvent struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
+}
+
+func (e *AuthenticatorDeleteEvent) AsAuthenticatorDelete() AuthenticatorDelete {
+	return AuthenticatorDelete{
+		ID:   e.ID,
+		Type: e.Type,
+	}
 }
 
 type ApplicationCommandPermissionsUpdateEvent struct {
@@ -13790,6 +14119,15 @@ type ApplicationCommandPermissionsUpdateEvent struct {
 	ApplicationID snowflake.ID                    `json:"application_id"`
 	GuildID       snowflake.ID                    `json:"guild_id"`
 	Permissions   []ApplicationCommandPermissions `json:"permissions"`
+}
+
+func (e *ApplicationCommandPermissionsUpdateEvent) AsGuildApplicationCommandPermissions() GuildApplicationCommandPermissions {
+	return GuildApplicationCommandPermissions{
+		ID:            e.ID,
+		ApplicationID: e.ApplicationID,
+		GuildID:       e.GuildID,
+		Permissions:   e.Permissions,
+	}
 }
 
 type AutoModerationRuleCreateEvent struct {
@@ -13806,6 +14144,22 @@ type AutoModerationRuleCreateEvent struct {
 	ExemptChannels  []snowflake.ID     `json:"exempt_channels"`
 }
 
+func (e *AutoModerationRuleCreateEvent) AsAutomodRule() AutomodRule {
+	return AutomodRule{
+		ID:              e.ID,
+		GuildID:         e.GuildID,
+		Name:            e.Name,
+		CreatorID:       e.CreatorID,
+		EventType:       e.EventType,
+		TriggerType:     e.TriggerType,
+		TriggerMetadata: e.TriggerMetadata,
+		Actions:         e.Actions,
+		Enabled:         e.Enabled,
+		ExemptRoles:     e.ExemptRoles,
+		ExemptChannels:  e.ExemptChannels,
+	}
+}
+
 type AutoModerationRuleUpdateEvent struct {
 	ID              snowflake.ID       `json:"id"`
 	GuildID         snowflake.ID       `json:"guild_id"`
@@ -13818,6 +14172,22 @@ type AutoModerationRuleUpdateEvent struct {
 	Enabled         bool               `json:"enabled"`
 	ExemptRoles     []snowflake.ID     `json:"exempt_roles"`
 	ExemptChannels  []snowflake.ID     `json:"exempt_channels"`
+}
+
+func (e *AutoModerationRuleUpdateEvent) AsAutomodRule() AutomodRule {
+	return AutomodRule{
+		ID:              e.ID,
+		GuildID:         e.GuildID,
+		Name:            e.Name,
+		CreatorID:       e.CreatorID,
+		EventType:       e.EventType,
+		TriggerType:     e.TriggerType,
+		TriggerMetadata: e.TriggerMetadata,
+		Actions:         e.Actions,
+		Enabled:         e.Enabled,
+		ExemptRoles:     e.ExemptRoles,
+		ExemptChannels:  e.ExemptChannels,
+	}
 }
 
 type AutoModerationRuleDeleteEvent struct {
@@ -13834,6 +14204,22 @@ type AutoModerationRuleDeleteEvent struct {
 	ExemptChannels  []snowflake.ID     `json:"exempt_channels"`
 }
 
+func (e *AutoModerationRuleDeleteEvent) AsAutomodRule() AutomodRule {
+	return AutomodRule{
+		ID:              e.ID,
+		GuildID:         e.GuildID,
+		Name:            e.Name,
+		CreatorID:       e.CreatorID,
+		EventType:       e.EventType,
+		TriggerType:     e.TriggerType,
+		TriggerMetadata: e.TriggerMetadata,
+		Actions:         e.Actions,
+		Enabled:         e.Enabled,
+		ExemptRoles:     e.ExemptRoles,
+		ExemptChannels:  e.ExemptChannels,
+	}
+}
+
 type AutoModerationActionExecutionEvent struct {
 	GuildID              snowflake.ID  `json:"guild_id"`
 	Action               AutomodAction `json:"action"`
@@ -13848,10 +14234,34 @@ type AutoModerationActionExecutionEvent struct {
 	MatchedContent       *string       `json:"matched_content"`
 }
 
+func (e *AutoModerationActionExecutionEvent) AsAutoModerationActionExecution() AutoModerationActionExecution {
+	return AutoModerationActionExecution{
+		GuildID:              e.GuildID,
+		Action:               e.Action,
+		RuleID:               e.RuleID,
+		RuleTriggerType:      e.RuleTriggerType,
+		UserID:               e.UserID,
+		ChannelID:            e.ChannelID,
+		MessageID:            e.MessageID,
+		AlertSystemMessageID: e.AlertSystemMessageID,
+		Content:              e.Content,
+		MatchedKeyword:       e.MatchedKeyword,
+		MatchedContent:       e.MatchedContent,
+	}
+}
+
 type AutoModerationMentionRaidDetectionEvent struct {
 	GuildID                        snowflake.ID `json:"guild_id"`
 	DecisionID                     string       `json:"decision_id"`
 	SuspiciousMentionActivityUntil time.Time    `json:"suspicious_mention_activity_until"`
+}
+
+func (e *AutoModerationMentionRaidDetectionEvent) AsAutoModerationMentionRaidDetection() AutoModerationMentionRaidDetection {
+	return AutoModerationMentionRaidDetection{
+		GuildID:                        e.GuildID,
+		DecisionID:                     e.DecisionID,
+		SuspiciousMentionActivityUntil: e.SuspiciousMentionActivityUntil,
+	}
 }
 
 type BillingPopupBridgeCallbackEvent struct {
@@ -13859,6 +14269,15 @@ type BillingPopupBridgeCallbackEvent struct {
 	State             string            `json:"state,omitzero"`
 	Path              string            `json:"path,omitzero"`
 	Query             map[string]string `json:"query,omitempty"`
+}
+
+func (e *BillingPopupBridgeCallbackEvent) AsBillingPopupBridgeCallback() BillingPopupBridgeCallback {
+	return BillingPopupBridgeCallback{
+		PaymentSourceType: e.PaymentSourceType,
+		State:             e.State,
+		Path:              e.Path,
+		Query:             e.Query,
+	}
 }
 
 type CallCreateEvent struct {
@@ -13869,6 +14288,16 @@ type CallCreateEvent struct {
 	VoiceStates []VoiceState   `json:"voice_states"`
 }
 
+func (e *CallCreateEvent) AsCallCreate() CallCreate {
+	return CallCreate{
+		ChannelID:   e.ChannelID,
+		MessageID:   e.MessageID,
+		Region:      e.Region,
+		Ringing:     e.Ringing,
+		VoiceStates: e.VoiceStates,
+	}
+}
+
 type CallUpdateEvent struct {
 	ChannelID snowflake.ID    `json:"channel_id"`
 	MessageID snowflake.ID    `json:"message_id"`
@@ -13876,9 +14305,25 @@ type CallUpdateEvent struct {
 	Ringing   json.RawMessage `json:"ringing"`
 }
 
+func (e *CallUpdateEvent) AsCallUpdate() CallUpdate {
+	return CallUpdate{
+		ChannelID: e.ChannelID,
+		MessageID: e.MessageID,
+		Region:    e.Region,
+		Ringing:   e.Ringing,
+	}
+}
+
 type CallDeleteEvent struct {
 	ChannelID   snowflake.ID `json:"channel_id"`
 	Unavailable bool         `json:"unavailable,omitzero"`
+}
+
+func (e *CallDeleteEvent) AsCallDelete() CallDelete {
+	return CallDelete{
+		ChannelID:   e.ChannelID,
+		Unavailable: e.Unavailable,
+	}
 }
 
 type ChannelCreateEvent struct {
@@ -13940,6 +14385,66 @@ type ChannelCreateEvent struct {
 	OriginChannelID                    snowflake.ID          `json:"origin_channel_id,omitzero"`
 }
 
+func (e *ChannelCreateEvent) AsChannel() Channel {
+	return Channel{
+		ID:                                 e.ID,
+		Type:                               e.Type,
+		GuildID:                            e.GuildID,
+		Position:                           e.Position,
+		PermissionOverwrites:               e.PermissionOverwrites,
+		Name:                               e.Name,
+		Topic:                              e.Topic,
+		NSFW:                               e.NSFW,
+		LastMessageID:                      e.LastMessageID,
+		LastPinTimestamp:                   e.LastPinTimestamp,
+		Bitrate:                            e.Bitrate,
+		UserLimit:                          e.UserLimit,
+		RateLimitPerUser:                   e.RateLimitPerUser,
+		Recipients:                         e.Recipients,
+		RecipientFlags:                     e.RecipientFlags,
+		Icon:                               e.Icon,
+		Nicks:                              e.Nicks,
+		Managed:                            e.Managed,
+		BlockedUserWarningDismissed:        e.BlockedUserWarningDismissed,
+		SafetyWarnings:                     e.SafetyWarnings,
+		ApplicationID:                      e.ApplicationID,
+		OwnerID:                            e.OwnerID,
+		Owner:                              e.Owner,
+		ParentID:                           e.ParentID,
+		RTCRegion:                          e.RTCRegion,
+		VideoQualityMode:                   e.VideoQualityMode,
+		TotalMessageSent:                   e.TotalMessageSent,
+		MessageCount:                       e.MessageCount,
+		MemberCount:                        e.MemberCount,
+		MemberIDsPreview:                   e.MemberIDsPreview,
+		ThreadMetadata:                     e.ThreadMetadata,
+		Member:                             e.Member,
+		DefaultAutoArchiveDuration:         e.DefaultAutoArchiveDuration,
+		DefaultThreadRateLimitPerUser:      e.DefaultThreadRateLimitPerUser,
+		Permissions:                        e.Permissions,
+		Flags:                              e.Flags,
+		AvailableTags:                      e.AvailableTags,
+		AppliedTags:                        e.AppliedTags,
+		DefaultReactionEmoji:               e.DefaultReactionEmoji,
+		DefaultForumLayout:                 e.DefaultForumLayout,
+		DefaultSortOrder:                   e.DefaultSortOrder,
+		DefaultTagSetting:                  e.DefaultTagSetting,
+		IconEmoji:                          e.IconEmoji,
+		ThemeColor:                         e.ThemeColor,
+		IsMessageRequest:                   e.IsMessageRequest,
+		IsMessageRequestTimestamp:          e.IsMessageRequestTimestamp,
+		IsSpam:                             e.IsSpam,
+		Status:                             e.Status,
+		HdStreamingUntil:                   e.HdStreamingUntil,
+		HdStreamingBuyerID:                 e.HdStreamingBuyerID,
+		LinkedLobby:                        e.LinkedLobby,
+		IsLinkable:                         e.IsLinkable,
+		IsViewableAndWriteableByAllMembers: e.IsViewableAndWriteableByAllMembers,
+		Template:                           e.Template,
+		Version:                            e.Version,
+	}
+}
+
 type ChannelUpdateEvent struct {
 	ID                                 snowflake.ID          `json:"id"`
 	Type                               ChannelType           `json:"type"`
@@ -13996,6 +14501,66 @@ type ChannelUpdateEvent struct {
 	IsViewableAndWriteableByAllMembers bool                  `json:"is_viewable_and_writeable_by_all_members,omitzero"`
 	Template                           string                `json:"template,omitzero"`
 	Version                            string                `json:"version,omitzero"`
+}
+
+func (e *ChannelUpdateEvent) AsChannel() Channel {
+	return Channel{
+		ID:                                 e.ID,
+		Type:                               e.Type,
+		GuildID:                            e.GuildID,
+		Position:                           e.Position,
+		PermissionOverwrites:               e.PermissionOverwrites,
+		Name:                               e.Name,
+		Topic:                              e.Topic,
+		NSFW:                               e.NSFW,
+		LastMessageID:                      e.LastMessageID,
+		LastPinTimestamp:                   e.LastPinTimestamp,
+		Bitrate:                            e.Bitrate,
+		UserLimit:                          e.UserLimit,
+		RateLimitPerUser:                   e.RateLimitPerUser,
+		Recipients:                         e.Recipients,
+		RecipientFlags:                     e.RecipientFlags,
+		Icon:                               e.Icon,
+		Nicks:                              e.Nicks,
+		Managed:                            e.Managed,
+		BlockedUserWarningDismissed:        e.BlockedUserWarningDismissed,
+		SafetyWarnings:                     e.SafetyWarnings,
+		ApplicationID:                      e.ApplicationID,
+		OwnerID:                            e.OwnerID,
+		Owner:                              e.Owner,
+		ParentID:                           e.ParentID,
+		RTCRegion:                          e.RTCRegion,
+		VideoQualityMode:                   e.VideoQualityMode,
+		TotalMessageSent:                   e.TotalMessageSent,
+		MessageCount:                       e.MessageCount,
+		MemberCount:                        e.MemberCount,
+		MemberIDsPreview:                   e.MemberIDsPreview,
+		ThreadMetadata:                     e.ThreadMetadata,
+		Member:                             e.Member,
+		DefaultAutoArchiveDuration:         e.DefaultAutoArchiveDuration,
+		DefaultThreadRateLimitPerUser:      e.DefaultThreadRateLimitPerUser,
+		Permissions:                        e.Permissions,
+		Flags:                              e.Flags,
+		AvailableTags:                      e.AvailableTags,
+		AppliedTags:                        e.AppliedTags,
+		DefaultReactionEmoji:               e.DefaultReactionEmoji,
+		DefaultForumLayout:                 e.DefaultForumLayout,
+		DefaultSortOrder:                   e.DefaultSortOrder,
+		DefaultTagSetting:                  e.DefaultTagSetting,
+		IconEmoji:                          e.IconEmoji,
+		ThemeColor:                         e.ThemeColor,
+		IsMessageRequest:                   e.IsMessageRequest,
+		IsMessageRequestTimestamp:          e.IsMessageRequestTimestamp,
+		IsSpam:                             e.IsSpam,
+		Status:                             e.Status,
+		HdStreamingUntil:                   e.HdStreamingUntil,
+		HdStreamingBuyerID:                 e.HdStreamingBuyerID,
+		LinkedLobby:                        e.LinkedLobby,
+		IsLinkable:                         e.IsLinkable,
+		IsViewableAndWriteableByAllMembers: e.IsViewableAndWriteableByAllMembers,
+		Template:                           e.Template,
+		Version:                            e.Version,
+	}
 }
 
 type ChannelDeleteEvent struct {
@@ -14056,10 +14621,78 @@ type ChannelDeleteEvent struct {
 	Version                            string                `json:"version,omitzero"`
 }
 
+func (e *ChannelDeleteEvent) AsChannel() Channel {
+	return Channel{
+		ID:                                 e.ID,
+		Type:                               e.Type,
+		GuildID:                            e.GuildID,
+		Position:                           e.Position,
+		PermissionOverwrites:               e.PermissionOverwrites,
+		Name:                               e.Name,
+		Topic:                              e.Topic,
+		NSFW:                               e.NSFW,
+		LastMessageID:                      e.LastMessageID,
+		LastPinTimestamp:                   e.LastPinTimestamp,
+		Bitrate:                            e.Bitrate,
+		UserLimit:                          e.UserLimit,
+		RateLimitPerUser:                   e.RateLimitPerUser,
+		Recipients:                         e.Recipients,
+		RecipientFlags:                     e.RecipientFlags,
+		Icon:                               e.Icon,
+		Nicks:                              e.Nicks,
+		Managed:                            e.Managed,
+		BlockedUserWarningDismissed:        e.BlockedUserWarningDismissed,
+		SafetyWarnings:                     e.SafetyWarnings,
+		ApplicationID:                      e.ApplicationID,
+		OwnerID:                            e.OwnerID,
+		Owner:                              e.Owner,
+		ParentID:                           e.ParentID,
+		RTCRegion:                          e.RTCRegion,
+		VideoQualityMode:                   e.VideoQualityMode,
+		TotalMessageSent:                   e.TotalMessageSent,
+		MessageCount:                       e.MessageCount,
+		MemberCount:                        e.MemberCount,
+		MemberIDsPreview:                   e.MemberIDsPreview,
+		ThreadMetadata:                     e.ThreadMetadata,
+		Member:                             e.Member,
+		DefaultAutoArchiveDuration:         e.DefaultAutoArchiveDuration,
+		DefaultThreadRateLimitPerUser:      e.DefaultThreadRateLimitPerUser,
+		Permissions:                        e.Permissions,
+		Flags:                              e.Flags,
+		AvailableTags:                      e.AvailableTags,
+		AppliedTags:                        e.AppliedTags,
+		DefaultReactionEmoji:               e.DefaultReactionEmoji,
+		DefaultForumLayout:                 e.DefaultForumLayout,
+		DefaultSortOrder:                   e.DefaultSortOrder,
+		DefaultTagSetting:                  e.DefaultTagSetting,
+		IconEmoji:                          e.IconEmoji,
+		ThemeColor:                         e.ThemeColor,
+		IsMessageRequest:                   e.IsMessageRequest,
+		IsMessageRequestTimestamp:          e.IsMessageRequestTimestamp,
+		IsSpam:                             e.IsSpam,
+		Status:                             e.Status,
+		HdStreamingUntil:                   e.HdStreamingUntil,
+		HdStreamingBuyerID:                 e.HdStreamingBuyerID,
+		LinkedLobby:                        e.LinkedLobby,
+		IsLinkable:                         e.IsLinkable,
+		IsViewableAndWriteableByAllMembers: e.IsViewableAndWriteableByAllMembers,
+		Template:                           e.Template,
+		Version:                            e.Version,
+	}
+}
+
 type ChannelSyncEvent struct {
 	GuildID        snowflake.ID `json:"guild_id"`
 	Channels       []Channel    `json:"channels"`
 	IntegrityCheck bool         `json:"integrity_check"`
+}
+
+func (e *ChannelSyncEvent) AsChannelSync() ChannelSync {
+	return ChannelSync{
+		GuildID:        e.GuildID,
+		Channels:       e.Channels,
+		IntegrityCheck: e.IntegrityCheck,
+	}
 }
 
 type ChannelUpdatePartialEvent struct {
@@ -14068,14 +14701,36 @@ type ChannelUpdatePartialEvent struct {
 	LastPinTimestamp *time.Time    `json:"last_pin_timestamp,omitempty"`
 }
 
+func (e *ChannelUpdatePartialEvent) AsChannelUnread() ChannelUnread {
+	return ChannelUnread{
+		ID:               e.ID,
+		LastMessageID:    e.LastMessageID,
+		LastPinTimestamp: e.LastPinTimestamp,
+	}
+}
+
 type ChannelInfoEvent struct {
 	GuildID  snowflake.ID      `json:"guild_id"`
 	Channels []ChannelMetadata `json:"channels"`
 }
 
+func (e *ChannelInfoEvent) AsChannelInfo() ChannelInfo {
+	return ChannelInfo{
+		GuildID:  e.GuildID,
+		Channels: e.Channels,
+	}
+}
+
 type ChannelStatusesEvent struct {
 	GuildID  snowflake.ID    `json:"guild_id"`
 	Channels []ChannelStatus `json:"channels"`
+}
+
+func (e *ChannelStatusesEvent) AsChannelStatuses() ChannelStatuses {
+	return ChannelStatuses{
+		GuildID:  e.GuildID,
+		Channels: e.Channels,
+	}
 }
 
 type ChannelMemberCountUpdateEvent struct {
@@ -14085,9 +14740,25 @@ type ChannelMemberCountUpdateEvent struct {
 	PresenceCount int64        `json:"presence_count"`
 }
 
+func (e *ChannelMemberCountUpdateEvent) AsChannelMemberCountUpdate() ChannelMemberCountUpdate {
+	return ChannelMemberCountUpdate{
+		GuildID:       e.GuildID,
+		ChannelID:     e.ChannelID,
+		MemberCount:   e.MemberCount,
+		PresenceCount: e.PresenceCount,
+	}
+}
+
 type ChannelUnreadUpdateEvent struct {
 	GuildID              snowflake.ID    `json:"guild_id"`
 	ChannelUnreadUpdates []ChannelUnread `json:"channel_unread_updates"`
+}
+
+func (e *ChannelUnreadUpdateEvent) AsChannelUnreadUpdate() ChannelUnreadUpdate {
+	return ChannelUnreadUpdate{
+		GuildID:              e.GuildID,
+		ChannelUnreadUpdates: e.ChannelUnreadUpdates,
+	}
 }
 
 type ChannelPinsUpdateEvent struct {
@@ -14096,10 +14767,26 @@ type ChannelPinsUpdateEvent struct {
 	LastPinTimestamp *time.Time   `json:"last_pin_timestamp,omitempty"`
 }
 
+func (e *ChannelPinsUpdateEvent) AsChannelPinsUpdate() ChannelPinsUpdate {
+	return ChannelPinsUpdate{
+		GuildID:          e.GuildID,
+		ChannelID:        e.ChannelID,
+		LastPinTimestamp: e.LastPinTimestamp,
+	}
+}
+
 type ChannelPinsAckEvent struct {
 	ChannelID snowflake.ID `json:"channel_id"`
 	Timestamp time.Time    `json:"timestamp"`
 	Version   int64        `json:"version"`
+}
+
+func (e *ChannelPinsAckEvent) AsChannelPinsAck() ChannelPinsAck {
+	return ChannelPinsAck{
+		ChannelID: e.ChannelID,
+		Timestamp: e.Timestamp,
+		Version:   e.Version,
+	}
 }
 
 type ChannelRecipientAddEvent struct {
@@ -14108,9 +14795,24 @@ type ChannelRecipientAddEvent struct {
 	Nick      string       `json:"nick,omitzero"`
 }
 
+func (e *ChannelRecipientAddEvent) AsChannelRecipientAdd() ChannelRecipientAdd {
+	return ChannelRecipientAdd{
+		ChannelID: e.ChannelID,
+		User:      e.User,
+		Nick:      e.Nick,
+	}
+}
+
 type ChannelRecipientRemoveEvent struct {
 	ChannelID snowflake.ID `json:"channel_id"`
 	User      PartialUser  `json:"user"`
+}
+
+func (e *ChannelRecipientRemoveEvent) AsChannelRecipientRemove() ChannelRecipientRemove {
+	return ChannelRecipientRemove{
+		ChannelID: e.ChannelID,
+		User:      e.User,
+	}
 }
 
 type ConsoleCommandUpdateEvent struct {
@@ -14119,10 +14821,26 @@ type ConsoleCommandUpdateEvent struct {
 	Error  json.RawMessage `json:"error"`
 }
 
+func (e *ConsoleCommandUpdateEvent) AsConsoleCommandUpdate() ConsoleCommandUpdate {
+	return ConsoleCommandUpdate{
+		ID:     e.ID,
+		Result: e.Result,
+		Error:  e.Error,
+	}
+}
+
 type ConversationSummaryUpdateEvent struct {
 	GuildID   snowflake.ID          `json:"guild_id"`
 	ChannelID snowflake.ID          `json:"channel_id"`
 	Summaries []ConversationSummary `json:"summaries"`
+}
+
+func (e *ConversationSummaryUpdateEvent) AsConversationSummaryUpdate() ConversationSummaryUpdate {
+	return ConversationSummaryUpdate{
+		GuildID:   e.GuildID,
+		ChannelID: e.ChannelID,
+		Summaries: e.Summaries,
+	}
 }
 
 type DeletedEntityIDsEvent struct {
@@ -14133,8 +14851,24 @@ type DeletedEntityIDsEvent struct {
 	Channels []snowflake.ID `json:"channels,omitempty"`
 }
 
+func (e *DeletedEntityIDsEvent) AsDeletedEntityIDs() DeletedEntityIDs {
+	return DeletedEntityIDs{
+		GuildID:  e.GuildID,
+		Stickers: e.Stickers,
+		Roles:    e.Roles,
+		Emojis:   e.Emojis,
+		Channels: e.Channels,
+	}
+}
+
 type DMSettingsUpsellShowEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
+}
+
+func (e *DMSettingsUpsellShowEvent) AsDMSettingsUpsellShow() DMSettingsUpsellShow {
+	return DMSettingsUpsellShow{
+		GuildID: e.GuildID,
+	}
 }
 
 type ThreadCreateEvent struct {
@@ -14196,6 +14930,66 @@ type ThreadCreateEvent struct {
 	NewlyCreated                       bool                  `json:"newly_created,omitzero"`
 }
 
+func (e *ThreadCreateEvent) AsChannel() Channel {
+	return Channel{
+		ID:                                 e.ID,
+		Type:                               e.Type,
+		GuildID:                            e.GuildID,
+		Position:                           e.Position,
+		PermissionOverwrites:               e.PermissionOverwrites,
+		Name:                               e.Name,
+		Topic:                              e.Topic,
+		NSFW:                               e.NSFW,
+		LastMessageID:                      e.LastMessageID,
+		LastPinTimestamp:                   e.LastPinTimestamp,
+		Bitrate:                            e.Bitrate,
+		UserLimit:                          e.UserLimit,
+		RateLimitPerUser:                   e.RateLimitPerUser,
+		Recipients:                         e.Recipients,
+		RecipientFlags:                     e.RecipientFlags,
+		Icon:                               e.Icon,
+		Nicks:                              e.Nicks,
+		Managed:                            e.Managed,
+		BlockedUserWarningDismissed:        e.BlockedUserWarningDismissed,
+		SafetyWarnings:                     e.SafetyWarnings,
+		ApplicationID:                      e.ApplicationID,
+		OwnerID:                            e.OwnerID,
+		Owner:                              e.Owner,
+		ParentID:                           e.ParentID,
+		RTCRegion:                          e.RTCRegion,
+		VideoQualityMode:                   e.VideoQualityMode,
+		TotalMessageSent:                   e.TotalMessageSent,
+		MessageCount:                       e.MessageCount,
+		MemberCount:                        e.MemberCount,
+		MemberIDsPreview:                   e.MemberIDsPreview,
+		ThreadMetadata:                     e.ThreadMetadata,
+		Member:                             e.Member,
+		DefaultAutoArchiveDuration:         e.DefaultAutoArchiveDuration,
+		DefaultThreadRateLimitPerUser:      e.DefaultThreadRateLimitPerUser,
+		Permissions:                        e.Permissions,
+		Flags:                              e.Flags,
+		AvailableTags:                      e.AvailableTags,
+		AppliedTags:                        e.AppliedTags,
+		DefaultReactionEmoji:               e.DefaultReactionEmoji,
+		DefaultForumLayout:                 e.DefaultForumLayout,
+		DefaultSortOrder:                   e.DefaultSortOrder,
+		DefaultTagSetting:                  e.DefaultTagSetting,
+		IconEmoji:                          e.IconEmoji,
+		ThemeColor:                         e.ThemeColor,
+		IsMessageRequest:                   e.IsMessageRequest,
+		IsMessageRequestTimestamp:          e.IsMessageRequestTimestamp,
+		IsSpam:                             e.IsSpam,
+		Status:                             e.Status,
+		HdStreamingUntil:                   e.HdStreamingUntil,
+		HdStreamingBuyerID:                 e.HdStreamingBuyerID,
+		LinkedLobby:                        e.LinkedLobby,
+		IsLinkable:                         e.IsLinkable,
+		IsViewableAndWriteableByAllMembers: e.IsViewableAndWriteableByAllMembers,
+		Template:                           e.Template,
+		Version:                            e.Version,
+	}
+}
+
 type ThreadUpdateEvent struct {
 	ID                                 snowflake.ID          `json:"id"`
 	Type                               ChannelType           `json:"type"`
@@ -14252,6 +15046,66 @@ type ThreadUpdateEvent struct {
 	IsViewableAndWriteableByAllMembers bool                  `json:"is_viewable_and_writeable_by_all_members,omitzero"`
 	Template                           string                `json:"template,omitzero"`
 	Version                            string                `json:"version,omitzero"`
+}
+
+func (e *ThreadUpdateEvent) AsChannel() Channel {
+	return Channel{
+		ID:                                 e.ID,
+		Type:                               e.Type,
+		GuildID:                            e.GuildID,
+		Position:                           e.Position,
+		PermissionOverwrites:               e.PermissionOverwrites,
+		Name:                               e.Name,
+		Topic:                              e.Topic,
+		NSFW:                               e.NSFW,
+		LastMessageID:                      e.LastMessageID,
+		LastPinTimestamp:                   e.LastPinTimestamp,
+		Bitrate:                            e.Bitrate,
+		UserLimit:                          e.UserLimit,
+		RateLimitPerUser:                   e.RateLimitPerUser,
+		Recipients:                         e.Recipients,
+		RecipientFlags:                     e.RecipientFlags,
+		Icon:                               e.Icon,
+		Nicks:                              e.Nicks,
+		Managed:                            e.Managed,
+		BlockedUserWarningDismissed:        e.BlockedUserWarningDismissed,
+		SafetyWarnings:                     e.SafetyWarnings,
+		ApplicationID:                      e.ApplicationID,
+		OwnerID:                            e.OwnerID,
+		Owner:                              e.Owner,
+		ParentID:                           e.ParentID,
+		RTCRegion:                          e.RTCRegion,
+		VideoQualityMode:                   e.VideoQualityMode,
+		TotalMessageSent:                   e.TotalMessageSent,
+		MessageCount:                       e.MessageCount,
+		MemberCount:                        e.MemberCount,
+		MemberIDsPreview:                   e.MemberIDsPreview,
+		ThreadMetadata:                     e.ThreadMetadata,
+		Member:                             e.Member,
+		DefaultAutoArchiveDuration:         e.DefaultAutoArchiveDuration,
+		DefaultThreadRateLimitPerUser:      e.DefaultThreadRateLimitPerUser,
+		Permissions:                        e.Permissions,
+		Flags:                              e.Flags,
+		AvailableTags:                      e.AvailableTags,
+		AppliedTags:                        e.AppliedTags,
+		DefaultReactionEmoji:               e.DefaultReactionEmoji,
+		DefaultForumLayout:                 e.DefaultForumLayout,
+		DefaultSortOrder:                   e.DefaultSortOrder,
+		DefaultTagSetting:                  e.DefaultTagSetting,
+		IconEmoji:                          e.IconEmoji,
+		ThemeColor:                         e.ThemeColor,
+		IsMessageRequest:                   e.IsMessageRequest,
+		IsMessageRequestTimestamp:          e.IsMessageRequestTimestamp,
+		IsSpam:                             e.IsSpam,
+		Status:                             e.Status,
+		HdStreamingUntil:                   e.HdStreamingUntil,
+		HdStreamingBuyerID:                 e.HdStreamingBuyerID,
+		LinkedLobby:                        e.LinkedLobby,
+		IsLinkable:                         e.IsLinkable,
+		IsViewableAndWriteableByAllMembers: e.IsViewableAndWriteableByAllMembers,
+		Template:                           e.Template,
+		Version:                            e.Version,
+	}
 }
 
 type ThreadDeleteEvent struct {
@@ -14312,11 +15166,80 @@ type ThreadDeleteEvent struct {
 	Version                            string                `json:"version,omitzero"`
 }
 
+func (e *ThreadDeleteEvent) AsChannel() Channel {
+	return Channel{
+		ID:                                 e.ID,
+		Type:                               e.Type,
+		GuildID:                            e.GuildID,
+		Position:                           e.Position,
+		PermissionOverwrites:               e.PermissionOverwrites,
+		Name:                               e.Name,
+		Topic:                              e.Topic,
+		NSFW:                               e.NSFW,
+		LastMessageID:                      e.LastMessageID,
+		LastPinTimestamp:                   e.LastPinTimestamp,
+		Bitrate:                            e.Bitrate,
+		UserLimit:                          e.UserLimit,
+		RateLimitPerUser:                   e.RateLimitPerUser,
+		Recipients:                         e.Recipients,
+		RecipientFlags:                     e.RecipientFlags,
+		Icon:                               e.Icon,
+		Nicks:                              e.Nicks,
+		Managed:                            e.Managed,
+		BlockedUserWarningDismissed:        e.BlockedUserWarningDismissed,
+		SafetyWarnings:                     e.SafetyWarnings,
+		ApplicationID:                      e.ApplicationID,
+		OwnerID:                            e.OwnerID,
+		Owner:                              e.Owner,
+		ParentID:                           e.ParentID,
+		RTCRegion:                          e.RTCRegion,
+		VideoQualityMode:                   e.VideoQualityMode,
+		TotalMessageSent:                   e.TotalMessageSent,
+		MessageCount:                       e.MessageCount,
+		MemberCount:                        e.MemberCount,
+		MemberIDsPreview:                   e.MemberIDsPreview,
+		ThreadMetadata:                     e.ThreadMetadata,
+		Member:                             e.Member,
+		DefaultAutoArchiveDuration:         e.DefaultAutoArchiveDuration,
+		DefaultThreadRateLimitPerUser:      e.DefaultThreadRateLimitPerUser,
+		Permissions:                        e.Permissions,
+		Flags:                              e.Flags,
+		AvailableTags:                      e.AvailableTags,
+		AppliedTags:                        e.AppliedTags,
+		DefaultReactionEmoji:               e.DefaultReactionEmoji,
+		DefaultForumLayout:                 e.DefaultForumLayout,
+		DefaultSortOrder:                   e.DefaultSortOrder,
+		DefaultTagSetting:                  e.DefaultTagSetting,
+		IconEmoji:                          e.IconEmoji,
+		ThemeColor:                         e.ThemeColor,
+		IsMessageRequest:                   e.IsMessageRequest,
+		IsMessageRequestTimestamp:          e.IsMessageRequestTimestamp,
+		IsSpam:                             e.IsSpam,
+		Status:                             e.Status,
+		HdStreamingUntil:                   e.HdStreamingUntil,
+		HdStreamingBuyerID:                 e.HdStreamingBuyerID,
+		LinkedLobby:                        e.LinkedLobby,
+		IsLinkable:                         e.IsLinkable,
+		IsViewableAndWriteableByAllMembers: e.IsViewableAndWriteableByAllMembers,
+		Template:                           e.Template,
+		Version:                            e.Version,
+	}
+}
+
 type ThreadListSyncEvent struct {
 	GuildID    snowflake.ID   `json:"guild_id"`
 	ChannelIDs []snowflake.ID `json:"channel_ids,omitempty"`
 	Threads    []Channel      `json:"threads"`
 	Members    []ThreadMember `json:"members"`
+}
+
+func (e *ThreadListSyncEvent) AsThreadListSync() ThreadListSync {
+	return ThreadListSync{
+		GuildID:    e.GuildID,
+		ChannelIDs: e.ChannelIDs,
+		Threads:    e.Threads,
+		Members:    e.Members,
+	}
 }
 
 type ThreadMemberUpdateEvent struct {
@@ -14330,12 +15253,34 @@ type ThreadMemberUpdateEvent struct {
 	GuildID       snowflake.ID      `json:"guild_id"`
 }
 
+func (e *ThreadMemberUpdateEvent) AsThreadMember() ThreadMember {
+	return ThreadMember{
+		ID:            e.ID,
+		UserID:        e.UserID,
+		JoinTimestamp: e.JoinTimestamp,
+		Flags:         e.Flags,
+		Muted:         e.Muted,
+		MuteConfig:    e.MuteConfig,
+		Member:        e.Member,
+	}
+}
+
 type ThreadMembersUpdateEvent struct {
 	ID               snowflake.ID    `json:"id"`
 	GuildID          snowflake.ID    `json:"guild_id"`
 	MemberCount      int64           `json:"member_count"`
 	AddedMembers     []ThreadMember  `json:"added_members,omitempty"`
 	RemovedMemberIDs json.RawMessage `json:"removed_member_ids,omitempty"`
+}
+
+func (e *ThreadMembersUpdateEvent) AsThreadMembersUpdate() ThreadMembersUpdate {
+	return ThreadMembersUpdate{
+		ID:               e.ID,
+		GuildID:          e.GuildID,
+		MemberCount:      e.MemberCount,
+		AddedMembers:     e.AddedMembers,
+		RemovedMemberIDs: e.RemovedMemberIDs,
+	}
 }
 
 type EmbeddedActivityUpdateV2Event struct {
@@ -14345,6 +15290,17 @@ type EmbeddedActivityUpdateV2Event struct {
 	LaunchID            snowflake.ID                  `json:"launch_id"`
 	Location            EmbeddedActivityLocation      `json:"location"`
 	Participants        []EmbeddedActivityParticipant `json:"participants"`
+}
+
+func (e *EmbeddedActivityUpdateV2Event) AsEmbeddedActivityInstance() EmbeddedActivityInstance {
+	return EmbeddedActivityInstance{
+		ApplicationID:       e.ApplicationID,
+		CompositeInstanceID: e.CompositeInstanceID,
+		InstanceID:          e.InstanceID,
+		LaunchID:            e.LaunchID,
+		Location:            e.Location,
+		Participants:        e.Participants,
+	}
 }
 
 type EntitlementCreateEvent struct {
@@ -14375,6 +15331,36 @@ type EntitlementCreateEvent struct {
 	SubscriptionPlan  PartialSubscriptionPlan      `json:"subscription_plan,omitzero"`
 }
 
+func (e *EntitlementCreateEvent) AsEntitlement() Entitlement {
+	return Entitlement{
+		ID:                e.ID,
+		Type:              e.Type,
+		SKUID:             e.SKUID,
+		ApplicationID:     e.ApplicationID,
+		UserID:            e.UserID,
+		User:              e.User,
+		GuildID:           e.GuildID,
+		ParentID:          e.ParentID,
+		Deleted:           e.Deleted,
+		Consumed:          e.Consumed,
+		Branches:          e.Branches,
+		StartsAt:          e.StartsAt,
+		EndsAt:            e.EndsAt,
+		PromotionID:       e.PromotionID,
+		SubscriptionID:    e.SubscriptionID,
+		GiftCodeFlags:     e.GiftCodeFlags,
+		GiftCodeBatchID:   e.GiftCodeBatchID,
+		GifterUserID:      e.GifterUserID,
+		GiftStyle:         e.GiftStyle,
+		FulfillmentStatus: e.FulfillmentStatus,
+		FulfilledAt:       e.FulfilledAt,
+		SourceType:        e.SourceType,
+		TenantMetadata:    e.TenantMetadata,
+		SKU:               e.SKU,
+		SubscriptionPlan:  e.SubscriptionPlan,
+	}
+}
+
 type EntitlementUpdateEvent struct {
 	ID                snowflake.ID                 `json:"id"`
 	Type              EntitlementType              `json:"type"`
@@ -14401,6 +15387,36 @@ type EntitlementUpdateEvent struct {
 	TenantMetadata    TenantMetadata               `json:"tenant_metadata,omitzero"`
 	SKU               SKU                          `json:"sku,omitzero"`
 	SubscriptionPlan  PartialSubscriptionPlan      `json:"subscription_plan,omitzero"`
+}
+
+func (e *EntitlementUpdateEvent) AsEntitlement() Entitlement {
+	return Entitlement{
+		ID:                e.ID,
+		Type:              e.Type,
+		SKUID:             e.SKUID,
+		ApplicationID:     e.ApplicationID,
+		UserID:            e.UserID,
+		User:              e.User,
+		GuildID:           e.GuildID,
+		ParentID:          e.ParentID,
+		Deleted:           e.Deleted,
+		Consumed:          e.Consumed,
+		Branches:          e.Branches,
+		StartsAt:          e.StartsAt,
+		EndsAt:            e.EndsAt,
+		PromotionID:       e.PromotionID,
+		SubscriptionID:    e.SubscriptionID,
+		GiftCodeFlags:     e.GiftCodeFlags,
+		GiftCodeBatchID:   e.GiftCodeBatchID,
+		GifterUserID:      e.GifterUserID,
+		GiftStyle:         e.GiftStyle,
+		FulfillmentStatus: e.FulfillmentStatus,
+		FulfilledAt:       e.FulfilledAt,
+		SourceType:        e.SourceType,
+		TenantMetadata:    e.TenantMetadata,
+		SKU:               e.SKU,
+		SubscriptionPlan:  e.SubscriptionPlan,
+	}
 }
 
 type EntitlementDeleteEvent struct {
@@ -14431,13 +15447,56 @@ type EntitlementDeleteEvent struct {
 	SubscriptionPlan  PartialSubscriptionPlan      `json:"subscription_plan,omitzero"`
 }
 
+func (e *EntitlementDeleteEvent) AsEntitlement() Entitlement {
+	return Entitlement{
+		ID:                e.ID,
+		Type:              e.Type,
+		SKUID:             e.SKUID,
+		ApplicationID:     e.ApplicationID,
+		UserID:            e.UserID,
+		User:              e.User,
+		GuildID:           e.GuildID,
+		ParentID:          e.ParentID,
+		Deleted:           e.Deleted,
+		Consumed:          e.Consumed,
+		Branches:          e.Branches,
+		StartsAt:          e.StartsAt,
+		EndsAt:            e.EndsAt,
+		PromotionID:       e.PromotionID,
+		SubscriptionID:    e.SubscriptionID,
+		GiftCodeFlags:     e.GiftCodeFlags,
+		GiftCodeBatchID:   e.GiftCodeBatchID,
+		GifterUserID:      e.GifterUserID,
+		GiftStyle:         e.GiftStyle,
+		FulfillmentStatus: e.FulfillmentStatus,
+		FulfilledAt:       e.FulfilledAt,
+		SourceType:        e.SourceType,
+		TenantMetadata:    e.TenantMetadata,
+		SKU:               e.SKU,
+		SubscriptionPlan:  e.SubscriptionPlan,
+	}
+}
+
 type ExperimentSessionOverrideCreateEvent struct {
 	ExperimentName string `json:"experiment_name"`
 	VariantID      int64  `json:"variant_id"`
 }
 
+func (e *ExperimentSessionOverrideCreateEvent) AsExperimentSessionOverrideCreate() ExperimentSessionOverrideCreate {
+	return ExperimentSessionOverrideCreate{
+		ExperimentName: e.ExperimentName,
+		VariantID:      e.VariantID,
+	}
+}
+
 type ExperimentSessionOverrideDeleteEvent struct {
 	ExperimentName string `json:"experiment_name"`
+}
+
+func (e *ExperimentSessionOverrideDeleteEvent) AsExperimentSessionOverrideDelete() ExperimentSessionOverrideDelete {
+	return ExperimentSessionOverrideDelete{
+		ExperimentName: e.ExperimentName,
+	}
 }
 
 type FriendSuggestionCreateEvent struct {
@@ -14448,8 +15507,24 @@ type FriendSuggestionCreateEvent struct {
 	ContactNames              []string                 `json:"contact_names,omitempty"`
 }
 
+func (e *FriendSuggestionCreateEvent) AsFriendSuggestion() FriendSuggestion {
+	return FriendSuggestion{
+		SuggestedUser:             e.SuggestedUser,
+		Reasons:                   e.Reasons,
+		FromSuggestedUserContacts: e.FromSuggestedUserContacts,
+		MutualFriendsCount:        e.MutualFriendsCount,
+		ContactNames:              e.ContactNames,
+	}
+}
+
 type FriendSuggestionDeleteEvent struct {
 	SuggestedUserID snowflake.ID `json:"suggested_user_id"`
+}
+
+func (e *FriendSuggestionDeleteEvent) AsFriendSuggestionDelete() FriendSuggestionDelete {
+	return FriendSuggestionDelete{
+		SuggestedUserID: e.SuggestedUserID,
+	}
 }
 
 type GameServerCreateEvent struct {
@@ -14457,14 +15532,35 @@ type GameServerCreateEvent struct {
 	GameServer GameServer   `json:"game_server"`
 }
 
+func (e *GameServerCreateEvent) AsGameServerCreate() GameServerCreate {
+	return GameServerCreate{
+		GuildID:    e.GuildID,
+		GameServer: e.GameServer,
+	}
+}
+
 type GameServerUpdateEvent struct {
 	GuildID    snowflake.ID `json:"guild_id"`
 	GameServer GameServer   `json:"game_server"`
 }
 
+func (e *GameServerUpdateEvent) AsGameServerUpdate() GameServerUpdate {
+	return GameServerUpdate{
+		GuildID:    e.GuildID,
+		GameServer: e.GameServer,
+	}
+}
+
 type GameServerDeleteEvent struct {
 	GuildID      snowflake.ID `json:"guild_id"`
 	GameServerID snowflake.ID `json:"game_server_id"`
+}
+
+func (e *GameServerDeleteEvent) AsGameServerDelete() GameServerDelete {
+	return GameServerDelete{
+		GuildID:      e.GuildID,
+		GameServerID: e.GameServerID,
+	}
 }
 
 type GiftCodeCreateEvent struct {
@@ -14475,6 +15571,16 @@ type GiftCodeCreateEvent struct {
 	GuildID   snowflake.ID `json:"guild_id,omitzero"`
 }
 
+func (e *GiftCodeCreateEvent) AsGatewayGiftCode() GatewayGiftCode {
+	return GatewayGiftCode{
+		Code:      e.Code,
+		SKUID:     e.SKUID,
+		Uses:      e.Uses,
+		ChannelID: e.ChannelID,
+		GuildID:   e.GuildID,
+	}
+}
+
 type GiftCodeUpdateEvent struct {
 	Code      string       `json:"code"`
 	SKUID     snowflake.ID `json:"sku_id"`
@@ -14483,8 +15589,17 @@ type GiftCodeUpdateEvent struct {
 	GuildID   snowflake.ID `json:"guild_id,omitzero"`
 }
 
+func (e *GiftCodeUpdateEvent) AsGatewayGiftCode() GatewayGiftCode {
+	return GatewayGiftCode{
+		Code:      e.Code,
+		SKUID:     e.SKUID,
+		Uses:      e.Uses,
+		ChannelID: e.ChannelID,
+		GuildID:   e.GuildID,
+	}
+}
+
 type GuildCreateEvent struct {
-	ID                       snowflake.ID               `json:"id"`
 	JoinedAt                 time.Time                  `json:"joined_at"`
 	Large                    bool                       `json:"large"`
 	Unavailable              bool                       `json:"unavailable,omitzero"`
@@ -14508,6 +15623,36 @@ type GuildCreateEvent struct {
 	Emojis                   []Emoji                    `json:"emojis"`
 	SoundboardSounds         []SoundboardSound          `json:"soundboard_sounds"`
 	PremiumSubscriptionCount int64                      `json:"premium_subscription_count"`
+	ID                       snowflake.ID               `json:"id"`
+}
+
+func (e *GuildCreateEvent) AsGatewayGuild() GatewayGuild {
+	return GatewayGuild{
+		JoinedAt:                 e.JoinedAt,
+		Large:                    e.Large,
+		Unavailable:              e.Unavailable,
+		GeoRestricted:            e.GeoRestricted,
+		MemberCount:              e.MemberCount,
+		Members:                  e.Members,
+		Channels:                 e.Channels,
+		Threads:                  e.Threads,
+		Presences:                e.Presences,
+		VoiceStates:              e.VoiceStates,
+		ActivityInstances:        e.ActivityInstances,
+		StageInstances:           e.StageInstances,
+		GuildScheduledEvents:     e.GuildScheduledEvents,
+		DataMode:                 e.DataMode,
+		PartialUpdates:           e.PartialUpdates,
+		ChannelUpdates:           e.ChannelUpdates,
+		UnableToSyncDeletes:      e.UnableToSyncDeletes,
+		Properties:               e.Properties,
+		Stickers:                 e.Stickers,
+		Roles:                    e.Roles,
+		Emojis:                   e.Emojis,
+		SoundboardSounds:         e.SoundboardSounds,
+		PremiumSubscriptionCount: e.PremiumSubscriptionCount,
+		ID:                       e.ID,
+	}
 }
 
 type GuildUpdateEvent struct {
@@ -14564,6 +15709,62 @@ type GuildUpdateEvent struct {
 	Version                                string                          `json:"version,omitzero"`
 }
 
+func (e *GuildUpdateEvent) AsGuild() Guild {
+	return Guild{
+		ID:                                     e.ID,
+		Name:                                   e.Name,
+		Icon:                                   e.Icon,
+		Banner:                                 e.Banner,
+		HomeHeader:                             e.HomeHeader,
+		Splash:                                 e.Splash,
+		DiscoverySplash:                        e.DiscoverySplash,
+		OwnerID:                                e.OwnerID,
+		ApplicationID:                          e.ApplicationID,
+		Description:                            e.Description,
+		Region:                                 e.Region,
+		AFKChannelID:                           e.AFKChannelID,
+		AFKTimeout:                             e.AFKTimeout,
+		WidgetEnabled:                          e.WidgetEnabled,
+		WidgetChannelID:                        e.WidgetChannelID,
+		VerificationLevel:                      e.VerificationLevel,
+		DefaultMessageNotifications:            e.DefaultMessageNotifications,
+		ExplicitContentFilter:                  e.ExplicitContentFilter,
+		Features:                               e.Features,
+		Roles:                                  e.Roles,
+		Emojis:                                 e.Emojis,
+		Stickers:                               e.Stickers,
+		MFALevel:                               e.MFALevel,
+		SystemChannelID:                        e.SystemChannelID,
+		SystemChannelFlags:                     e.SystemChannelFlags,
+		RulesChannelID:                         e.RulesChannelID,
+		PublicUpdatesChannelID:                 e.PublicUpdatesChannelID,
+		SafetyAlertsChannelID:                  e.SafetyAlertsChannelID,
+		MaxPresences:                           e.MaxPresences,
+		MaxMembers:                             e.MaxMembers,
+		VanityURLCode:                          e.VanityURLCode,
+		PremiumTier:                            e.PremiumTier,
+		PremiumSubscriptionCount:               e.PremiumSubscriptionCount,
+		PreferredLocale:                        e.PreferredLocale,
+		MaxVideoChannelUsers:                   e.MaxVideoChannelUsers,
+		MaxStageVideoChannelUsers:              e.MaxStageVideoChannelUsers,
+		NSFW:                                   e.NSFW,
+		NSFWLevel:                              e.NSFWLevel,
+		OwnerConfiguredContentLevel:            e.OwnerConfiguredContentLevel,
+		HubType:                                e.HubType,
+		PremiumProgressBarEnabled:              e.PremiumProgressBarEnabled,
+		PremiumProgressBarEnabledUserUpdatedAt: e.PremiumProgressBarEnabledUserUpdatedAt,
+		LatestOnboardingQuestionID:             e.LatestOnboardingQuestionID,
+		IncidentsData:                          e.IncidentsData,
+		InventorySettings:                      e.InventorySettings,
+		PremiumFeatures:                        e.PremiumFeatures,
+		Profile:                                e.Profile,
+		ApproximateMemberCount:                 e.ApproximateMemberCount,
+		ApproximatePresenceCount:               e.ApproximatePresenceCount,
+		OfficialMessageColor:                   e.OfficialMessageColor,
+		Version:                                e.Version,
+	}
+}
+
 type GuildDeleteEvent struct {
 	ID            snowflake.ID `json:"id"`
 	Unavailable   bool         `json:"unavailable,omitzero"`
@@ -14572,8 +15773,24 @@ type GuildDeleteEvent struct {
 	Icon          *string      `json:"icon,omitempty"`
 }
 
+func (e *GuildDeleteEvent) AsUnavailableGuild() UnavailableGuild {
+	return UnavailableGuild{
+		ID:            e.ID,
+		Unavailable:   e.Unavailable,
+		GeoRestricted: e.GeoRestricted,
+		Name:          e.Name,
+		Icon:          e.Icon,
+	}
+}
+
 type GuildApplicationCommandIndexUpdateEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
+}
+
+func (e *GuildApplicationCommandIndexUpdateEvent) AsGuildApplicationCommandIndexUpdate() GuildApplicationCommandIndexUpdate {
+	return GuildApplicationCommandIndexUpdate{
+		GuildID: e.GuildID,
+	}
 }
 
 type GuildAppliedBoostsUpdateEvent struct {
@@ -14586,6 +15803,18 @@ type GuildAppliedBoostsUpdateEvent struct {
 	User        PartialUser  `json:"user"`
 }
 
+func (e *GuildAppliedBoostsUpdateEvent) AsPremiumGuildSubscription() PremiumGuildSubscription {
+	return PremiumGuildSubscription{
+		ID:          e.ID,
+		GuildID:     e.GuildID,
+		UserID:      e.UserID,
+		Ended:       e.Ended,
+		EndsAt:      e.EndsAt,
+		PauseEndsAt: e.PauseEndsAt,
+		User:        e.User,
+	}
+}
+
 type GuildAuditLogEntryCreateEvent struct {
 	TargetID   *snowflake.ID      `json:"target_id"`
 	Changes    []AuditLogChange   `json:"changes,omitempty"`
@@ -14596,10 +15825,30 @@ type GuildAuditLogEntryCreateEvent struct {
 	Reason     string             `json:"reason,omitzero"`
 }
 
+func (e *GuildAuditLogEntryCreateEvent) AsAuditLogEntry() AuditLogEntry {
+	return AuditLogEntry{
+		TargetID:   e.TargetID,
+		Changes:    e.Changes,
+		UserID:     e.UserID,
+		ID:         e.ID,
+		ActionType: e.ActionType,
+		Options:    e.Options,
+		Reason:     e.Reason,
+	}
+}
+
 type GuildBanAddEvent struct {
 	GuildID           snowflake.ID `json:"guild_id"`
 	User              PartialUser  `json:"user"`
 	DeleteMessageSecs int64        `json:"delete_message_secs"`
+}
+
+func (e *GuildBanAddEvent) AsGuildBanAdd() GuildBanAdd {
+	return GuildBanAdd{
+		GuildID:           e.GuildID,
+		User:              e.User,
+		DeleteMessageSecs: e.DeleteMessageSecs,
+	}
 }
 
 type GuildBanRemoveEvent struct {
@@ -14607,9 +15856,23 @@ type GuildBanRemoveEvent struct {
 	User    PartialUser  `json:"user"`
 }
 
+func (e *GuildBanRemoveEvent) AsGuildBanRemove() GuildBanRemove {
+	return GuildBanRemove{
+		GuildID: e.GuildID,
+		User:    e.User,
+	}
+}
+
 type GuildBulkBanUpdateEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
 	BulkBan GuildBulkBan `json:"bulk_ban"`
+}
+
+func (e *GuildBulkBanUpdateEvent) AsGuildBulkBanUpdate() GuildBulkBanUpdate {
+	return GuildBulkBanUpdate{
+		GuildID: e.GuildID,
+		BulkBan: e.BulkBan,
+	}
 }
 
 type GuildDirectoryEntryCreateEvent struct {
@@ -14624,6 +15887,20 @@ type GuildDirectoryEntryCreateEvent struct {
 	GuildScheduledEvent DirectoryGuildScheduledEvent `json:"guild_scheduled_event,omitzero"`
 }
 
+func (e *GuildDirectoryEntryCreateEvent) AsDirectoryEntry() DirectoryEntry {
+	return DirectoryEntry{
+		Type:                e.Type,
+		DirectoryChannelID:  e.DirectoryChannelID,
+		EntityID:            e.EntityID,
+		CreatedAt:           e.CreatedAt,
+		PrimaryCategoryID:   e.PrimaryCategoryID,
+		Description:         e.Description,
+		AuthorID:            e.AuthorID,
+		Guild:               e.Guild,
+		GuildScheduledEvent: e.GuildScheduledEvent,
+	}
+}
+
 type GuildDirectoryEntryUpdateEvent struct {
 	Type                DirectoryEntryType           `json:"type"`
 	DirectoryChannelID  snowflake.ID                 `json:"directory_channel_id"`
@@ -14634,6 +15911,20 @@ type GuildDirectoryEntryUpdateEvent struct {
 	AuthorID            snowflake.ID                 `json:"author_id"`
 	Guild               DirectoryGuild               `json:"guild,omitzero"`
 	GuildScheduledEvent DirectoryGuildScheduledEvent `json:"guild_scheduled_event,omitzero"`
+}
+
+func (e *GuildDirectoryEntryUpdateEvent) AsDirectoryEntry() DirectoryEntry {
+	return DirectoryEntry{
+		Type:                e.Type,
+		DirectoryChannelID:  e.DirectoryChannelID,
+		EntityID:            e.EntityID,
+		CreatedAt:           e.CreatedAt,
+		PrimaryCategoryID:   e.PrimaryCategoryID,
+		Description:         e.Description,
+		AuthorID:            e.AuthorID,
+		Guild:               e.Guild,
+		GuildScheduledEvent: e.GuildScheduledEvent,
+	}
 }
 
 type GuildDirectoryEntryDeleteEvent struct {
@@ -14647,14 +15938,41 @@ type GuildDirectoryEntryDeleteEvent struct {
 	AuthorID           snowflake.ID       `json:"author_id"`
 }
 
+func (e *GuildDirectoryEntryDeleteEvent) AsGuildDirectoryEntryDelete() GuildDirectoryEntryDelete {
+	return GuildDirectoryEntryDelete{
+		Type:               e.Type,
+		DirectoryChannelID: e.DirectoryChannelID,
+		GuildID:            e.GuildID,
+		EntityID:           e.EntityID,
+		CreatedAt:          e.CreatedAt,
+		PrimaryCategoryID:  e.PrimaryCategoryID,
+		Description:        e.Description,
+		AuthorID:           e.AuthorID,
+	}
+}
+
 type GuildEmojisUpdateEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
 	Emojis  []Emoji      `json:"emojis"`
 }
 
+func (e *GuildEmojisUpdateEvent) AsGuildEmojisUpdate() GuildEmojisUpdate {
+	return GuildEmojisUpdate{
+		GuildID: e.GuildID,
+		Emojis:  e.Emojis,
+	}
+}
+
 type GuildStickersUpdateEvent struct {
 	GuildID  snowflake.ID `json:"guild_id"`
 	Stickers []Sticker    `json:"stickers"`
+}
+
+func (e *GuildStickersUpdateEvent) AsGuildStickersUpdate() GuildStickersUpdate {
+	return GuildStickersUpdate{
+		GuildID:  e.GuildID,
+		Stickers: e.Stickers,
+	}
 }
 
 type GuildFeatureAckEvent struct {
@@ -14664,10 +15982,27 @@ type GuildFeatureAckEvent struct {
 	Version    int64         `json:"version"`
 }
 
+func (e *GuildFeatureAckEvent) AsGuildFeatureAck() GuildFeatureAck {
+	return GuildFeatureAck{
+		AckType:    e.AckType,
+		ResourceID: e.ResourceID,
+		EntityID:   e.EntityID,
+		Version:    e.Version,
+	}
+}
+
 type GuildJoinRequestCreateEvent struct {
 	GuildID snowflake.ID           `json:"guild_id"`
 	Request GuildJoinRequest       `json:"request"`
 	Status  GuildJoinRequestStatus `json:"status"`
+}
+
+func (e *GuildJoinRequestCreateEvent) AsGuildJoinRequestCreate() GuildJoinRequestCreate {
+	return GuildJoinRequestCreate{
+		GuildID: e.GuildID,
+		Request: e.Request,
+		Status:  e.Status,
+	}
 }
 
 type GuildJoinRequestUpdateEvent struct {
@@ -14676,10 +16011,26 @@ type GuildJoinRequestUpdateEvent struct {
 	Status  GuildJoinRequestStatus `json:"status"`
 }
 
+func (e *GuildJoinRequestUpdateEvent) AsGuildJoinRequestUpdate() GuildJoinRequestUpdate {
+	return GuildJoinRequestUpdate{
+		GuildID: e.GuildID,
+		Request: e.Request,
+		Status:  e.Status,
+	}
+}
+
 type GuildJoinRequestDeleteEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
 	ID      snowflake.ID `json:"id"`
 	UserID  snowflake.ID `json:"user_id"`
+}
+
+func (e *GuildJoinRequestDeleteEvent) AsGuildJoinRequestDelete() GuildJoinRequestDelete {
+	return GuildJoinRequestDelete{
+		GuildID: e.GuildID,
+		ID:      e.ID,
+		UserID:  e.UserID,
+	}
 }
 
 type GuildMemberAddEvent struct {
@@ -14701,7 +16052,32 @@ type GuildMemberAddEvent struct {
 	UnusualDMActivityUntil     *time.Time            `json:"unusual_dm_activity_until,omitempty"`
 	Flags                      GuildMemberFlags      `json:"flags"`
 	Permissions                Permissions           `json:"permissions,omitzero"`
+	UserID                     snowflake.ID          `json:"user_id,omitzero"`
 	GuildID                    snowflake.ID          `json:"guild_id"`
+}
+
+func (e *GuildMemberAddEvent) AsGuildMember() GuildMember {
+	return GuildMember{
+		User:                       e.User,
+		Nick:                       e.Nick,
+		Avatar:                     e.Avatar,
+		AvatarDecorationData:       e.AvatarDecorationData,
+		Collectibles:               e.Collectibles,
+		DisplayNameStyles:          e.DisplayNameStyles,
+		Banner:                     e.Banner,
+		Bio:                        e.Bio,
+		Roles:                      e.Roles,
+		JoinedAt:                   e.JoinedAt,
+		PremiumSince:               e.PremiumSince,
+		Deaf:                       e.Deaf,
+		Mute:                       e.Mute,
+		Pending:                    e.Pending,
+		CommunicationDisabledUntil: e.CommunicationDisabledUntil,
+		UnusualDMActivityUntil:     e.UnusualDMActivityUntil,
+		Flags:                      e.Flags,
+		Permissions:                e.Permissions,
+		UserID:                     e.UserID,
+	}
 }
 
 type GuildMemberUpdateEvent struct {
@@ -14720,9 +16096,34 @@ type GuildMemberUpdateEvent struct {
 	Flags                      GuildMemberFlags      `json:"flags"`
 }
 
+func (e *GuildMemberUpdateEvent) AsGuildMemberUpdate() GuildMemberUpdate {
+	return GuildMemberUpdate{
+		GuildID:                    e.GuildID,
+		User:                       e.User,
+		Nick:                       e.Nick,
+		Avatar:                     e.Avatar,
+		AvatarDecorationData:       e.AvatarDecorationData,
+		Roles:                      e.Roles,
+		JoinedAt:                   e.JoinedAt,
+		PremiumSince:               e.PremiumSince,
+		Deaf:                       e.Deaf,
+		Mute:                       e.Mute,
+		Pending:                    e.Pending,
+		CommunicationDisabledUntil: e.CommunicationDisabledUntil,
+		Flags:                      e.Flags,
+	}
+}
+
 type GuildMemberRemoveEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
 	User    User         `json:"user"`
+}
+
+func (e *GuildMemberRemoveEvent) AsGuildMemberRemove() GuildMemberRemove {
+	return GuildMemberRemove{
+		GuildID: e.GuildID,
+		User:    e.User,
+	}
 }
 
 type GuildMembersChunkEvent struct {
@@ -14735,9 +16136,28 @@ type GuildMembersChunkEvent struct {
 	Nonce      string          `json:"nonce,omitzero"`
 }
 
+func (e *GuildMembersChunkEvent) AsGuildMembersChunk() GuildMembersChunk {
+	return GuildMembersChunk{
+		GuildID:    e.GuildID,
+		Members:    e.Members,
+		ChunkIndex: e.ChunkIndex,
+		ChunkCount: e.ChunkCount,
+		NotFound:   e.NotFound,
+		Presences:  e.Presences,
+		Nonce:      e.Nonce,
+	}
+}
+
 type GuildOfficialGameApplicationsUpdateEvent struct {
 	GuildID            snowflake.ID   `json:"guild_id"`
 	GameApplicationIDs []snowflake.ID `json:"game_application_ids"`
+}
+
+func (e *GuildOfficialGameApplicationsUpdateEvent) AsGuildOfficialGameApplicationsUpdate() GuildOfficialGameApplicationsUpdate {
+	return GuildOfficialGameApplicationsUpdate{
+		GuildID:            e.GuildID,
+		GameApplicationIDs: e.GameApplicationIDs,
+	}
 }
 
 type GuildPowerupEntitlementsCreateEvent struct {
@@ -14745,9 +16165,23 @@ type GuildPowerupEntitlementsCreateEvent struct {
 	Entitlements []Entitlement `json:"entitlements"`
 }
 
+func (e *GuildPowerupEntitlementsCreateEvent) AsGuildPowerupEntitlementsCreate() GuildPowerupEntitlementsCreate {
+	return GuildPowerupEntitlementsCreate{
+		GuildID:      e.GuildID,
+		Entitlements: e.Entitlements,
+	}
+}
+
 type GuildPowerupEntitlementsDeleteEvent struct {
 	GuildID      snowflake.ID  `json:"guild_id"`
 	Entitlements []Entitlement `json:"entitlements"`
+}
+
+func (e *GuildPowerupEntitlementsDeleteEvent) AsGuildPowerupEntitlementsDelete() GuildPowerupEntitlementsDelete {
+	return GuildPowerupEntitlementsDelete{
+		GuildID:      e.GuildID,
+		Entitlements: e.Entitlements,
+	}
 }
 
 type GuildRoleCreateEvent struct {
@@ -14755,14 +16189,35 @@ type GuildRoleCreateEvent struct {
 	Role    Role         `json:"role"`
 }
 
+func (e *GuildRoleCreateEvent) AsGuildRoleCreate() GuildRoleCreate {
+	return GuildRoleCreate{
+		GuildID: e.GuildID,
+		Role:    e.Role,
+	}
+}
+
 type GuildRoleUpdateEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
 	Role    Role         `json:"role"`
 }
 
+func (e *GuildRoleUpdateEvent) AsGuildRoleUpdate() GuildRoleUpdate {
+	return GuildRoleUpdate{
+		GuildID: e.GuildID,
+		Role:    e.Role,
+	}
+}
+
 type GuildRoleDeleteEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
 	RoleID  snowflake.ID `json:"role_id"`
+}
+
+func (e *GuildRoleDeleteEvent) AsGuildRoleDelete() GuildRoleDelete {
+	return GuildRoleDelete{
+		GuildID: e.GuildID,
+		RoleID:  e.RoleID,
+	}
 }
 
 type GuildScheduledEventCreateEvent struct {
@@ -14787,6 +16242,30 @@ type GuildScheduledEventCreateEvent struct {
 	GuildScheduledEventExceptions []json.RawMessage             `json:"guild_scheduled_event_exceptions"`
 }
 
+func (e *GuildScheduledEventCreateEvent) AsGuildScheduledEvent() GuildScheduledEvent {
+	return GuildScheduledEvent{
+		ID:                            e.ID,
+		GuildID:                       e.GuildID,
+		ChannelID:                     e.ChannelID,
+		CreatorID:                     e.CreatorID,
+		Creator:                       e.Creator,
+		Name:                          e.Name,
+		Description:                   e.Description,
+		ScheduledStartTime:            e.ScheduledStartTime,
+		ScheduledEndTime:              e.ScheduledEndTime,
+		AutoStart:                     e.AutoStart,
+		PrivacyLevel:                  e.PrivacyLevel,
+		Status:                        e.Status,
+		EntityType:                    e.EntityType,
+		EntityID:                      e.EntityID,
+		EntityMetadata:                e.EntityMetadata,
+		UserCount:                     e.UserCount,
+		Image:                         e.Image,
+		RecurrenceRule:                e.RecurrenceRule,
+		GuildScheduledEventExceptions: e.GuildScheduledEventExceptions,
+	}
+}
+
 type GuildScheduledEventUpdateEvent struct {
 	ID                            snowflake.ID                  `json:"id"`
 	GuildID                       snowflake.ID                  `json:"guild_id"`
@@ -14807,6 +16286,30 @@ type GuildScheduledEventUpdateEvent struct {
 	Image                         *string                       `json:"image,omitempty"`
 	RecurrenceRule                json.RawMessage               `json:"recurrence_rule"`
 	GuildScheduledEventExceptions []json.RawMessage             `json:"guild_scheduled_event_exceptions"`
+}
+
+func (e *GuildScheduledEventUpdateEvent) AsGuildScheduledEvent() GuildScheduledEvent {
+	return GuildScheduledEvent{
+		ID:                            e.ID,
+		GuildID:                       e.GuildID,
+		ChannelID:                     e.ChannelID,
+		CreatorID:                     e.CreatorID,
+		Creator:                       e.Creator,
+		Name:                          e.Name,
+		Description:                   e.Description,
+		ScheduledStartTime:            e.ScheduledStartTime,
+		ScheduledEndTime:              e.ScheduledEndTime,
+		AutoStart:                     e.AutoStart,
+		PrivacyLevel:                  e.PrivacyLevel,
+		Status:                        e.Status,
+		EntityType:                    e.EntityType,
+		EntityID:                      e.EntityID,
+		EntityMetadata:                e.EntityMetadata,
+		UserCount:                     e.UserCount,
+		Image:                         e.Image,
+		RecurrenceRule:                e.RecurrenceRule,
+		GuildScheduledEventExceptions: e.GuildScheduledEventExceptions,
+	}
 }
 
 type GuildScheduledEventDeleteEvent struct {
@@ -14831,12 +16334,46 @@ type GuildScheduledEventDeleteEvent struct {
 	GuildScheduledEventExceptions []json.RawMessage             `json:"guild_scheduled_event_exceptions"`
 }
 
+func (e *GuildScheduledEventDeleteEvent) AsGuildScheduledEvent() GuildScheduledEvent {
+	return GuildScheduledEvent{
+		ID:                            e.ID,
+		GuildID:                       e.GuildID,
+		ChannelID:                     e.ChannelID,
+		CreatorID:                     e.CreatorID,
+		Creator:                       e.Creator,
+		Name:                          e.Name,
+		Description:                   e.Description,
+		ScheduledStartTime:            e.ScheduledStartTime,
+		ScheduledEndTime:              e.ScheduledEndTime,
+		AutoStart:                     e.AutoStart,
+		PrivacyLevel:                  e.PrivacyLevel,
+		Status:                        e.Status,
+		EntityType:                    e.EntityType,
+		EntityID:                      e.EntityID,
+		EntityMetadata:                e.EntityMetadata,
+		UserCount:                     e.UserCount,
+		Image:                         e.Image,
+		RecurrenceRule:                e.RecurrenceRule,
+		GuildScheduledEventExceptions: e.GuildScheduledEventExceptions,
+	}
+}
+
 type GuildScheduledEventExceptionCreateEvent struct {
 	EventID            snowflake.ID `json:"event_id"`
 	EventExceptionID   snowflake.ID `json:"event_exception_id"`
 	IsCanceled         bool         `json:"is_canceled"`
 	ScheduledStartTime *time.Time   `json:"scheduled_start_time"`
 	ScheduledEndTime   *time.Time   `json:"scheduled_end_time"`
+}
+
+func (e *GuildScheduledEventExceptionCreateEvent) AsGuildScheduledEventException() GuildScheduledEventException {
+	return GuildScheduledEventException{
+		EventID:            e.EventID,
+		EventExceptionID:   e.EventExceptionID,
+		IsCanceled:         e.IsCanceled,
+		ScheduledStartTime: e.ScheduledStartTime,
+		ScheduledEndTime:   e.ScheduledEndTime,
+	}
 }
 
 type GuildScheduledEventExceptionUpdateEvent struct {
@@ -14847,6 +16384,16 @@ type GuildScheduledEventExceptionUpdateEvent struct {
 	ScheduledEndTime   *time.Time   `json:"scheduled_end_time"`
 }
 
+func (e *GuildScheduledEventExceptionUpdateEvent) AsGuildScheduledEventException() GuildScheduledEventException {
+	return GuildScheduledEventException{
+		EventID:            e.EventID,
+		EventExceptionID:   e.EventExceptionID,
+		IsCanceled:         e.IsCanceled,
+		ScheduledStartTime: e.ScheduledStartTime,
+		ScheduledEndTime:   e.ScheduledEndTime,
+	}
+}
+
 type GuildScheduledEventExceptionDeleteEvent struct {
 	EventID            snowflake.ID `json:"event_id"`
 	EventExceptionID   snowflake.ID `json:"event_exception_id"`
@@ -14855,9 +16402,26 @@ type GuildScheduledEventExceptionDeleteEvent struct {
 	ScheduledEndTime   *time.Time   `json:"scheduled_end_time"`
 }
 
+func (e *GuildScheduledEventExceptionDeleteEvent) AsGuildScheduledEventException() GuildScheduledEventException {
+	return GuildScheduledEventException{
+		EventID:            e.EventID,
+		EventExceptionID:   e.EventExceptionID,
+		IsCanceled:         e.IsCanceled,
+		ScheduledStartTime: e.ScheduledStartTime,
+		ScheduledEndTime:   e.ScheduledEndTime,
+	}
+}
+
 type GuildScheduledEventExceptionsDeleteEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
 	EventID snowflake.ID `json:"event_id"`
+}
+
+func (e *GuildScheduledEventExceptionsDeleteEvent) AsGuildScheduledEventExceptionsDelete() GuildScheduledEventExceptionsDelete {
+	return GuildScheduledEventExceptionsDelete{
+		GuildID: e.GuildID,
+		EventID: e.EventID,
+	}
 }
 
 type GuildScheduledEventUserAddEvent struct {
@@ -14869,6 +16433,17 @@ type GuildScheduledEventUserAddEvent struct {
 	Member                         GuildMember                     `json:"member,omitzero"`
 }
 
+func (e *GuildScheduledEventUserAddEvent) AsGuildScheduledEventUser() GuildScheduledEventUser {
+	return GuildScheduledEventUser{
+		GuildScheduledEventID:          e.GuildScheduledEventID,
+		GuildScheduledEventExceptionID: e.GuildScheduledEventExceptionID,
+		Response:                       e.Response,
+		UserID:                         e.UserID,
+		User:                           e.User,
+		Member:                         e.Member,
+	}
+}
+
 type GuildScheduledEventUserRemoveEvent struct {
 	GuildScheduledEventID          snowflake.ID                    `json:"guild_scheduled_event_id"`
 	GuildScheduledEventExceptionID snowflake.ID                    `json:"guild_scheduled_event_exception_id,omitzero"`
@@ -14876,6 +16451,17 @@ type GuildScheduledEventUserRemoveEvent struct {
 	UserID                         snowflake.ID                    `json:"user_id"`
 	User                           PartialUser                     `json:"user,omitzero"`
 	Member                         GuildMember                     `json:"member,omitzero"`
+}
+
+func (e *GuildScheduledEventUserRemoveEvent) AsGuildScheduledEventUser() GuildScheduledEventUser {
+	return GuildScheduledEventUser{
+		GuildScheduledEventID:          e.GuildScheduledEventID,
+		GuildScheduledEventExceptionID: e.GuildScheduledEventExceptionID,
+		Response:                       e.Response,
+		UserID:                         e.UserID,
+		User:                           e.User,
+		Member:                         e.Member,
+	}
 }
 
 type GuildSoundboardSoundCreateEvent struct {
@@ -14890,6 +16476,20 @@ type GuildSoundboardSoundCreateEvent struct {
 	UserID    snowflake.ID  `json:"user_id,omitzero"`
 }
 
+func (e *GuildSoundboardSoundCreateEvent) AsSoundboardSound() SoundboardSound {
+	return SoundboardSound{
+		SoundID:   e.SoundID,
+		Name:      e.Name,
+		Volume:    e.Volume,
+		EmojiID:   e.EmojiID,
+		EmojiName: e.EmojiName,
+		GuildID:   e.GuildID,
+		Available: e.Available,
+		User:      e.User,
+		UserID:    e.UserID,
+	}
+}
+
 type GuildSoundboardSoundUpdateEvent struct {
 	SoundID   snowflake.ID  `json:"sound_id"`
 	Name      string        `json:"name"`
@@ -14902,9 +16502,30 @@ type GuildSoundboardSoundUpdateEvent struct {
 	UserID    snowflake.ID  `json:"user_id,omitzero"`
 }
 
+func (e *GuildSoundboardSoundUpdateEvent) AsSoundboardSound() SoundboardSound {
+	return SoundboardSound{
+		SoundID:   e.SoundID,
+		Name:      e.Name,
+		Volume:    e.Volume,
+		EmojiID:   e.EmojiID,
+		EmojiName: e.EmojiName,
+		GuildID:   e.GuildID,
+		Available: e.Available,
+		User:      e.User,
+		UserID:    e.UserID,
+	}
+}
+
 type GuildSoundboardSoundDeleteEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
 	SoundID snowflake.ID `json:"sound_id"`
+}
+
+func (e *GuildSoundboardSoundDeleteEvent) AsGuildSoundboardSoundDelete() GuildSoundboardSoundDelete {
+	return GuildSoundboardSoundDelete{
+		GuildID: e.GuildID,
+		SoundID: e.SoundID,
+	}
 }
 
 type GuildSoundboardSoundsUpdateEvent struct {
@@ -14912,8 +16533,21 @@ type GuildSoundboardSoundsUpdateEvent struct {
 	SoundboardSounds []SoundboardSound `json:"soundboard_sounds"`
 }
 
+func (e *GuildSoundboardSoundsUpdateEvent) AsGuildSoundboardSoundsUpdate() GuildSoundboardSoundsUpdate {
+	return GuildSoundboardSoundsUpdate{
+		GuildID:          e.GuildID,
+		SoundboardSounds: e.SoundboardSounds,
+	}
+}
+
 type GuildIntegrationsUpdateEvent struct {
 	GuildID snowflake.ID `json:"guild_id"`
+}
+
+func (e *GuildIntegrationsUpdateEvent) AsGuildIntegrationsUpdate() GuildIntegrationsUpdate {
+	return GuildIntegrationsUpdate{
+		GuildID: e.GuildID,
+	}
 }
 
 type IntegrationCreateEvent struct {
@@ -14937,6 +16571,28 @@ type IntegrationCreateEvent struct {
 	GuildID                 snowflake.ID                        `json:"guild_id"`
 }
 
+func (e *IntegrationCreateEvent) AsIntegration() Integration {
+	return Integration{
+		ID:                      e.ID,
+		Name:                    e.Name,
+		Type:                    e.Type,
+		Enabled:                 e.Enabled,
+		Account:                 e.Account,
+		Syncing:                 e.Syncing,
+		RoleID:                  e.RoleID,
+		EnableEmoticons:         e.EnableEmoticons,
+		ExpireBehavior:          e.ExpireBehavior,
+		ExpireGracePeriod:       e.ExpireGracePeriod,
+		SyncedAt:                e.SyncedAt,
+		SubscriberCount:         e.SubscriberCount,
+		Revoked:                 e.Revoked,
+		Application:             e.Application,
+		Scopes:                  e.Scopes,
+		RoleConnectionsMetadata: e.RoleConnectionsMetadata,
+		User:                    e.User,
+	}
+}
+
 type IntegrationUpdateEvent struct {
 	ID                      snowflake.ID                        `json:"id"`
 	Name                    string                              `json:"name"`
@@ -14958,15 +16614,52 @@ type IntegrationUpdateEvent struct {
 	GuildID                 snowflake.ID                        `json:"guild_id"`
 }
 
+func (e *IntegrationUpdateEvent) AsIntegration() Integration {
+	return Integration{
+		ID:                      e.ID,
+		Name:                    e.Name,
+		Type:                    e.Type,
+		Enabled:                 e.Enabled,
+		Account:                 e.Account,
+		Syncing:                 e.Syncing,
+		RoleID:                  e.RoleID,
+		EnableEmoticons:         e.EnableEmoticons,
+		ExpireBehavior:          e.ExpireBehavior,
+		ExpireGracePeriod:       e.ExpireGracePeriod,
+		SyncedAt:                e.SyncedAt,
+		SubscriberCount:         e.SubscriberCount,
+		Revoked:                 e.Revoked,
+		Application:             e.Application,
+		Scopes:                  e.Scopes,
+		RoleConnectionsMetadata: e.RoleConnectionsMetadata,
+		User:                    e.User,
+	}
+}
+
 type IntegrationDeleteEvent struct {
 	ID            snowflake.ID `json:"id"`
 	GuildID       snowflake.ID `json:"guild_id"`
 	ApplicationID snowflake.ID `json:"application_id,omitzero"`
 }
 
+func (e *IntegrationDeleteEvent) AsIntegrationDelete() IntegrationDelete {
+	return IntegrationDelete{
+		ID:            e.ID,
+		GuildID:       e.GuildID,
+		ApplicationID: e.ApplicationID,
+	}
+}
+
 type InteractionCreateEvent struct {
 	ID    snowflake.ID `json:"id"`
 	Nonce string       `json:"nonce,omitzero"`
+}
+
+func (e *InteractionCreateEvent) AsInteractionCreate() InteractionCreate {
+	return InteractionCreate{
+		ID:    e.ID,
+		Nonce: e.Nonce,
+	}
 }
 
 type InteractionFailureEvent struct {
@@ -14975,14 +16668,36 @@ type InteractionFailureEvent struct {
 	ReasonCode InteractionFailureReason `json:"reason_code"`
 }
 
+func (e *InteractionFailureEvent) AsInteractionFailure() InteractionFailure {
+	return InteractionFailure{
+		ID:         e.ID,
+		Nonce:      e.Nonce,
+		ReasonCode: e.ReasonCode,
+	}
+}
+
 type InteractionSuccessEvent struct {
 	ID    snowflake.ID `json:"id"`
 	Nonce *string      `json:"nonce"`
 }
 
+func (e *InteractionSuccessEvent) AsInteractionSuccess() InteractionSuccess {
+	return InteractionSuccess{
+		ID:    e.ID,
+		Nonce: e.Nonce,
+	}
+}
+
 type ApplicationCommandAutocompleteResponseEvent struct {
 	Choices []ApplicationCommandOptionChoice `json:"choices"`
 	Nonce   *string                          `json:"nonce"`
+}
+
+func (e *ApplicationCommandAutocompleteResponseEvent) AsApplicationCommandAutocompleteResponse() ApplicationCommandAutocompleteResponse {
+	return ApplicationCommandAutocompleteResponse{
+		Choices: e.Choices,
+		Nonce:   e.Nonce,
+	}
 }
 
 type InteractionModalCreateEvent struct {
@@ -14996,6 +16711,19 @@ type InteractionModalCreateEvent struct {
 	Resolved    ResolvedData           `json:"resolved,omitzero"`
 }
 
+func (e *InteractionModalCreateEvent) AsInteractionModalCreate() InteractionModalCreate {
+	return InteractionModalCreate{
+		ID:          e.ID,
+		ChannelID:   e.ChannelID,
+		CustomID:    e.CustomID,
+		Application: e.Application,
+		Title:       e.Title,
+		Components:  e.Components,
+		Nonce:       e.Nonce,
+		Resolved:    e.Resolved,
+	}
+}
+
 type InteractionIframeModalCreateEvent struct {
 	ID          snowflake.ID           `json:"id"`
 	ChannelID   snowflake.ID           `json:"channel_id"`
@@ -15007,12 +16735,35 @@ type InteractionIframeModalCreateEvent struct {
 	Nonce       *string                `json:"nonce"`
 }
 
+func (e *InteractionIframeModalCreateEvent) AsInteractionIframeModalCreate() InteractionIframeModalCreate {
+	return InteractionIframeModalCreate{
+		ID:          e.ID,
+		ChannelID:   e.ChannelID,
+		CustomID:    e.CustomID,
+		Application: e.Application,
+		Title:       e.Title,
+		IframePath:  e.IframePath,
+		ModalSize:   e.ModalSize,
+		Nonce:       e.Nonce,
+	}
+}
+
 type SocialLayerSKUPurchaseEligibilityResponseEvent struct {
 	InteractionID snowflake.ID `json:"interaction_id"`
 	ApplicationID snowflake.ID `json:"application_id"`
 	SKUID         snowflake.ID `json:"sku_id"`
 	RecipientID   snowflake.ID `json:"recipient_id"`
 	Eligible      snowflake.ID `json:"eligible"`
+}
+
+func (e *SocialLayerSKUPurchaseEligibilityResponseEvent) AsSocialLayerSKUPurchaseEligibilityResponse() SocialLayerSKUPurchaseEligibilityResponse {
+	return SocialLayerSKUPurchaseEligibilityResponse{
+		InteractionID: e.InteractionID,
+		ApplicationID: e.ApplicationID,
+		SKUID:         e.SKUID,
+		RecipientID:   e.RecipientID,
+		Eligible:      e.Eligible,
+	}
 }
 
 type InviteCreateEvent struct {
@@ -15033,10 +16784,38 @@ type InviteCreateEvent struct {
 	Temporary         bool               `json:"temporary"`
 }
 
+func (e *InviteCreateEvent) AsInviteCreate() InviteCreate {
+	return InviteCreate{
+		Code:              e.Code,
+		Type:              e.Type,
+		ChannelID:         e.ChannelID,
+		GuildID:           e.GuildID,
+		Inviter:           e.Inviter,
+		TargetType:        e.TargetType,
+		TargetUser:        e.TargetUser,
+		TargetApplication: e.TargetApplication,
+		RoleIDs:           e.RoleIDs,
+		ExpiresAt:         e.ExpiresAt,
+		CreatedAt:         e.CreatedAt,
+		Uses:              e.Uses,
+		MaxUses:           e.MaxUses,
+		MaxAge:            e.MaxAge,
+		Temporary:         e.Temporary,
+	}
+}
+
 type InviteDeleteEvent struct {
 	Code      string       `json:"code"`
 	ChannelID snowflake.ID `json:"channel_id"`
 	GuildID   snowflake.ID `json:"guild_id"`
+}
+
+func (e *InviteDeleteEvent) AsInviteDelete() InviteDelete {
+	return InviteDelete{
+		Code:      e.Code,
+		ChannelID: e.ChannelID,
+		GuildID:   e.GuildID,
+	}
 }
 
 type MessageCreateEvent struct {
@@ -15089,6 +16868,53 @@ type MessageCreateEvent struct {
 	ModerationMetadata   map[string]string           `json:"moderation_metadata,omitempty"`
 }
 
+func (e *MessageCreateEvent) AsMessage() Message {
+	return Message{
+		ID:                   e.ID,
+		ChannelID:            e.ChannelID,
+		LobbyID:              e.LobbyID,
+		Author:               e.Author,
+		Content:              e.Content,
+		Timestamp:            e.Timestamp,
+		EditedTimestamp:      e.EditedTimestamp,
+		TTS:                  e.TTS,
+		MentionEveryone:      e.MentionEveryone,
+		Mentions:             e.Mentions,
+		MentionRoles:         e.MentionRoles,
+		MentionChannels:      e.MentionChannels,
+		Attachments:          e.Attachments,
+		Embeds:               e.Embeds,
+		Reactions:            e.Reactions,
+		Nonce:                e.Nonce,
+		Pinned:               e.Pinned,
+		WebhookID:            e.WebhookID,
+		Type:                 e.Type,
+		Activity:             e.Activity,
+		Application:          e.Application,
+		ApplicationID:        e.ApplicationID,
+		Flags:                e.Flags,
+		MessageReference:     e.MessageReference,
+		ReferencedMessage:    e.ReferencedMessage,
+		MessageSnapshots:     e.MessageSnapshots,
+		Call:                 e.Call,
+		Interaction:          e.Interaction,
+		InteractionMetadata:  e.InteractionMetadata,
+		Resolved:             e.Resolved,
+		Thread:               e.Thread,
+		RoleSubscriptionData: e.RoleSubscriptionData,
+		PurchaseNotification: e.PurchaseNotification,
+		GiftInfo:             e.GiftInfo,
+		Components:           e.Components,
+		StickerItems:         e.StickerItems,
+		Stickers:             e.Stickers,
+		Poll:                 e.Poll,
+		ChangelogID:          e.ChangelogID,
+		SoundboardSounds:     e.SoundboardSounds,
+		Potions:              e.Potions,
+		SharedClientTheme:    e.SharedClientTheme,
+	}
+}
+
 type MessageUpdateEvent struct {
 	ID                   snowflake.ID                `json:"id"`
 	ChannelID            snowflake.ID                `json:"channel_id"`
@@ -15139,16 +16965,79 @@ type MessageUpdateEvent struct {
 	ModerationMetadata   map[string]string           `json:"moderation_metadata,omitempty"`
 }
 
+func (e *MessageUpdateEvent) AsMessage() Message {
+	return Message{
+		ID:                   e.ID,
+		ChannelID:            e.ChannelID,
+		LobbyID:              e.LobbyID,
+		Author:               e.Author,
+		Content:              e.Content,
+		Timestamp:            e.Timestamp,
+		EditedTimestamp:      e.EditedTimestamp,
+		TTS:                  e.TTS,
+		MentionEveryone:      e.MentionEveryone,
+		Mentions:             e.Mentions,
+		MentionRoles:         e.MentionRoles,
+		MentionChannels:      e.MentionChannels,
+		Attachments:          e.Attachments,
+		Embeds:               e.Embeds,
+		Reactions:            e.Reactions,
+		Nonce:                e.Nonce,
+		Pinned:               e.Pinned,
+		WebhookID:            e.WebhookID,
+		Type:                 e.Type,
+		Activity:             e.Activity,
+		Application:          e.Application,
+		ApplicationID:        e.ApplicationID,
+		Flags:                e.Flags,
+		MessageReference:     e.MessageReference,
+		ReferencedMessage:    e.ReferencedMessage,
+		MessageSnapshots:     e.MessageSnapshots,
+		Call:                 e.Call,
+		Interaction:          e.Interaction,
+		InteractionMetadata:  e.InteractionMetadata,
+		Resolved:             e.Resolved,
+		Thread:               e.Thread,
+		RoleSubscriptionData: e.RoleSubscriptionData,
+		PurchaseNotification: e.PurchaseNotification,
+		GiftInfo:             e.GiftInfo,
+		Components:           e.Components,
+		StickerItems:         e.StickerItems,
+		Stickers:             e.Stickers,
+		Poll:                 e.Poll,
+		ChangelogID:          e.ChangelogID,
+		SoundboardSounds:     e.SoundboardSounds,
+		Potions:              e.Potions,
+		SharedClientTheme:    e.SharedClientTheme,
+	}
+}
+
 type MessageDeleteEvent struct {
 	ID        snowflake.ID `json:"id"`
 	ChannelID snowflake.ID `json:"channel_id"`
 	GuildID   snowflake.ID `json:"guild_id,omitzero"`
 }
 
+func (e *MessageDeleteEvent) AsGatewayEventsMessageDelete() GatewayEventsMessageDelete {
+	return GatewayEventsMessageDelete{
+		ID:        e.ID,
+		ChannelID: e.ChannelID,
+		GuildID:   e.GuildID,
+	}
+}
+
 type MessageDeleteBulkEvent struct {
 	IDs       []snowflake.ID `json:"ids"`
 	ChannelID snowflake.ID   `json:"channel_id"`
 	GuildID   snowflake.ID   `json:"guild_id,omitzero"`
+}
+
+func (e *MessageDeleteBulkEvent) AsMessageDeleteBulk() MessageDeleteBulk {
+	return MessageDeleteBulk{
+		IDs:       e.IDs,
+		ChannelID: e.ChannelID,
+		GuildID:   e.GuildID,
+	}
 }
 
 type MessageAckEvent struct {
@@ -15162,6 +17051,19 @@ type MessageAckEvent struct {
 	Version      int64           `json:"version"`
 }
 
+func (e *MessageAckEvent) AsMessageAck() MessageAck {
+	return MessageAck{
+		AckType:      e.AckType,
+		ChannelID:    e.ChannelID,
+		MessageID:    e.MessageID,
+		Manual:       e.Manual,
+		MentionCount: e.MentionCount,
+		Flags:        e.Flags,
+		LastViewed:   e.LastViewed,
+		Version:      e.Version,
+	}
+}
+
 type MessagePollVoteAddEvent struct {
 	UserID    snowflake.ID `json:"user_id"`
 	ChannelID snowflake.ID `json:"channel_id"`
@@ -15170,12 +17072,32 @@ type MessagePollVoteAddEvent struct {
 	AnswerID  int64        `json:"answer_id"`
 }
 
+func (e *MessagePollVoteAddEvent) AsMessagePollVoteAdd() MessagePollVoteAdd {
+	return MessagePollVoteAdd{
+		UserID:    e.UserID,
+		ChannelID: e.ChannelID,
+		MessageID: e.MessageID,
+		GuildID:   e.GuildID,
+		AnswerID:  e.AnswerID,
+	}
+}
+
 type MessagePollVoteRemoveEvent struct {
 	UserID    snowflake.ID `json:"user_id"`
 	ChannelID snowflake.ID `json:"channel_id"`
 	MessageID snowflake.ID `json:"message_id"`
 	GuildID   snowflake.ID `json:"guild_id,omitzero"`
 	AnswerID  int64        `json:"answer_id"`
+}
+
+func (e *MessagePollVoteRemoveEvent) AsMessagePollVoteRemove() MessagePollVoteRemove {
+	return MessagePollVoteRemove{
+		UserID:    e.UserID,
+		ChannelID: e.ChannelID,
+		MessageID: e.MessageID,
+		GuildID:   e.GuildID,
+		AnswerID:  e.AnswerID,
+	}
 }
 
 type MessageReactionAddEvent struct {
@@ -15190,11 +17112,34 @@ type MessageReactionAddEvent struct {
 	BurstColors     []string        `json:"burst_colors,omitempty"`
 }
 
+func (e *MessageReactionAddEvent) AsMessageReactionAdd() MessageReactionAdd {
+	return MessageReactionAdd{
+		UserID:          e.UserID,
+		ChannelID:       e.ChannelID,
+		MessageID:       e.MessageID,
+		MessageAuthorID: e.MessageAuthorID,
+		GuildID:         e.GuildID,
+		Member:          e.Member,
+		Emoji:           e.Emoji,
+		Type:            e.Type,
+		BurstColors:     e.BurstColors,
+	}
+}
+
 type MessageReactionAddManyEvent struct {
 	ChannelID snowflake.ID        `json:"channel_id"`
 	MessageID snowflake.ID        `json:"message_id"`
 	GuildID   snowflake.ID        `json:"guild_id,omitzero"`
 	Reactions []DebouncedReaction `json:"reactions"`
+}
+
+func (e *MessageReactionAddManyEvent) AsMessageReactionAddMany() MessageReactionAddMany {
+	return MessageReactionAddMany{
+		ChannelID: e.ChannelID,
+		MessageID: e.MessageID,
+		GuildID:   e.GuildID,
+		Reactions: e.Reactions,
+	}
 }
 
 type MessageReactionRemoveEvent struct {
@@ -15206,10 +17151,29 @@ type MessageReactionRemoveEvent struct {
 	Type      ReactionType    `json:"type"`
 }
 
+func (e *MessageReactionRemoveEvent) AsMessageReactionRemove() MessageReactionRemove {
+	return MessageReactionRemove{
+		UserID:    e.UserID,
+		ChannelID: e.ChannelID,
+		MessageID: e.MessageID,
+		GuildID:   e.GuildID,
+		Emoji:     e.Emoji,
+		Type:      e.Type,
+	}
+}
+
 type MessageReactionRemoveAllEvent struct {
 	ChannelID snowflake.ID `json:"channel_id"`
 	MessageID snowflake.ID `json:"message_id"`
 	GuildID   snowflake.ID `json:"guild_id,omitzero"`
+}
+
+func (e *MessageReactionRemoveAllEvent) AsMessageReactionRemoveAll() MessageReactionRemoveAll {
+	return MessageReactionRemoveAll{
+		ChannelID: e.ChannelID,
+		MessageID: e.MessageID,
+		GuildID:   e.GuildID,
+	}
 }
 
 type MessageReactionRemoveEmojiEvent struct {
@@ -15217,6 +17181,15 @@ type MessageReactionRemoveEmojiEvent struct {
 	MessageID snowflake.ID `json:"message_id"`
 	GuildID   snowflake.ID `json:"guild_id,omitzero"`
 	Emoji     Emoji        `json:"emoji"`
+}
+
+func (e *MessageReactionRemoveEmojiEvent) AsMessageReactionRemoveEmoji() MessageReactionRemoveEmoji {
+	return MessageReactionRemoveEmoji{
+		ChannelID: e.ChannelID,
+		MessageID: e.MessageID,
+		GuildID:   e.GuildID,
+		Emoji:     e.Emoji,
+	}
 }
 
 type ReactionNotificationSentEvent struct {
@@ -15230,13 +17203,39 @@ type ReactionNotificationSentEvent struct {
 	TrackingType  string       `json:"tracking_type"`
 }
 
+func (e *ReactionNotificationSentEvent) AsReactionNotificationSent() ReactionNotificationSent {
+	return ReactionNotificationSent{
+		Message:       e.Message,
+		ReactorUserID: e.ReactorUserID,
+		Emoji:         e.Emoji,
+		Title:         e.Title,
+		Body:          e.Body,
+		Icon:          e.Icon,
+		Route:         e.Route,
+		TrackingType:  e.TrackingType,
+	}
+}
+
 type RecentMentionDeleteEvent struct {
 	MessageID snowflake.ID `json:"message_id"`
+}
+
+func (e *RecentMentionDeleteEvent) AsRecentMentionDelete() RecentMentionDelete {
+	return RecentMentionDelete{
+		MessageID: e.MessageID,
+	}
 }
 
 type LastMessagesEvent struct {
 	GuildID  snowflake.ID `json:"guild_id"`
 	Messages []Message    `json:"messages"`
+}
+
+func (e *LastMessagesEvent) AsLastMessages() LastMessages {
+	return LastMessages{
+		GuildID:  e.GuildID,
+		Messages: e.Messages,
+	}
 }
 
 type NotificationCenterItemCreateEvent struct {
@@ -15268,21 +17267,77 @@ type NotificationCenterItemCreateEvent struct {
 	IsVoiceMessage         bool                        `json:"is_voice_message"`
 }
 
+func (e *NotificationCenterItemCreateEvent) AsNotificationCenterItem() NotificationCenterItem {
+	return NotificationCenterItem{
+		ID:                     e.ID,
+		BundleID:               e.BundleID,
+		Type:                   e.Type,
+		ItemEnum:               e.ItemEnum,
+		Body:                   e.Body,
+		Acked:                  e.Acked,
+		Deeplink:               e.Deeplink,
+		IconURL:                e.IconURL,
+		IconName:               e.IconName,
+		OtherUser:              e.OtherUser,
+		Message:                e.Message,
+		Completed:              e.Completed,
+		GuildID:                e.GuildID,
+		MessageID:              e.MessageID,
+		MessageChannelID:       e.MessageChannelID,
+		GuildScheduledEventID:  e.GuildScheduledEventID,
+		DisableAction:          e.DisableAction,
+		Callout:                e.Callout,
+		Application:            e.Application,
+		EmojiID:                e.EmojiID,
+		EmojiName:              e.EmojiName,
+		MessageContent:         e.MessageContent,
+		MessageEmbedCount:      e.MessageEmbedCount,
+		MessageAttachmentCount: e.MessageAttachmentCount,
+		MessageStickerCount:    e.MessageStickerCount,
+		IsVoiceMessage:         e.IsVoiceMessage,
+	}
+}
+
 type NotificationCenterItemDeleteEvent struct {
 	ID     snowflake.ID `json:"id"`
 	UserID snowflake.ID `json:"user_id"`
+}
+
+func (e *NotificationCenterItemDeleteEvent) AsNotificationCenterItemDelete() NotificationCenterItemDelete {
+	return NotificationCenterItemDelete{
+		ID:     e.ID,
+		UserID: e.UserID,
+	}
 }
 
 type NotificationCenterItemsAckEvent struct {
 	ID snowflake.ID `json:"id"`
 }
 
+func (e *NotificationCenterItemsAckEvent) AsNotificationCenterItemsAck() NotificationCenterItemsAck {
+	return NotificationCenterItemsAck{
+		ID: e.ID,
+	}
+}
+
 type NotificationCenterItemCompletedEvent struct {
 	ItemEnum NotificationCenterItemEnum `json:"item_enum"`
 }
 
+func (e *NotificationCenterItemCompletedEvent) AsNotificationCenterItemCompleted() NotificationCenterItemCompleted {
+	return NotificationCenterItemCompleted{
+		ItemEnum: e.ItemEnum,
+	}
+}
+
 type NotificationSettingsUpdateEvent struct {
 	Flags NotificationSettingsFlags `json:"flags"`
+}
+
+func (e *NotificationSettingsUpdateEvent) AsNotificationSettings() NotificationSettings {
+	return NotificationSettings{
+		Flags: e.Flags,
+	}
 }
 
 type OAuth2TokenCreateEvent struct {
@@ -15292,14 +17347,37 @@ type OAuth2TokenCreateEvent struct {
 	Disclosures []int64            `json:"disclosures,omitempty"`
 }
 
+func (e *OAuth2TokenCreateEvent) AsOAuth2Authorization() OAuth2Authorization {
+	return OAuth2Authorization{
+		ID:          e.ID,
+		Scopes:      e.Scopes,
+		Application: e.Application,
+		Disclosures: e.Disclosures,
+	}
+}
+
 type OAuth2TokenDeleteEvent struct {
 	ID            snowflake.ID `json:"id"`
 	ApplicationID snowflake.ID `json:"application_id"`
 }
 
+func (e *OAuth2TokenDeleteEvent) AsOAuth2TokenDelete() OAuth2TokenDelete {
+	return OAuth2TokenDelete{
+		ID:            e.ID,
+		ApplicationID: e.ApplicationID,
+	}
+}
+
 type OAuth2TokenRevokeEvent struct {
 	AccessToken   string       `json:"access_token"`
 	ApplicationID snowflake.ID `json:"application_id,omitzero"`
+}
+
+func (e *OAuth2TokenRevokeEvent) AsOAuth2TokenRevoke() OAuth2TokenRevoke {
+	return OAuth2TokenRevoke{
+		AccessToken:   e.AccessToken,
+		ApplicationID: e.ApplicationID,
+	}
 }
 
 type PaymentUpdateEvent struct {
@@ -15329,6 +17407,35 @@ type PaymentUpdateEvent struct {
 	Metadata                      PaymentMetadata     `json:"metadata"`
 }
 
+func (e *PaymentUpdateEvent) AsPayment() Payment {
+	return Payment{
+		ID:                            e.ID,
+		Amount:                        e.Amount,
+		Tax:                           e.Tax,
+		TaxInclusive:                  e.TaxInclusive,
+		Currency:                      e.Currency,
+		AmountRefunded:                e.AmountRefunded,
+		Description:                   e.Description,
+		Status:                        e.Status,
+		CreatedAt:                     e.CreatedAt,
+		SKUID:                         e.SKUID,
+		SKUPrice:                      e.SKUPrice,
+		SKUSubscriptionPlanID:         e.SKUSubscriptionPlanID,
+		PaymentGateway:                e.PaymentGateway,
+		PaymentGatewayPaymentID:       e.PaymentGatewayPaymentID,
+		HasInvoiceURL:                 e.HasInvoiceURL,
+		HasRefundInvoiceURLs:          e.HasRefundInvoiceURLs,
+		DownloadableInvoice:           e.DownloadableInvoice,
+		DownloadableRefundInvoices:    e.DownloadableRefundInvoices,
+		RefundDisqualificationReasons: e.RefundDisqualificationReasons,
+		Flags:                         e.Flags,
+		SKU:                           e.SKU,
+		PaymentSource:                 e.PaymentSource,
+		Subscription:                  e.Subscription,
+		Metadata:                      e.Metadata,
+	}
+}
+
 type PresenceUpdateEvent struct {
 	User             PartialUser  `json:"user"`
 	GuildID          snowflake.ID `json:"guild_id,omitzero"`
@@ -15339,12 +17446,36 @@ type PresenceUpdateEvent struct {
 	HasPlayedGame    bool         `json:"has_played_game,omitzero"`
 }
 
+func (e *PresenceUpdateEvent) AsPresence() Presence {
+	return Presence{
+		User:             e.User,
+		GuildID:          e.GuildID,
+		Status:           e.Status,
+		Activities:       e.Activities,
+		HiddenActivities: e.HiddenActivities,
+		ClientStatus:     e.ClientStatus,
+		HasPlayedGame:    e.HasPlayedGame,
+	}
+}
+
 type QuestsUserStatusUpdateEvent struct {
 	UserStatus QuestUserStatus `json:"user_status"`
 }
 
+func (e *QuestsUserStatusUpdateEvent) AsQuestsUserStatusUpdate() QuestsUserStatusUpdate {
+	return QuestsUserStatusUpdate{
+		UserStatus: e.UserStatus,
+	}
+}
+
 type QuestsUserCompletionUpdateEvent struct {
 	QuestEnrollmentBlockedUntil *time.Time `json:"quest_enrollment_blocked_until"`
+}
+
+func (e *QuestsUserCompletionUpdateEvent) AsQuestsUserCompletionUpdate() QuestsUserCompletionUpdate {
+	return QuestsUserCompletionUpdate{
+		QuestEnrollmentBlockedUntil: e.QuestEnrollmentBlockedUntil,
+	}
 }
 
 type RelationshipAddEvent struct {
@@ -15362,6 +17493,22 @@ type RelationshipAddEvent struct {
 	ShouldNotify        bool             `json:"should_notify,omitzero"`
 }
 
+func (e *RelationshipAddEvent) AsRelationship() Relationship {
+	return Relationship{
+		ID:                  e.ID,
+		Type:                e.Type,
+		User:                e.User,
+		Nickname:            e.Nickname,
+		IsSpamRequest:       e.IsSpamRequest,
+		StrangerRequest:     e.StrangerRequest,
+		UserIgnored:         e.UserIgnored,
+		OriginApplicationID: e.OriginApplicationID,
+		Since:               e.Since,
+		HasPlayedGame:       e.HasPlayedGame,
+		Note:                e.Note,
+	}
+}
+
 type RelationshipUpdateEvent struct {
 	ID              snowflake.ID     `json:"id"`
 	Type            RelationshipType `json:"type"`
@@ -15371,6 +17518,17 @@ type RelationshipUpdateEvent struct {
 	UserIgnored     bool             `json:"user_ignored"`
 }
 
+func (e *RelationshipUpdateEvent) AsPartialRelationship() PartialRelationship {
+	return PartialRelationship{
+		ID:              e.ID,
+		Type:            e.Type,
+		Nickname:        e.Nickname,
+		Since:           e.Since,
+		StrangerRequest: e.StrangerRequest,
+		UserIgnored:     e.UserIgnored,
+	}
+}
+
 type RelationshipRemoveEvent struct {
 	ID              snowflake.ID     `json:"id"`
 	Type            RelationshipType `json:"type"`
@@ -15378,6 +17536,17 @@ type RelationshipRemoveEvent struct {
 	Since           time.Time        `json:"since,omitzero"`
 	StrangerRequest bool             `json:"stranger_request,omitzero"`
 	UserIgnored     bool             `json:"user_ignored"`
+}
+
+func (e *RelationshipRemoveEvent) AsPartialRelationship() PartialRelationship {
+	return PartialRelationship{
+		ID:              e.ID,
+		Type:            e.Type,
+		Nickname:        e.Nickname,
+		Since:           e.Since,
+		StrangerRequest: e.StrangerRequest,
+		UserIgnored:     e.UserIgnored,
+	}
 }
 
 type GameRelationshipAddEvent struct {
@@ -15390,6 +17559,18 @@ type GameRelationshipAddEvent struct {
 	UserID        snowflake.ID `json:"user_id"`
 }
 
+func (e *GameRelationshipAddEvent) AsGameRelationship() GameRelationship {
+	return GameRelationship{
+		ID:            e.ID,
+		ApplicationID: e.ApplicationID,
+		Type:          e.Type,
+		User:          e.User,
+		Since:         e.Since,
+		DMAccessType:  e.DMAccessType,
+		UserID:        e.UserID,
+	}
+}
+
 type GameRelationshipRemoveEvent struct {
 	ID            string       `json:"id"`
 	ApplicationID snowflake.ID `json:"application_id"`
@@ -15397,6 +17578,17 @@ type GameRelationshipRemoveEvent struct {
 	Since         time.Time    `json:"since"`
 	DMAccessType  int64        `json:"dm_access_type"`
 	UserID        snowflake.ID `json:"user_id"`
+}
+
+func (e *GameRelationshipRemoveEvent) AsGameRelationshipRemove() GameRelationshipRemove {
+	return GameRelationshipRemove{
+		ID:            e.ID,
+		ApplicationID: e.ApplicationID,
+		Type:          e.Type,
+		Since:         e.Since,
+		DMAccessType:  e.DMAccessType,
+		UserID:        e.UserID,
+	}
 }
 
 type GameInviteCreateEvent struct {
@@ -15414,12 +17606,41 @@ type GameInviteCreateEvent struct {
 	ApplicationName  string         `json:"application_name"`
 }
 
+func (e *GameInviteCreateEvent) AsGameInvite() GameInvite {
+	return GameInvite{
+		InviteID:         e.InviteID,
+		CreatedAt:        e.CreatedAt,
+		TTL:              e.TTL,
+		InviterID:        e.InviterID,
+		RecipientID:      e.RecipientID,
+		PlatformType:     e.PlatformType,
+		LaunchParameters: e.LaunchParameters,
+		Installed:        e.Installed,
+		Joinable:         e.Joinable,
+		FallbackURL:      e.FallbackURL,
+		ApplicationAsset: e.ApplicationAsset,
+		ApplicationName:  e.ApplicationName,
+	}
+}
+
 type GameInviteDeleteEvent struct {
 	InviteID snowflake.ID `json:"invite_id"`
 }
 
+func (e *GameInviteDeleteEvent) AsGameInviteDelete() GameInviteDelete {
+	return GameInviteDelete{
+		InviteID: e.InviteID,
+	}
+}
+
 type GameInviteDeleteManyEvent struct {
 	InviteIDs []snowflake.ID `json:"invite_ids"`
+}
+
+func (e *GameInviteDeleteManyEvent) AsGameInviteDeleteMany() GameInviteDeleteMany {
+	return GameInviteDeleteMany{
+		InviteIDs: e.InviteIDs,
+	}
 }
 
 type GatewayLobbyObjectEvent struct {
@@ -15433,10 +17654,25 @@ type LobbyDeleteEvent struct {
 	Reason LobbyDeletionReason `json:"reason"`
 }
 
+func (e *LobbyDeleteEvent) AsLobbyDelete() LobbyDelete {
+	return LobbyDelete{
+		ID:     e.ID,
+		Reason: e.Reason,
+	}
+}
+
 type LobbyMemberAddEvent struct {
 	Member        LobbyMember  `json:"member"`
 	LobbyID       snowflake.ID `json:"lobby_id"`
 	ApplicationID snowflake.ID `json:"application_id"`
+}
+
+func (e *LobbyMemberAddEvent) AsLobbyMemberAdd() LobbyMemberAdd {
+	return LobbyMemberAdd{
+		Member:        e.Member,
+		LobbyID:       e.LobbyID,
+		ApplicationID: e.ApplicationID,
+	}
 }
 
 type LobbyMemberConnectEvent struct {
@@ -15444,9 +17680,23 @@ type LobbyMemberConnectEvent struct {
 	LobbyID snowflake.ID `json:"lobby_id"`
 }
 
+func (e *LobbyMemberConnectEvent) AsLobbyMemberConnect() LobbyMemberConnect {
+	return LobbyMemberConnect{
+		Member:  e.Member,
+		LobbyID: e.LobbyID,
+	}
+}
+
 type LobbyMemberDisconnectEvent struct {
 	Member  LobbyMember  `json:"member"`
 	LobbyID snowflake.ID `json:"lobby_id"`
+}
+
+func (e *LobbyMemberDisconnectEvent) AsLobbyMemberDisconnect() LobbyMemberDisconnect {
+	return LobbyMemberDisconnect{
+		Member:  e.Member,
+		LobbyID: e.LobbyID,
+	}
 }
 
 type LobbyMemberUpdateEvent struct {
@@ -15455,10 +17705,26 @@ type LobbyMemberUpdateEvent struct {
 	ApplicationID snowflake.ID `json:"application_id"`
 }
 
+func (e *LobbyMemberUpdateEvent) AsLobbyMemberUpdate() LobbyMemberUpdate {
+	return LobbyMemberUpdate{
+		Member:        e.Member,
+		LobbyID:       e.LobbyID,
+		ApplicationID: e.ApplicationID,
+	}
+}
+
 type LobbyMemberRemoveEvent struct {
 	Member        LobbyMember  `json:"member"`
 	LobbyID       snowflake.ID `json:"lobby_id"`
 	ApplicationID snowflake.ID `json:"application_id"`
+}
+
+func (e *LobbyMemberRemoveEvent) AsLobbyMemberRemove() LobbyMemberRemove {
+	return LobbyMemberRemove{
+		Member:        e.Member,
+		LobbyID:       e.LobbyID,
+		ApplicationID: e.ApplicationID,
+	}
 }
 
 type LobbyMessageCreateEvent struct {
@@ -15511,6 +17777,53 @@ type LobbyMessageCreateEvent struct {
 	ModerationMetadata   map[string]string           `json:"moderation_metadata,omitempty"`
 }
 
+func (e *LobbyMessageCreateEvent) AsMessage() Message {
+	return Message{
+		ID:                   e.ID,
+		ChannelID:            e.ChannelID,
+		LobbyID:              e.LobbyID,
+		Author:               e.Author,
+		Content:              e.Content,
+		Timestamp:            e.Timestamp,
+		EditedTimestamp:      e.EditedTimestamp,
+		TTS:                  e.TTS,
+		MentionEveryone:      e.MentionEveryone,
+		Mentions:             e.Mentions,
+		MentionRoles:         e.MentionRoles,
+		MentionChannels:      e.MentionChannels,
+		Attachments:          e.Attachments,
+		Embeds:               e.Embeds,
+		Reactions:            e.Reactions,
+		Nonce:                e.Nonce,
+		Pinned:               e.Pinned,
+		WebhookID:            e.WebhookID,
+		Type:                 e.Type,
+		Activity:             e.Activity,
+		Application:          e.Application,
+		ApplicationID:        e.ApplicationID,
+		Flags:                e.Flags,
+		MessageReference:     e.MessageReference,
+		ReferencedMessage:    e.ReferencedMessage,
+		MessageSnapshots:     e.MessageSnapshots,
+		Call:                 e.Call,
+		Interaction:          e.Interaction,
+		InteractionMetadata:  e.InteractionMetadata,
+		Resolved:             e.Resolved,
+		Thread:               e.Thread,
+		RoleSubscriptionData: e.RoleSubscriptionData,
+		PurchaseNotification: e.PurchaseNotification,
+		GiftInfo:             e.GiftInfo,
+		Components:           e.Components,
+		StickerItems:         e.StickerItems,
+		Stickers:             e.Stickers,
+		Poll:                 e.Poll,
+		ChangelogID:          e.ChangelogID,
+		SoundboardSounds:     e.SoundboardSounds,
+		Potions:              e.Potions,
+		SharedClientTheme:    e.SharedClientTheme,
+	}
+}
+
 type LobbyMessageUpdateEvent struct {
 	ID                   snowflake.ID                `json:"id"`
 	ChannelID            snowflake.ID                `json:"channel_id"`
@@ -15561,10 +17874,65 @@ type LobbyMessageUpdateEvent struct {
 	ModerationMetadata   map[string]string           `json:"moderation_metadata,omitempty"`
 }
 
+func (e *LobbyMessageUpdateEvent) AsMessage() Message {
+	return Message{
+		ID:                   e.ID,
+		ChannelID:            e.ChannelID,
+		LobbyID:              e.LobbyID,
+		Author:               e.Author,
+		Content:              e.Content,
+		Timestamp:            e.Timestamp,
+		EditedTimestamp:      e.EditedTimestamp,
+		TTS:                  e.TTS,
+		MentionEveryone:      e.MentionEveryone,
+		Mentions:             e.Mentions,
+		MentionRoles:         e.MentionRoles,
+		MentionChannels:      e.MentionChannels,
+		Attachments:          e.Attachments,
+		Embeds:               e.Embeds,
+		Reactions:            e.Reactions,
+		Nonce:                e.Nonce,
+		Pinned:               e.Pinned,
+		WebhookID:            e.WebhookID,
+		Type:                 e.Type,
+		Activity:             e.Activity,
+		Application:          e.Application,
+		ApplicationID:        e.ApplicationID,
+		Flags:                e.Flags,
+		MessageReference:     e.MessageReference,
+		ReferencedMessage:    e.ReferencedMessage,
+		MessageSnapshots:     e.MessageSnapshots,
+		Call:                 e.Call,
+		Interaction:          e.Interaction,
+		InteractionMetadata:  e.InteractionMetadata,
+		Resolved:             e.Resolved,
+		Thread:               e.Thread,
+		RoleSubscriptionData: e.RoleSubscriptionData,
+		PurchaseNotification: e.PurchaseNotification,
+		GiftInfo:             e.GiftInfo,
+		Components:           e.Components,
+		StickerItems:         e.StickerItems,
+		Stickers:             e.Stickers,
+		Poll:                 e.Poll,
+		ChangelogID:          e.ChangelogID,
+		SoundboardSounds:     e.SoundboardSounds,
+		Potions:              e.Potions,
+		SharedClientTheme:    e.SharedClientTheme,
+	}
+}
+
 type LobbyVoiceServerUpdateEvent struct {
 	Token    string       `json:"token"`
 	LobbyID  snowflake.ID `json:"lobby_id"`
 	Endpoint *string      `json:"endpoint"`
+}
+
+func (e *LobbyVoiceServerUpdateEvent) AsLobbyVoiceServerUpdate() LobbyVoiceServerUpdate {
+	return LobbyVoiceServerUpdate{
+		Token:    e.Token,
+		LobbyID:  e.LobbyID,
+		Endpoint: e.Endpoint,
+	}
 }
 
 type PassiveUpdateV1Event struct {
@@ -15572,6 +17940,15 @@ type PassiveUpdateV1Event struct {
 	Channels    []ChannelUnread `json:"channels"`
 	VoiceStates []VoiceState    `json:"voice_states,omitempty"`
 	Members     []GuildMember   `json:"members,omitempty"`
+}
+
+func (e *PassiveUpdateV1Event) AsPassiveUpdateV1() PassiveUpdateV1 {
+	return PassiveUpdateV1{
+		GuildID:     e.GuildID,
+		Channels:    e.Channels,
+		VoiceStates: e.VoiceStates,
+		Members:     e.Members,
+	}
 }
 
 type PassiveUpdateV2Event struct {
@@ -15582,14 +17959,38 @@ type PassiveUpdateV2Event struct {
 	UpdatedMembers     []GuildMember   `json:"updated_members"`
 }
 
+func (e *PassiveUpdateV2Event) AsPassiveUpdateV2() PassiveUpdateV2 {
+	return PassiveUpdateV2{
+		GuildID:            e.GuildID,
+		UpdatedChannels:    e.UpdatedChannels,
+		UpdatedVoiceStates: e.UpdatedVoiceStates,
+		RemovedVoiceStates: e.RemovedVoiceStates,
+		UpdatedMembers:     e.UpdatedMembers,
+	}
+}
+
 type SavedMessageCreateEvent struct {
 	Message  *Message `json:"message"`
 	SaveData SaveData `json:"save_data"`
 }
 
+func (e *SavedMessageCreateEvent) AsSavedMessage() SavedMessage {
+	return SavedMessage{
+		Message:  e.Message,
+		SaveData: e.SaveData,
+	}
+}
+
 type SavedMessageDeleteEvent struct {
 	ChannelID snowflake.ID `json:"channel_id"`
 	MessageID snowflake.ID `json:"message_id"`
+}
+
+func (e *SavedMessageDeleteEvent) AsSavedMessageDelete() SavedMessageDelete {
+	return SavedMessageDelete{
+		ChannelID: e.ChannelID,
+		MessageID: e.MessageID,
+	}
 }
 
 type SessionsReplaceEvent []Session
@@ -15605,6 +18006,19 @@ type StageInstanceCreateEvent struct {
 	GuildScheduledEventID *snowflake.ID `json:"guild_scheduled_event_id"`
 }
 
+func (e *StageInstanceCreateEvent) AsStageInstance() StageInstance {
+	return StageInstance{
+		ID:                    e.ID,
+		GuildID:               e.GuildID,
+		ChannelID:             e.ChannelID,
+		Topic:                 e.Topic,
+		PrivacyLevel:          e.PrivacyLevel,
+		InviteCode:            e.InviteCode,
+		DiscoverableDisabled:  e.DiscoverableDisabled,
+		GuildScheduledEventID: e.GuildScheduledEventID,
+	}
+}
+
 type StageInstanceUpdateEvent struct {
 	ID                    snowflake.ID  `json:"id"`
 	GuildID               snowflake.ID  `json:"guild_id"`
@@ -15614,6 +18028,19 @@ type StageInstanceUpdateEvent struct {
 	InviteCode            *string       `json:"invite_code"`
 	DiscoverableDisabled  bool          `json:"discoverable_disabled"`
 	GuildScheduledEventID *snowflake.ID `json:"guild_scheduled_event_id"`
+}
+
+func (e *StageInstanceUpdateEvent) AsStageInstance() StageInstance {
+	return StageInstance{
+		ID:                    e.ID,
+		GuildID:               e.GuildID,
+		ChannelID:             e.ChannelID,
+		Topic:                 e.Topic,
+		PrivacyLevel:          e.PrivacyLevel,
+		InviteCode:            e.InviteCode,
+		DiscoverableDisabled:  e.DiscoverableDisabled,
+		GuildScheduledEventID: e.GuildScheduledEventID,
+	}
 }
 
 type StageInstanceDeleteEvent struct {
@@ -15627,6 +18054,19 @@ type StageInstanceDeleteEvent struct {
 	GuildScheduledEventID *snowflake.ID `json:"guild_scheduled_event_id"`
 }
 
+func (e *StageInstanceDeleteEvent) AsStageInstance() StageInstance {
+	return StageInstance{
+		ID:                    e.ID,
+		GuildID:               e.GuildID,
+		ChannelID:             e.ChannelID,
+		Topic:                 e.Topic,
+		PrivacyLevel:          e.PrivacyLevel,
+		InviteCode:            e.InviteCode,
+		DiscoverableDisabled:  e.DiscoverableDisabled,
+		GuildScheduledEventID: e.GuildScheduledEventID,
+	}
+}
+
 type StreamCreateEvent struct {
 	StreamKey    string          `json:"stream_key"`
 	RTCServerID  snowflake.ID    `json:"rtc_server_id"`
@@ -15636,10 +18076,29 @@ type StreamCreateEvent struct {
 	Paused       bool            `json:"paused"`
 }
 
+func (e *StreamCreateEvent) AsStream() Stream {
+	return Stream{
+		StreamKey:    e.StreamKey,
+		RTCServerID:  e.RTCServerID,
+		RTCChannelID: e.RTCChannelID,
+		Region:       e.Region,
+		ViewerIDs:    e.ViewerIDs,
+		Paused:       e.Paused,
+	}
+}
+
 type StreamServerUpdateEvent struct {
 	Token     string  `json:"token"`
 	StreamKey string  `json:"stream_key"`
 	Endpoint  *string `json:"endpoint"`
+}
+
+func (e *StreamServerUpdateEvent) AsStreamServerUpdate() StreamServerUpdate {
+	return StreamServerUpdate{
+		Token:     e.Token,
+		StreamKey: e.StreamKey,
+		Endpoint:  e.Endpoint,
+	}
 }
 
 type StreamUpdateEvent struct {
@@ -15651,10 +18110,29 @@ type StreamUpdateEvent struct {
 	Paused       bool            `json:"paused"`
 }
 
+func (e *StreamUpdateEvent) AsStream() Stream {
+	return Stream{
+		StreamKey:    e.StreamKey,
+		RTCServerID:  e.RTCServerID,
+		RTCChannelID: e.RTCChannelID,
+		Region:       e.Region,
+		ViewerIDs:    e.ViewerIDs,
+		Paused:       e.Paused,
+	}
+}
+
 type StreamDeleteEvent struct {
 	StreamKey   string             `json:"stream_key"`
 	Reason      StreamDeleteReason `json:"reason"`
 	Unavailable bool               `json:"unavailable,omitzero"`
+}
+
+func (e *StreamDeleteEvent) AsStreamDelete() StreamDelete {
+	return StreamDelete{
+		StreamKey:   e.StreamKey,
+		Reason:      e.Reason,
+		Unavailable: e.Unavailable,
+	}
 }
 
 type TypingStartEvent struct {
@@ -15663,6 +18141,16 @@ type TypingStartEvent struct {
 	UserID    snowflake.ID    `json:"user_id"`
 	Timestamp int64           `json:"timestamp"`
 	Member    json.RawMessage `json:"member,omitempty"`
+}
+
+func (e *TypingStartEvent) AsTypingStart() TypingStart {
+	return TypingStart{
+		ChannelID: e.ChannelID,
+		GuildID:   e.GuildID,
+		UserID:    e.UserID,
+		Timestamp: e.Timestamp,
+		Member:    e.Member,
+	}
 }
 
 type UserUpdateEvent struct {
@@ -15704,8 +18192,55 @@ type UserUpdateEvent struct {
 	AnalyticsToken        string                `json:"analytics_token"`
 }
 
+func (e *UserUpdateEvent) AsUser() User {
+	return User{
+		ID:                    e.ID,
+		Username:              e.Username,
+		Discriminator:         e.Discriminator,
+		GlobalName:            e.GlobalName,
+		Avatar:                e.Avatar,
+		AvatarDecorationData:  e.AvatarDecorationData,
+		Collectibles:          e.Collectibles,
+		DisplayNameStyles:     e.DisplayNameStyles,
+		PrimaryGuild:          e.PrimaryGuild,
+		LinkedUsers:           e.LinkedUsers,
+		Bot:                   e.Bot,
+		System:                e.System,
+		MFAEnabled:            e.MFAEnabled,
+		NSFWAllowed:           e.NSFWAllowed,
+		AgeVerificationStatus: e.AgeVerificationStatus,
+		Pronouns:              e.Pronouns,
+		Bio:                   e.Bio,
+		Banner:                e.Banner,
+		AccentColor:           e.AccentColor,
+		Locale:                e.Locale,
+		Verified:              e.Verified,
+		Email:                 e.Email,
+		Phone:                 e.Phone,
+		Premium:               e.Premium,
+		PremiumType:           e.PremiumType,
+		PremiumState:          e.PremiumState,
+		PersonalConnectionID:  e.PersonalConnectionID,
+		Flags:                 e.Flags,
+		PublicFlags:           e.PublicFlags,
+		PurchasedFlags:        e.PurchasedFlags,
+		PremiumUsageFlags:     e.PremiumUsageFlags,
+		Desktop:               e.Desktop,
+		Mobile:                e.Mobile,
+		HasBouncedEmail:       e.HasBouncedEmail,
+		AuthenticatorTypes:    e.AuthenticatorTypes,
+		AnalyticsToken:        e.AnalyticsToken,
+	}
+}
+
 type UserApplicationRemoveEvent struct {
 	ApplicationID snowflake.ID `json:"application_id"`
+}
+
+func (e *UserApplicationRemoveEvent) AsGatewayEventsUserApplicationRemove() GatewayEventsUserApplicationRemove {
+	return GatewayEventsUserApplicationRemove{
+		ApplicationID: e.ApplicationID,
+	}
 }
 
 type UserApplicationIdentityUpdateEvent struct {
@@ -15717,13 +18252,37 @@ type UserApplicationIdentityUpdateEvent struct {
 	AvatarHash  *string                          `json:"avatar_hash"`
 }
 
+func (e *UserApplicationIdentityUpdateEvent) AsUserApplicationProfile() UserApplicationProfile {
+	return UserApplicationProfile{
+		Username:    e.Username,
+		Metadata:    e.Metadata,
+		Data:        e.Data,
+		DataTrusted: e.DataTrusted,
+		ExternalID:  e.ExternalID,
+		AvatarHash:  e.AvatarHash,
+	}
+}
+
 type UserApplicationIdentityRemoveEvent struct {
 	UserID        snowflake.ID `json:"user_id"`
 	ApplicationID snowflake.ID `json:"application_id"`
 }
 
+func (e *UserApplicationIdentityRemoveEvent) AsUserApplicationIdentityRemove() UserApplicationIdentityRemove {
+	return UserApplicationIdentityRemove{
+		UserID:        e.UserID,
+		ApplicationID: e.ApplicationID,
+	}
+}
+
 type UserConnectionsUpdateEvent struct {
 	UserID snowflake.ID `json:"user_id"`
+}
+
+func (e *UserConnectionsUpdateEvent) AsUserConnectionsUpdate() UserConnectionsUpdate {
+	return UserConnectionsUpdate{
+		UserID: e.UserID,
+	}
 }
 
 type UserGuildSettingsUpdateEvent struct {
@@ -15742,9 +18301,34 @@ type UserGuildSettingsUpdateEvent struct {
 	Version              int64                    `json:"version"`
 }
 
+func (e *UserGuildSettingsUpdateEvent) AsUserGuildSettings() UserGuildSettings {
+	return UserGuildSettings{
+		ChannelOverrides:     e.ChannelOverrides,
+		Flags:                e.Flags,
+		GuildID:              e.GuildID,
+		HideMutedChannels:    e.HideMutedChannels,
+		MessageNotifications: e.MessageNotifications,
+		MobilePush:           e.MobilePush,
+		MuteScheduledEvents:  e.MuteScheduledEvents,
+		Muted:                e.Muted,
+		MuteConfig:           e.MuteConfig,
+		NotifyHighlights:     e.NotifyHighlights,
+		SuppressEveryone:     e.SuppressEveryone,
+		SuppressRoles:        e.SuppressRoles,
+		Version:              e.Version,
+	}
+}
+
 type UserMergeOperationCompletedEvent struct {
 	MergeOperationID snowflake.ID `json:"merge_operation_id"`
 	SourceUserID     snowflake.ID `json:"source_user_id"`
+}
+
+func (e *UserMergeOperationCompletedEvent) AsUserMergeOperationCompleted() UserMergeOperationCompleted {
+	return UserMergeOperationCompleted{
+		MergeOperationID: e.MergeOperationID,
+		SourceUserID:     e.SourceUserID,
+	}
 }
 
 type UserNonChannelAckEvent struct {
@@ -15754,9 +18338,25 @@ type UserNonChannelAckEvent struct {
 	Version    int64         `json:"version"`
 }
 
+func (e *UserNonChannelAckEvent) AsUserNonChannelAck() UserNonChannelAck {
+	return UserNonChannelAck{
+		AckType:    e.AckType,
+		ResourceID: e.ResourceID,
+		EntityID:   e.EntityID,
+		Version:    e.Version,
+	}
+}
+
 type UserNoteUpdateEvent struct {
 	ID   snowflake.ID `json:"id"`
 	Note string       `json:"note"`
+}
+
+func (e *UserNoteUpdateEvent) AsUserNoteUpdate() UserNoteUpdate {
+	return UserNoteUpdate{
+		ID:   e.ID,
+		Note: e.Note,
+	}
 }
 
 type UserPremiumGuildSubscriptionSlotCreateEvent struct {
@@ -15767,12 +18367,32 @@ type UserPremiumGuildSubscriptionSlotCreateEvent struct {
 	PremiumGuildSubscription *PremiumGuildSubscription `json:"premium_guild_subscription"`
 }
 
+func (e *UserPremiumGuildSubscriptionSlotCreateEvent) AsPremiumGuildSubscriptionSlot() PremiumGuildSubscriptionSlot {
+	return PremiumGuildSubscriptionSlot{
+		ID:                       e.ID,
+		SubscriptionID:           e.SubscriptionID,
+		Canceled:                 e.Canceled,
+		CooldownEndsAt:           e.CooldownEndsAt,
+		PremiumGuildSubscription: e.PremiumGuildSubscription,
+	}
+}
+
 type UserPremiumGuildSubscriptionSlotUpdateEvent struct {
 	ID                       snowflake.ID              `json:"id"`
 	SubscriptionID           snowflake.ID              `json:"subscription_id"`
 	Canceled                 bool                      `json:"canceled"`
 	CooldownEndsAt           *string                   `json:"cooldown_ends_at"`
 	PremiumGuildSubscription *PremiumGuildSubscription `json:"premium_guild_subscription"`
+}
+
+func (e *UserPremiumGuildSubscriptionSlotUpdateEvent) AsPremiumGuildSubscriptionSlot() PremiumGuildSubscriptionSlot {
+	return PremiumGuildSubscriptionSlot{
+		ID:                       e.ID,
+		SubscriptionID:           e.SubscriptionID,
+		Canceled:                 e.Canceled,
+		CooldownEndsAt:           e.CooldownEndsAt,
+		PremiumGuildSubscription: e.PremiumGuildSubscription,
+	}
 }
 
 type UserPremiumGuildSubscriptionSlotDeleteEvent struct {
@@ -15783,9 +18403,26 @@ type UserPremiumGuildSubscriptionSlotDeleteEvent struct {
 	PremiumGuildSubscription *PremiumGuildSubscription `json:"premium_guild_subscription"`
 }
 
+func (e *UserPremiumGuildSubscriptionSlotDeleteEvent) AsPremiumGuildSubscriptionSlot() PremiumGuildSubscriptionSlot {
+	return PremiumGuildSubscriptionSlot{
+		ID:                       e.ID,
+		SubscriptionID:           e.SubscriptionID,
+		Canceled:                 e.Canceled,
+		CooldownEndsAt:           e.CooldownEndsAt,
+		PremiumGuildSubscription: e.PremiumGuildSubscription,
+	}
+}
+
 type UserSettingsProtoUpdateEvent struct {
 	Settings UserSettingsProto `json:"settings"`
 	Partial  bool              `json:"partial"`
+}
+
+func (e *UserSettingsProtoUpdateEvent) AsUserSettingsProtoUpdate() UserSettingsProtoUpdate {
+	return UserSettingsProtoUpdate{
+		Settings: e.Settings,
+		Partial:  e.Partial,
+	}
 }
 
 type UserSettingsUpdateEvent struct {
@@ -15830,9 +18467,60 @@ type UserSettingsUpdateEvent struct {
 	ViewNSFWGuilds                        bool                      `json:"view_nsfw_guilds"`
 }
 
+func (e *UserSettingsUpdateEvent) AsUserSettings() UserSettings {
+	return UserSettings{
+		ActivityRestrictedGuildIDs:            e.ActivityRestrictedGuildIDs,
+		ActivityJoiningRestrictedGuildIDs:     e.ActivityJoiningRestrictedGuildIDs,
+		AFKTimeout:                            e.AFKTimeout,
+		AllowAccessibilityDetection:           e.AllowAccessibilityDetection,
+		AllowActivityPartyPrivacyFriends:      e.AllowActivityPartyPrivacyFriends,
+		AllowActivityPartyPrivacyVoiceChannel: e.AllowActivityPartyPrivacyVoiceChannel,
+		AnimateEmoji:                          e.AnimateEmoji,
+		AnimateStickers:                       e.AnimateStickers,
+		ContactSyncEnabled:                    e.ContactSyncEnabled,
+		ConvertEmoticons:                      e.ConvertEmoticons,
+		CustomStatus:                          e.CustomStatus,
+		DefaultGuildsRestricted:               e.DefaultGuildsRestricted,
+		DetectPlatformAccounts:                e.DetectPlatformAccounts,
+		DeveloperMode:                         e.DeveloperMode,
+		DisableGamesTab:                       e.DisableGamesTab,
+		EnableTTSCommand:                      e.EnableTTSCommand,
+		ExplicitContentFilter:                 e.ExplicitContentFilter,
+		FriendDiscoveryFlags:                  e.FriendDiscoveryFlags,
+		FriendSourceFlags:                     e.FriendSourceFlags,
+		GIFAutoPlay:                           e.GIFAutoPlay,
+		GuildFolders:                          e.GuildFolders,
+		InlineAttachmentMedia:                 e.InlineAttachmentMedia,
+		InlineEmbedMedia:                      e.InlineEmbedMedia,
+		Locale:                                e.Locale,
+		MessageDisplayCompact:                 e.MessageDisplayCompact,
+		NativePhoneIntegrationEnabled:         e.NativePhoneIntegrationEnabled,
+		Passwordless:                          e.Passwordless,
+		RenderEmbeds:                          e.RenderEmbeds,
+		RenderReactions:                       e.RenderReactions,
+		RestrictedGuilds:                      e.RestrictedGuilds,
+		ShowCurrentGame:                       e.ShowCurrentGame,
+		SlayerSdkReceiveDMsInGame:             e.SlayerSdkReceiveDMsInGame,
+		SoundboardVolume:                      e.SoundboardVolume,
+		Status:                                e.Status,
+		StreamNotificationsEnabled:            e.StreamNotificationsEnabled,
+		Theme:                                 e.Theme,
+		TimezoneOffset:                        e.TimezoneOffset,
+		ViewNSFWCommands:                      e.ViewNSFWCommands,
+		ViewNSFWGuilds:                        e.ViewNSFWGuilds,
+	}
+}
+
 type AudioSettingsUpdateEvent struct {
 	User   map[snowflake.ID]json.RawMessage `json:"user"`
 	Stream map[snowflake.ID]json.RawMessage `json:"stream"`
+}
+
+func (e *AudioSettingsUpdateEvent) AsAudioSettingsUpdate() AudioSettingsUpdate {
+	return AudioSettingsUpdate{
+		User:   e.User,
+		Stream: e.Stream,
+	}
 }
 
 type UserPaymentBrowserCheckoutDoneEvent struct {
@@ -15841,13 +18529,34 @@ type UserPaymentBrowserCheckoutDoneEvent struct {
 	SKUSubscriptionPlanID *snowflake.ID `json:"sku_subscription_plan_id"`
 }
 
+func (e *UserPaymentBrowserCheckoutDoneEvent) AsUserPaymentBrowserCheckoutDone() UserPaymentBrowserCheckoutDone {
+	return UserPaymentBrowserCheckoutDone{
+		LoadID:                e.LoadID,
+		SKUID:                 e.SKUID,
+		SKUSubscriptionPlanID: e.SKUSubscriptionPlanID,
+	}
+}
+
 type UserPaymentClientAddEvent struct {
 	PurchaseTokenHash string    `json:"purchase_token_hash"`
 	ExpiresAt         time.Time `json:"expires_at"`
 }
 
+func (e *UserPaymentClientAddEvent) AsUserPaymentClientAdd() UserPaymentClientAdd {
+	return UserPaymentClientAdd{
+		PurchaseTokenHash: e.PurchaseTokenHash,
+		ExpiresAt:         e.ExpiresAt,
+	}
+}
+
 type UserRequiredActionUpdateEvent struct {
 	RequiredAction *RequiredActionType `json:"required_action"`
+}
+
+func (e *UserRequiredActionUpdateEvent) AsUserRequiredActionUpdate() UserRequiredActionUpdate {
+	return UserRequiredActionUpdate{
+		RequiredAction: e.RequiredAction,
+	}
 }
 
 type VoiceStateUpdateEvent struct {
@@ -15870,11 +18579,42 @@ type VoiceStateUpdateEvent struct {
 	UserVolume              float64       `json:"user_volume,omitzero"`
 }
 
+func (e *VoiceStateUpdateEvent) AsVoiceState() VoiceState {
+	return VoiceState{
+		GuildID:                 e.GuildID,
+		ChannelID:               e.ChannelID,
+		LobbyID:                 e.LobbyID,
+		UserID:                  e.UserID,
+		Member:                  e.Member,
+		SessionID:               e.SessionID,
+		ConnectedAt:             e.ConnectedAt,
+		Deaf:                    e.Deaf,
+		Mute:                    e.Mute,
+		SelfDeaf:                e.SelfDeaf,
+		SelfMute:                e.SelfMute,
+		SelfStream:              e.SelfStream,
+		SelfVideo:               e.SelfVideo,
+		Suppress:                e.Suppress,
+		RequestToSpeakTimestamp: e.RequestToSpeakTimestamp,
+		Discoverable:            e.Discoverable,
+		UserVolume:              e.UserVolume,
+	}
+}
+
 type VoiceServerUpdateEvent struct {
 	Token     string        `json:"token"`
 	GuildID   *snowflake.ID `json:"guild_id"`
 	ChannelID snowflake.ID  `json:"channel_id,omitzero"`
 	Endpoint  *string       `json:"endpoint"`
+}
+
+func (e *VoiceServerUpdateEvent) AsVoiceServerUpdate() VoiceServerUpdate {
+	return VoiceServerUpdate{
+		Token:     e.Token,
+		GuildID:   e.GuildID,
+		ChannelID: e.ChannelID,
+		Endpoint:  e.Endpoint,
+	}
 }
 
 type VoiceChannelEffectSendEvent struct {
@@ -15888,10 +18628,31 @@ type VoiceChannelEffectSendEvent struct {
 	SoundVolume   float64                          `json:"sound_volume,omitzero"`
 }
 
+func (e *VoiceChannelEffectSendEvent) AsVoiceChannelEffectSend() VoiceChannelEffectSend {
+	return VoiceChannelEffectSend{
+		ChannelID:     e.ChannelID,
+		GuildID:       e.GuildID,
+		UserID:        e.UserID,
+		AnimationType: e.AnimationType,
+		AnimationID:   e.AnimationID,
+		Emoji:         e.Emoji,
+		SoundID:       e.SoundID,
+		SoundVolume:   e.SoundVolume,
+	}
+}
+
 type VoiceChannelStartTimeUpdateEvent struct {
 	ID             snowflake.ID `json:"id"`
 	GuildID        snowflake.ID `json:"guild_id"`
 	VoiceStartTime *int64       `json:"voice_start_time"`
+}
+
+func (e *VoiceChannelStartTimeUpdateEvent) AsVoiceChannelStartTimeUpdate() VoiceChannelStartTimeUpdate {
+	return VoiceChannelStartTimeUpdate{
+		ID:             e.ID,
+		GuildID:        e.GuildID,
+		VoiceStartTime: e.VoiceStartTime,
+	}
 }
 
 type VoiceChannelStatusUpdateEvent struct {
@@ -15900,13 +18661,34 @@ type VoiceChannelStatusUpdateEvent struct {
 	Status  *string      `json:"status"`
 }
 
+func (e *VoiceChannelStatusUpdateEvent) AsVoiceChannelStatusUpdate() VoiceChannelStatusUpdate {
+	return VoiceChannelStatusUpdate{
+		ID:      e.ID,
+		GuildID: e.GuildID,
+		Status:  e.Status,
+	}
+}
+
 type VirtualCurrencyBalanceUpdateEvent struct {
 	Balance int64 `json:"balance"`
+}
+
+func (e *VirtualCurrencyBalanceUpdateEvent) AsVirtualCurrencyBalanceUpdate() VirtualCurrencyBalanceUpdate {
+	return VirtualCurrencyBalanceUpdate{
+		Balance: e.Balance,
+	}
 }
 
 type WebhooksUpdateEvent struct {
 	GuildID   snowflake.ID `json:"guild_id"`
 	ChannelID snowflake.ID `json:"channel_id"`
+}
+
+func (e *WebhooksUpdateEvent) AsWebhooksUpdate() WebhooksUpdate {
+	return WebhooksUpdate{
+		GuildID:   e.GuildID,
+		ChannelID: e.ChannelID,
+	}
 }
 
 var Events = map[string]func() any{

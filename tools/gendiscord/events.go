@@ -55,12 +55,13 @@ func eventsBody(spec *Spec, r *resolver, fields map[string][]genField) []byte {
 		prose := strings.Join(ev.Prose, " ")
 		var base []genField
 		var extras [][]genField
+		baseName := ""
 		for _, s := range ev.Structs {
 			switch {
 			case strings.HasSuffix(s.Title, "Extra Fields"):
 				extras = append(extras, fields[r.names[s]])
 			case base == nil && strings.EqualFold(s.Title, ev.Name):
-				base = fields[r.names[s]]
+				base, baseName = fields[r.names[s]], r.names[s]
 			}
 		}
 		sliceOf := ""
@@ -70,7 +71,7 @@ func eventsBody(spec *Spec, r *resolver, fields map[string][]genField) []byte {
 					if lead := strings.ToLower(m[1]); strings.Contains(lead, "list of") || strings.Contains(lead, "array of") {
 						sliceOf = t
 					} else {
-						base = fields[t]
+						base, baseName = fields[t], t
 					}
 				}
 			}
@@ -98,11 +99,15 @@ func eventsBody(spec *Spec, r *resolver, fields map[string][]genField) []byte {
 		}
 		seen[name] = true
 		entries = append(entries, entry{wire: wireName(ev.Name), goName: name})
+		merged := merge(base, extras...)
 		fmt.Fprintf(&body, "type %s struct {\n", name)
-		for _, f := range merge(base, extras...) {
+		for _, f := range merged {
 			fmt.Fprintf(&body, "\t%s %s `json:%q`\n", f.name, f.typ, f.tag)
 		}
 		body.WriteString("}\n\n")
+		if baseName != "" && baseName != name {
+			writeAccessor(&body, name, baseName, base, merged)
+		}
 	}
 	sort.Slice(entries, func(i, j int) bool { return entries[i].wire < entries[j].wire })
 	body.WriteString("var Events = map[string]func() any{\n")
@@ -111,4 +116,18 @@ func eventsBody(spec *Spec, r *resolver, fields map[string][]genField) []byte {
 	}
 	body.WriteString("}\n")
 	return body.Bytes()
+}
+
+func writeAccessor(b *bytes.Buffer, event, base string, baseFields, merged []genField) {
+	have := map[string]string{}
+	for _, f := range merged {
+		have[f.name] = f.typ
+	}
+	fmt.Fprintf(b, "func (e *%s) As%s() %s {\n\treturn %s{\n", event, base, base, base)
+	for _, f := range baseFields {
+		if have[f.name] == f.typ {
+			fmt.Fprintf(b, "\t\t%s: e.%s,\n", f.name, f.name)
+		}
+	}
+	b.WriteString("\t}\n}\n\n")
 }

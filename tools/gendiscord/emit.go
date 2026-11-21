@@ -78,13 +78,16 @@ type genField struct {
 
 var extras = map[string][]genField{
 	"GatewayGuild": {{name: "ID", typ: "snowflake.ID", tag: "id"}},
+	"GuildMember":  {{name: "UserID", typ: "snowflake.ID", tag: "user_id,omitzero"}},
 }
 
 func structFields(spec *Spec, r *resolver, overrides map[string]string) map[string][]genField {
 	out := map[string][]genField{}
-	for name, fs := range extras {
-		out[name] = append(out[name], fs...)
-	}
+	defer func() {
+		for name, fs := range extras {
+			out[name] = append(out[name], fs...)
+		}
+	}()
 	for _, s := range spec.Structures {
 		name := r.names[s]
 		used := map[string]bool{}
