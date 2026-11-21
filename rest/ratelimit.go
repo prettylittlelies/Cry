@@ -8,17 +8,30 @@ import (
 	"time"
 )
 
+const (
+	bucketIdle = 5 * time.Minute
+	pruneEvery = time.Minute
+)
+
 type bucket struct {
 	mu        sync.Mutex
 	limit     int
 	remaining int
 	resetAt   time.Time
+	usedAt    time.Time
+}
+
+func (b *bucket) idle(now time.Time) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return now.Sub(b.usedAt) >= bucketIdle && !now.Before(b.resetAt)
 }
 
 func (b *bucket) acquire(ctx context.Context, now func() time.Time) error {
 	for {
 		b.mu.Lock()
 		t := now()
+		b.usedAt = t
 		if !b.resetAt.IsZero() && !t.Before(b.resetAt) {
 			b.remaining, b.resetAt = b.limit, time.Time{}
 		}
@@ -67,6 +80,7 @@ type limiter struct {
 	hashes  map[string]string
 	buckets map[string]*bucket
 	global  time.Time
+	pruned  time.Time
 	now     func() time.Time
 }
 
@@ -77,6 +91,7 @@ func newLimiter() *limiter {
 func (l *limiter) bucket(r Route) *bucket {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	l.prune()
 	id := r.Key()
 	if h, ok := l.hashes[id]; ok {
 		id = h
@@ -84,10 +99,29 @@ func (l *limiter) bucket(r Route) *bucket {
 	id += ":" + r.Major()
 	b, ok := l.buckets[id]
 	if !ok {
-		b = new(bucket)
+		b = &bucket{usedAt: l.now()}
 		l.buckets[id] = b
 	}
 	return b
+}
+
+func (l *limiter) prune() {
+	now := l.now()
+	if now.Sub(l.pruned) < pruneEvery {
+		return
+	}
+	l.pruned = now
+	for id, b := range l.buckets {
+		if b.idle(now) {
+			delete(l.buckets, id)
+		}
+	}
+}
+
+func (l *limiter) size() int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return len(l.buckets)
 }
 
 func (l *limiter) learn(r Route, b *bucket, hash string) {

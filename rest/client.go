@@ -47,6 +47,10 @@ func WithDebugOptions(opts ...string) Option {
 	return func(c *Client) { c.browser.debug = strings.Join(opts, ",") }
 }
 
+func WithClock(now func() time.Time) Option {
+	return func(c *Client) { c.limiter.now = now }
+}
+
 func WithInstallationID(id string) Option {
 	return func(c *Client) { c.installation = id }
 }
@@ -75,6 +79,14 @@ func New(token string, rt http.RoundTripper, id Identity, opts ...Option) *Clien
 		o(c)
 	}
 	return c
+}
+
+type Stats struct {
+	Buckets int
+}
+
+func (c *Client) Stats() Stats {
+	return Stats{Buckets: c.limiter.size()}
 }
 
 func (c *Client) SetToken(token string) {
