@@ -26,6 +26,8 @@ type Parameter struct {
 	HasDefault       bool
 	Greedy           bool
 	Literals         []string
+	Min, Max         any
+	Tag              reflect.StructTag
 	field            []int
 }
 
@@ -89,6 +91,7 @@ func signature(t reflect.Type) ([]*Parameter, error) {
 			Description:      f.Tag.Get("description"),
 			DisplayedDefault: f.Tag.Get("displayed_default"),
 			Type:             f.Type,
+			Tag:              f.Tag,
 			field:            f.Index,
 		}
 		if p.Name == "" {
@@ -108,6 +111,9 @@ func signature(t reflect.Type) ([]*Parameter, error) {
 		}
 		if (p.Kind == VarPositional || p.Greedy) && f.Type.Kind() != reflect.Slice {
 			return nil, fmt.Errorf("commands: parameter %s must be a slice to be %s", p.Name, f.Tag.Get("commands"))
+		}
+		if err := parseBounds(p, f.Tag); err != nil {
+			return nil, err
 		}
 		if _, err := flagSpecFor(p.converter()); err != nil {
 			return nil, err

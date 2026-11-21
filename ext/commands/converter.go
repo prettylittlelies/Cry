@@ -122,6 +122,9 @@ func runConverters(ctx *Context, p *Parameter, argument string) (reflect.Value, 
 			Argument: argument,
 		}
 	}
+	if err := checkRange(p, v); err != nil {
+		return v, err
+	}
 	if p.Optional() {
 		ptr := reflect.New(t)
 		ptr.Elem().Set(v)

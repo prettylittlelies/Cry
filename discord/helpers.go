@@ -56,3 +56,15 @@ func (u *User) Partial() PartialUser {
 		System:               u.System,
 	}
 }
+
+func (t ChannelType) IsThread() bool {
+	return t == ChannelTypeNewsThread || t == ChannelTypePublicThread || t == ChannelTypePrivateThread
+}
+
+func (t ChannelType) Messageable() bool {
+	switch t {
+	case ChannelTypeGuildText, ChannelTypeDM, ChannelTypeGuildVoice, ChannelTypeGroupDM, ChannelTypeGuildNews, ChannelTypeGuildStageVoice:
+		return true
+	}
+	return t.IsThread()
+}

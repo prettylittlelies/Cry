@@ -27,6 +27,8 @@ type Context struct {
 	CommandFailed     bool
 	CurrentParameter  *Parameter
 	CurrentArgument   string
+
+	attachments int
 }
 
 type CommandEvent struct{ Context *Context }

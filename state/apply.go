@@ -21,6 +21,12 @@ func (s *State) Apply(event any) {
 		s.putChannel(e.AsChannel())
 	case *discord.ChannelDeleteEvent:
 		delete(s.channels, e.ID)
+	case *discord.ThreadCreateEvent:
+		s.putChannel(e.AsChannel())
+	case *discord.ThreadUpdateEvent:
+		s.putChannel(e.AsChannel())
+	case *discord.ThreadDeleteEvent:
+		delete(s.channels, e.ID)
 	case *discord.GuildMemberAddEvent:
 		s.putMember(e.GuildID, e.AsGuildMember())
 	case *discord.GuildMemberRemoveEvent:
@@ -68,7 +74,7 @@ func (s *State) ready(e *discord.ReadyEvent) {
 }
 
 func (s *State) putGuild(g discord.GatewayGuild, merged []discord.GuildMember) {
-	for _, c := range g.Channels {
+	for _, c := range append(g.Channels, g.Threads...) {
 		c.GuildID = g.ID
 		s.putChannel(c)
 	}

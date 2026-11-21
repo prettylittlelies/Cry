@@ -429,3 +429,33 @@ func errMissingRequiredFlag(flag *Flag) *MissingRequiredFlag {
 func errMissingFlagArgument(flag *Flag) *MissingFlagArgument {
 	return &MissingFlagArgument{newKind(flagErr, "Flag %q does not have an argument", flag.Name), flag}
 }
+
+func errChannelNotReadable(channel string) *ChannelNotReadable {
+	return &ChannelNotReadable{newKind(badArg, "Can't read messages in %s.", channel), channel}
+}
+
+func errBadInvite(argument string) *BadInviteArgument {
+	return &BadInviteArgument{newKind(badArg, "Invite %q is invalid or expired.", argument), argument}
+}
+
+func errRange(value any, minimum, maximum any) *RangeError {
+	var label string
+	switch {
+	case minimum == nil && maximum != nil:
+		label = "no more than " + formatBound(maximum)
+	case minimum != nil && maximum == nil:
+		label = "not less than " + formatBound(minimum)
+	case minimum != nil && maximum != nil:
+		label = "between " + formatBound(minimum) + " and " + formatBound(maximum)
+	}
+	shown := formatBound(value)
+	if s, ok := value.(string); ok && label != "" {
+		label += " characters"
+		if n := len([]rune(s)); n == 1 {
+			shown = "1 character"
+		} else {
+			shown = fmt.Sprintf("%d characters", n)
+		}
+	}
+	return &RangeError{newKind(badArg, "value must be %s but received %s", label, shown), value, minimum, maximum}
+}

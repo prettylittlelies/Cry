@@ -30,6 +30,9 @@ func (c *Command) paramSignature(p *Parameter) string {
 	if name == "" {
 		name = p.Name
 	}
+	if p.isAttachment() {
+		return attachmentSignature(p, name)
+	}
 	if len(p.Literals) > 0 {
 		quote := p.converter().Kind() == reflect.String
 		values := make([]string, len(p.Literals))

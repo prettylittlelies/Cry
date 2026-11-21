@@ -23,17 +23,3 @@ func (s Scope) Guild(argument string) (discord.GatewayGuild, bool) {
 	}
 	return findFirst(st.AllGuilds(), func(g *discord.GatewayGuild) bool { return g.Properties.Name == argument })
 }
-
-func (s Scope) Channel(argument string) (discord.Channel, bool) {
-	st := s.Client.State()
-	if id, ok := matchID(argument, channelPattern); ok {
-		c, ok := st.Channel(id)
-		return c, ok && (s.GuildID == 0 || c.GuildID == s.GuildID)
-	}
-	for _, g := range s.guilds() {
-		if c, ok := findFirst(st.GuildChannels(g), func(c *discord.Channel) bool { return equalPtr(c.Name, argument) }); ok {
-			return c, true
-		}
-	}
-	return discord.Channel{}, false
-}

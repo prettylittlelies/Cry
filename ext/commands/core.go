@@ -228,6 +228,9 @@ func (c *Command) CooldownRetryAfter(ctx *Context) time.Duration {
 func (c *Command) transform(ctx *Context, p *Parameter) (reflect.Value, error) {
 	view := ctx.View
 	view.SkipWS()
+	if p.isAttachment() {
+		return transformAttachment(ctx, p)
+	}
 	if p.Greedy {
 		if p.Kind == VarPositional {
 			return c.greedyVarPos(ctx, p)
@@ -318,6 +321,7 @@ func (c *Command) defaultValue(ctx *Context, p *Parameter) (reflect.Value, error
 func (c *Command) parseArguments(ctx *Context) (reflect.Value, error) {
 	values := reflect.New(c.paramsType).Elem()
 	view := ctx.View
+	ctx.attachments = 0
 	for _, p := range c.Params {
 		ctx.CurrentParameter = p
 		field := values.FieldByIndex(p.field)
