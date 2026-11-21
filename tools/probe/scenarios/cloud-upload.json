@@ -1,0 +1,5 @@
+{
+  "page": "https://discord.com/robots.txt",
+  "hosts": ["discord-attachments-uploads-prd.storage.googleapis.com"],
+  "script": "async () => { const url = 'https://discord-attachments-uploads-prd.storage.googleapis.com/87e49c99/cat.png?upload_id=probe'; const put = (headers, body) => new Promise((ok, no) => { const q = new XMLHttpRequest(); q.open('PUT', url); for (const [k, v] of Object.entries(headers)) q.setRequestHeader(k, v); q.onload = () => ok(q.status); q.onerror = () => no(new Error('xhr failed')); q.send(body); }); const file = new Blob([new Uint8Array(4096)]); await put({ 'Content-Type': 'application/octet-stream' }, file); await put({ 'Content-Range': 'bytes */*' }, null); await put({ 'Content-Type': 'application/octet-stream', 'Content-Range': 'bytes 2048-4095/4096' }, file.slice(2048)); }"
+}
