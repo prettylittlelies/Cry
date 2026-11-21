@@ -42,7 +42,7 @@ func TestArrangeMatchesChromium(t *testing.T) {
 
 func names(p fingerprint.HeaderPolicy, h http.Header) []string {
 	var out []string
-	for _, f := range p.Fields(h) {
+	for _, f := range p.Fields(http.MethodGet, h) {
 		out = append(out, f.Name)
 	}
 	return out

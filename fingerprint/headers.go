@@ -15,6 +15,7 @@ type HeaderPolicy struct {
 	Leading   []string
 	Hints     []string
 	Trailing  []string
+	Preflight []string
 }
 
 var hopByHop = map[string]struct{}{
@@ -61,12 +62,28 @@ var (
 	}
 )
 
+var chromiumPreflight = []string{
+	"accept",
+	"access-control-request-method",
+	"access-control-request-headers",
+	"origin",
+	"user-agent",
+	"sec-fetch-mode",
+	"sec-fetch-site",
+	"sec-fetch-dest",
+	"referer",
+	"accept-encoding",
+	"accept-language",
+	"priority",
+}
+
 func DiscordWebPolicy() HeaderPolicy {
 	return HeaderPolicy{
 		Insertion: discordInsertion,
 		Leading:   []string{"content-length"},
 		Hints:     chromiumHints,
 		Trailing:  chromiumTrailing,
+		Preflight: chromiumPreflight,
 	}
 }
 
@@ -124,7 +141,23 @@ func (p HeaderPolicy) insertion(names map[string]struct{}) []string {
 	return append(out, unknown...)
 }
 
-func (p HeaderPolicy) Fields(h http.Header) []hpack.HeaderField {
+func (p HeaderPolicy) preflight(names map[string]struct{}) []string {
+	out := make([]string, 0, len(names))
+	for _, n := range p.Preflight {
+		if _, ok := names[n]; ok {
+			out = append(out, n)
+			delete(names, n)
+		}
+	}
+	rest := make([]string, 0, len(names))
+	for n := range names {
+		rest = append(rest, n)
+	}
+	slices.Sort(rest)
+	return append(out, rest...)
+}
+
+func (p HeaderPolicy) Fields(method string, h http.Header) []hpack.HeaderField {
 	values := make(map[string][]string, len(h))
 	names := make(map[string]struct{}, len(h))
 	for k, v := range h {
@@ -135,7 +168,13 @@ func (p HeaderPolicy) Fields(h http.Header) []hpack.HeaderField {
 		}
 	}
 	fields := make([]hpack.HeaderField, 0, len(values))
-	for _, n := range p.Arrange(p.insertion(names)) {
+	var order []string
+	if method == http.MethodOptions && len(p.Preflight) > 0 {
+		order = p.preflight(names)
+	} else {
+		order = p.Arrange(p.insertion(names))
+	}
+	for _, n := range order {
 		for _, v := range values[n] {
 			fields = append(fields, hpack.HeaderField{Name: n, Value: v})
 		}
