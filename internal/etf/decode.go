@@ -309,7 +309,11 @@ func (d *Decoder) bignum(r source, n int) error {
 	if sign != 0 {
 		v.Neg(v)
 	}
-	d.buf.WriteString(v.String())
+	if n <= 4 && (sign == 0 || v.Cmp(big.NewInt(math.MinInt32)) >= 0) {
+		d.buf.WriteString(v.String())
+		return nil
+	}
+	d.str([]byte(v.String()))
 	return nil
 }
 
