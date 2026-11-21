@@ -9,6 +9,7 @@ import (
 type Param struct {
 	Name  string
 	Value string
+	Raw   bool
 }
 
 type Route struct {
@@ -31,10 +32,18 @@ func P[T ParamValue](name string, value T) Param {
 	return Param{Name: name, Value: fmt.Sprint(value)}
 }
 
+func Raw(name, value string) Param {
+	return Param{Name: name, Value: value, Raw: true}
+}
+
 func (r Route) Path() string {
 	path := r.Template
 	for _, p := range r.Params {
-		path = strings.ReplaceAll(path, "{"+p.Name+"}", url.PathEscape(p.Value))
+		v := p.Value
+		if !p.Raw {
+			v = url.PathEscape(v)
+		}
+		path = strings.ReplaceAll(path, "{"+p.Name+"}", v)
 	}
 	return path
 }

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+
+	"github.com/prettylittlelies/cry/internal/mimetype"
 )
 
 const (
@@ -99,6 +101,9 @@ func (f *Form) Encode() ([]byte, string) {
 		quote(&buf, p.File.Name, false)
 		buf.WriteString("\"\r\nContent-Type: ")
 		ct := p.File.ContentType
+		if ct == "" {
+			ct = mimetype.ForFilename(p.File.Name)
+		}
 		if ct == "" {
 			ct = octetStream
 		}

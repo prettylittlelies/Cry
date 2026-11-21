@@ -29,12 +29,18 @@ func identity(t *testing.T) rest.Identity {
 	return rest.Identity{Session: properties.NewSession(d), Host: h, Chrome: chrome}
 }
 
-func client(t *testing.T, h http.HandlerFunc, opts ...rest.Option) *rest.Client {
+func clientURL(t *testing.T, h http.HandlerFunc, opts ...rest.Option) (*rest.Client, string) {
 	t.Helper()
 	srv := testkit.NewH2Server(t, h)
 	tr := transport.New(fingerprint.Electron44(), transport.WithRootCAs(srv.Pool))
 	t.Cleanup(tr.CloseIdleConnections)
-	return rest.New("token", tr, identity(t), append([]rest.Option{rest.WithBaseURL(srv.URL)}, opts...)...)
+	return rest.New("token", tr, identity(t), append([]rest.Option{rest.WithBaseURL(srv.URL)}, opts...)...), srv.URL
+}
+
+func client(t *testing.T, h http.HandlerFunc, opts ...rest.Option) *rest.Client {
+	t.Helper()
+	c, _ := clientURL(t, h, opts...)
+	return c
 }
 
 func me() *rest.Request {

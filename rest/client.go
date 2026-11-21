@@ -57,6 +57,9 @@ func WithInstallationID(id string) Option {
 
 type Client struct {
 	http          *http.Client
+	anonymous     *http.Client
+	cors          *corsCache
+	uploads       *uploadIDs
 	browser       *browser
 	limiter       *limiter
 	token         string
@@ -69,15 +72,18 @@ type Client struct {
 func New(token string, rt http.RoundTripper, id Identity, opts ...Option) *Client {
 	jar, _ := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	c := &Client{
-		http:    &http.Client{Transport: rt, Jar: jar},
-		browser: newBrowser(id),
-		limiter: newLimiter(),
-		token:   token,
-		base:    DefaultBaseURL,
+		http:      &http.Client{Transport: rt, Jar: jar},
+		anonymous: &http.Client{Transport: rt},
+		browser:   newBrowser(id),
+		limiter:   newLimiter(),
+		token:     token,
+		base:      DefaultBaseURL,
+		uploads:   newUploadIDs(),
 	}
 	for _, o := range opts {
 		o(c)
 	}
+	c.cors = newCORSCache(c.limiter.now)
 	return c
 }
 
@@ -118,11 +124,11 @@ func (c *Client) Do(ctx context.Context, req *Request) (*Response, error) {
 			return nil, err
 		}
 		h := c.compose(req, contentType, contextHeader, extra, failed)
-		resp, err := c.send(ctx, req.Route.Method, c.base+req.Route.Path()+query.encode(), body, h)
+		resp, err := c.sendWith(ctx, c.http, req.Route.Method, c.base+req.Route.Path()+query.encode(), body, h)
 		if err != nil {
 			if attempt < maxAttempts-1 && retryableNetErr(err) && ctx.Err() == nil {
 				failed++
-				if err := sleep(ctx, backoff(attempt)); err != nil {
+				if err := sleep(ctx, retryDelay(attempt)); err != nil {
 					return nil, err
 				}
 				continue
@@ -159,7 +165,7 @@ func (c *Client) Do(ctx context.Context, req *Request) (*Response, error) {
 			continue
 		case isRetryStatus(resp.Status):
 			failed++
-			if err := sleep(ctx, backoff(attempt)); err != nil {
+			if err := sleep(ctx, retryDelay(attempt)); err != nil {
 				return nil, err
 			}
 			continue
@@ -209,7 +215,7 @@ func (c *Client) compose(req *Request, contentType, contextHeader string, extra 
 	return h
 }
 
-func (c *Client) send(ctx context.Context, method, target string, body []byte, h http.Header) (*Response, error) {
+func (c *Client) sendWith(ctx context.Context, hc *http.Client, method, target string, body []byte, h http.Header) (*Response, error) {
 	var r io.Reader
 	if body != nil {
 		r = bytes.NewReader(body)
@@ -219,7 +225,7 @@ func (c *Client) send(ctx context.Context, method, target string, body []byte, h
 		return nil, err
 	}
 	hr.Header = h
-	resp, err := c.http.Do(hr)
+	resp, err := hc.Do(hr)
 	if err != nil {
 		return nil, err
 	}
@@ -279,6 +285,6 @@ func isRetryStatus(s int) bool {
 	return ok
 }
 
-func backoff(attempt int) time.Duration {
+func retryDelay(attempt int) time.Duration {
 	return time.Duration(1+2*attempt) * time.Second
 }
