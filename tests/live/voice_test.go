@@ -45,7 +45,7 @@ func TestVoiceJoin(t *testing.T) {
 	tok := token(t)
 	guild := envID(t, "CRY_VOICE_GUILD", 1573803464159662120)
 	channel := envID(t, "CRY_VOICE_CHANNEL", 1573803465031950469)
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -90,7 +90,14 @@ func TestVoiceJoin(t *testing.T) {
 	}()
 	t.Log("voice handshake complete")
 
-	deadline := time.Now().Add(20 * time.Second)
+	wait := 20 * time.Second
+	if raw := os.Getenv("CRY_VOICE_WAIT"); raw != "" {
+		if wait, err = time.ParseDuration(raw); err != nil {
+			t.Fatalf("CRY_VOICE_WAIT: %v", err)
+		}
+	}
+	t.Logf("waiting up to %s for dave; join the channel from another account now", wait)
+	deadline := time.Now().Add(wait)
 	for !conn.Encrypted() && time.Now().Before(deadline) {
 		if err := conn.Err(); err != nil {
 			t.Fatalf("connection failed: %v", err)
@@ -100,7 +107,7 @@ func TestVoiceJoin(t *testing.T) {
 	if conn.Encrypted() {
 		t.Logf("dave active, epoch authenticator %s", hex.EncodeToString(conn.EpochAuthenticator()))
 	} else {
-		t.Log("dave not active after 20s (fine if you are alone in the channel and the server keeps transport-only encryption)")
+		t.Logf("dave not active after %s (expected if nobody else joined)", wait)
 	}
 
 	if path := os.Getenv("CRY_VOICE_OGG"); path != "" {
