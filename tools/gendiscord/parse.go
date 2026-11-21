@@ -84,11 +84,22 @@ func anchor(title string) string {
 }
 
 func cells(line string) []string {
-	parts := strings.Split(strings.Trim(strings.TrimSpace(line), "|"), "|")
-	for i := range parts {
-		parts[i] = strings.TrimSpace(parts[i])
+	line = strings.Trim(strings.TrimSpace(line), "|")
+	var parts []string
+	var cur strings.Builder
+	for i := 0; i < len(line); i++ {
+		switch {
+		case line[i] == '\\' && i+1 < len(line) && line[i+1] == '|':
+			cur.WriteByte('|')
+			i++
+		case line[i] == '|':
+			parts = append(parts, strings.TrimSpace(cur.String()))
+			cur.Reset()
+		default:
+			cur.WriteByte(line[i])
+		}
 	}
-	return parts
+	return append(parts, strings.TrimSpace(cur.String()))
 }
 
 func clean(s string) string {
@@ -214,7 +225,7 @@ func parseDoc(spec *Spec, doc, text string) {
 					if len(r) > 2 {
 						desc = r[2]
 					}
-					e.Values = append(e.Values, EnumValue{Value: value, Name: clean(r[1]), Description: desc})
+					e.Values = append(e.Values, EnumValue{Value: value, Name: plainType(r[1]), Description: desc})
 				} else {
 					e.Values = append(e.Values, EnumValue{Value: value, Name: value, Description: r[1]})
 				}

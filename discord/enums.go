@@ -961,13 +961,13 @@ const (
 type CollectibleProductType int64
 
 const (
-	CollectibleProductTypeAvatarDecorationAvatarDecorationCollectibleItemStructure CollectibleProductType = 0
-	CollectibleProductTypeProfileEffectProfileEffectCollectibleItemStructure       CollectibleProductType = 1
-	CollectibleProductTypeNameplateNameplateCollectibleItemStructure               CollectibleProductType = 2
-	CollectibleProductTypeProfileFrameProfileFrameCollectibleItemStructure         CollectibleProductType = 3
-	CollectibleProductTypeBundle                                                   CollectibleProductType = 1000
-	CollectibleProductTypeVariantsGroup                                            CollectibleProductType = 2000
-	CollectibleProductTypeExternalSKU                                              CollectibleProductType = 3000
+	CollectibleProductTypeAvatarDecoration CollectibleProductType = 0
+	CollectibleProductTypeProfileEffect    CollectibleProductType = 1
+	CollectibleProductTypeNameplate        CollectibleProductType = 2
+	CollectibleProductTypeProfileFrame     CollectibleProductType = 3
+	CollectibleProductTypeBundle           CollectibleProductType = 1000
+	CollectibleProductTypeVariantsGroup    CollectibleProductType = 2000
+	CollectibleProductTypeExternalSKU      CollectibleProductType = 3000
 )
 
 type CollectiblePurchaseType int64
@@ -1005,11 +1005,11 @@ const (
 type CollectiblesMarketingType int64
 
 const (
-	CollectiblesMarketingTypeCoachtipCoachtipCollectiblesMarketingStructure     CollectiblesMarketingType = 0
-	CollectiblesMarketingTypeBadgeBadgeCollectiblesMarketingStructure           CollectiblesMarketingType = 1
-	CollectiblesMarketingTypeBannerBannerCollectiblesMarketingStructure         CollectiblesMarketingType = 2
-	CollectiblesMarketingTypeCoachmarkCoachmarkCollectiblesMarketingStructure   CollectiblesMarketingType = 3
-	CollectiblesMarketingTypeTabTooltipTabTooltipCollectiblesMarketingStructure CollectiblesMarketingType = 4
+	CollectiblesMarketingTypeCoachtip   CollectiblesMarketingType = 0
+	CollectiblesMarketingTypeBadge      CollectiblesMarketingType = 1
+	CollectiblesMarketingTypeBanner     CollectiblesMarketingType = 2
+	CollectiblesMarketingTypeCoachmark  CollectiblesMarketingType = 3
+	CollectiblesMarketingTypeTabTooltip CollectiblesMarketingType = 4
 )
 
 type CollectiblesShopHomeConfig string
@@ -1040,28 +1040,28 @@ const (
 type ComponentType int64
 
 const (
-	ComponentTypeActionRowActionRow                         ComponentType = 1
-	ComponentTypeButtonButton                               ComponentType = 2
-	ComponentTypeStringSelectStringSelect                   ComponentType = 3
-	ComponentTypeTextInputTextInput                         ComponentType = 4
-	ComponentTypeUserSelectUserSelect                       ComponentType = 5
-	ComponentTypeRoleSelectRoleSelect                       ComponentType = 6
-	ComponentTypeMentionableSelectMentionableSelect         ComponentType = 7
-	ComponentTypeChannelSelectChannelSelect                 ComponentType = 8
-	ComponentTypeSectionSection                             ComponentType = 9
-	ComponentTypeTextDisplayTextDisplay                     ComponentType = 10
-	ComponentTypeThumbnailThumbnail                         ComponentType = 11
-	ComponentTypeMediaGalleryMediaGallery                   ComponentType = 12
-	ComponentTypeFileFile                                   ComponentType = 13
-	ComponentTypeSeparatorSeparator                         ComponentType = 14
-	ComponentTypeContentInventoryEntryContentInventoryEntry ComponentType = 16
-	ComponentTypeContainerContainer                         ComponentType = 17
-	ComponentTypeLabelLabel                                 ComponentType = 18
-	ComponentTypeFileUploadFileUpload                       ComponentType = 19
-	ComponentTypeCheckpointCardCheckpointCard               ComponentType = 20
-	ComponentTypeRadioGroupRadioGroup                       ComponentType = 21
-	ComponentTypeCheckboxGroupCheckboxGroup                 ComponentType = 22
-	ComponentTypeCheckboxCheckbox                           ComponentType = 23
+	ComponentTypeActionRow             ComponentType = 1
+	ComponentTypeButton                ComponentType = 2
+	ComponentTypeStringSelect          ComponentType = 3
+	ComponentTypeTextInput             ComponentType = 4
+	ComponentTypeUserSelect            ComponentType = 5
+	ComponentTypeRoleSelect            ComponentType = 6
+	ComponentTypeMentionableSelect     ComponentType = 7
+	ComponentTypeChannelSelect         ComponentType = 8
+	ComponentTypeSection               ComponentType = 9
+	ComponentTypeTextDisplay           ComponentType = 10
+	ComponentTypeThumbnail             ComponentType = 11
+	ComponentTypeMediaGallery          ComponentType = 12
+	ComponentTypeFile                  ComponentType = 13
+	ComponentTypeSeparator             ComponentType = 14
+	ComponentTypeContentInventoryEntry ComponentType = 16
+	ComponentTypeContainer             ComponentType = 17
+	ComponentTypeLabel                 ComponentType = 18
+	ComponentTypeFileUpload            ComponentType = 19
+	ComponentTypeCheckpointCard        ComponentType = 20
+	ComponentTypeRadioGroup            ComponentType = 21
+	ComponentTypeCheckboxGroup         ComponentType = 22
+	ComponentTypeCheckbox              ComponentType = 23
 )
 
 type ConnectionType string
@@ -4517,17 +4517,17 @@ const (
 type ShopBlockType int64
 
 const (
-	ShopBlockTypeHeroHeroShopBlockStructure                                                                     ShopBlockType = 0
-	ShopBlockTypeFeaturedFeaturedShopBlockStructure                                                             ShopBlockType = 1
-	ShopBlockTypeFeedFeedShopBlockStructure                                                                     ShopBlockType = 2
-	ShopBlockTypeWideBannerWideBannerShopBlockStructure                                                         ShopBlockType = 3
-	ShopBlockTypeShelfShelfShopBlockStructure                                                                   ShopBlockType = 4
-	ShopBlockTypeCountdownTimerCountdownTimerShopBlockStructure                                                 ShopBlockType = 5
-	ShopBlockTypeImmersiveBannerImmersiveBannerShopBlockStructure                                               ShopBlockType = 6
-	ShopBlockTypeRewardHeroRewardHeroShopBlockStructure                                                         ShopBlockType = 7
-	ShopBlockTypeSocialLayerStorefrontPromotionalBannerSocialLayerStorefrontPromotionalBannerShopBlockStructure ShopBlockType = 9
-	ShopBlockTypeFramesBannerFramesBannerShopBlockStructure                                                     ShopBlockType = 10
-	ShopBlockTypeFramesProductShelfFramesProductShelfShopBlockStructure                                         ShopBlockType = 11
+	ShopBlockTypeHero                                   ShopBlockType = 0
+	ShopBlockTypeFeatured                               ShopBlockType = 1
+	ShopBlockTypeFeed                                   ShopBlockType = 2
+	ShopBlockTypeWideBanner                             ShopBlockType = 3
+	ShopBlockTypeShelf                                  ShopBlockType = 4
+	ShopBlockTypeCountdownTimer                         ShopBlockType = 5
+	ShopBlockTypeImmersiveBanner                        ShopBlockType = 6
+	ShopBlockTypeRewardHero                             ShopBlockType = 7
+	ShopBlockTypeSocialLayerStorefrontPromotionalBanner ShopBlockType = 9
+	ShopBlockTypeFramesBanner                           ShopBlockType = 10
+	ShopBlockTypeFramesProductShelf                     ShopBlockType = 11
 )
 
 type ShopItemType string

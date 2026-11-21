@@ -112,9 +112,9 @@ type ActionGuildJoinRequestParams struct {
 }
 
 type ActionRow struct {
-	Type       ComponentType     `json:"type"`
-	ID         int64             `json:"id,omitzero"`
-	Components []json.RawMessage `json:"components"`
+	Type       ComponentType `json:"type"`
+	ID         int64         `json:"id,omitzero"`
+	Components Components    `json:"components"`
 }
 
 type Activity struct {
@@ -537,7 +537,7 @@ type ApplicationCommandData struct {
 type ApplicationCommandDataOption struct {
 	Type    ApplicationCommandOptionType   `json:"type"`
 	Name    string                         `json:"name"`
-	Value   bool                           `json:"value,omitzero"`
+	Value   json.RawMessage                `json:"value,omitempty"`
 	Options []ApplicationCommandDataOption `json:"options,omitempty"`
 	Focused bool                           `json:"focused,omitzero"`
 }
@@ -570,8 +570,8 @@ type ApplicationCommandOption struct {
 	Choices                  []ApplicationCommandOptionChoice `json:"choices,omitempty"`
 	Options                  []ApplicationCommandOption       `json:"options,omitempty"`
 	ChannelTypes             []int64                          `json:"channel_types,omitempty"`
-	MinValue                 float64                          `json:"min_value,omitzero"`
-	MaxValue                 float64                          `json:"max_value,omitzero"`
+	MinValue                 json.RawMessage                  `json:"min_value,omitempty"`
+	MaxValue                 json.RawMessage                  `json:"max_value,omitempty"`
 	MinLength                ApplicationCommandOptionType     `json:"min_length,omitzero"`
 	MaxLength                ApplicationCommandOptionType     `json:"max_length,omitzero"`
 	Autocomplete             bool                             `json:"autocomplete,omitzero"`
@@ -582,7 +582,7 @@ type ApplicationCommandOptionChoice struct {
 	Name              string            `json:"name"`
 	NameLocalizations map[string]string `json:"name_localizations,omitempty"`
 	NameLocalized     *string           `json:"name_localized,omitempty"`
-	Value             float64           `json:"value"`
+	Value             json.RawMessage   `json:"value"`
 }
 
 type ApplicationCommandPermissions struct {
@@ -2138,11 +2138,11 @@ type ContactSyncSettingsResponse struct {
 }
 
 type Container struct {
-	Type        ComponentType     `json:"type"`
-	ID          int64             `json:"id,omitzero"`
-	Components  []json.RawMessage `json:"components"`
-	AccentColor *int64            `json:"accent_color,omitempty"`
-	Spoiler     bool              `json:"spoiler,omitzero"`
+	Type        ComponentType `json:"type"`
+	ID          int64         `json:"id,omitzero"`
+	Components  Components    `json:"components"`
+	AccentColor *int64        `json:"accent_color,omitempty"`
+	Spoiler     bool          `json:"spoiler,omitzero"`
 }
 
 type ContentInventoryArtist struct {
@@ -2662,10 +2662,10 @@ type CreateMessageParams struct {
 	Content           string            `json:"content,omitzero"`
 	TTS               bool              `json:"tts,omitzero"`
 	Embeds            []Embed           `json:"embeds,omitempty"`
-	Nonce             int64             `json:"nonce,omitzero"`
+	Nonce             json.RawMessage   `json:"nonce,omitempty"`
 	AllowedMentions   AllowedMentions   `json:"allowed_mentions,omitzero"`
 	MessageReference  MessageReference  `json:"message_reference,omitzero"`
-	Components        []json.RawMessage `json:"components,omitempty"`
+	Components        Components        `json:"components,omitzero"`
 	StickerIDs        []snowflake.ID    `json:"sticker_ids,omitempty"`
 	Activity          MessageActivity   `json:"activity,omitzero"`
 	ApplicationID     snowflake.ID      `json:"application_id,omitzero"`
@@ -3371,24 +3371,24 @@ type EditDMMessageParams struct {
 }
 
 type EditMessageParams struct {
-	Content         *string           `json:"content,omitempty"`
-	Embeds          []Embed           `json:"embeds,omitempty"`
-	AllowedMentions *AllowedMentions  `json:"allowed_mentions,omitempty"`
-	Components      []json.RawMessage `json:"components,omitempty"`
-	Flags           *MessageFlags     `json:"flags,omitempty"`
-	FilesN          json.RawMessage   `json:"files[n]"`
-	Attachments     []Attachment      `json:"attachments"`
+	Content         *string          `json:"content,omitempty"`
+	Embeds          []Embed          `json:"embeds,omitempty"`
+	AllowedMentions *AllowedMentions `json:"allowed_mentions,omitempty"`
+	Components      *Components      `json:"components,omitempty"`
+	Flags           *MessageFlags    `json:"flags,omitempty"`
+	FilesN          json.RawMessage  `json:"files[n]"`
+	Attachments     []Attachment     `json:"attachments"`
 }
 
 type EditWebhookMessageParams struct {
-	Content         string            `json:"content,omitzero"`
-	TTS             bool              `json:"tts,omitzero"`
-	Embeds          []Embed           `json:"embeds,omitempty"`
-	AllowedMentions AllowedMentions   `json:"allowed_mentions,omitzero"`
-	Components      []json.RawMessage `json:"components,omitempty"`
-	Flags           MessageFlags      `json:"flags,omitzero"`
-	FilesN          json.RawMessage   `json:"files[n],omitempty"`
-	Attachments     []Attachment      `json:"attachments,omitempty"`
+	Content         string          `json:"content,omitzero"`
+	TTS             bool            `json:"tts,omitzero"`
+	Embeds          []Embed         `json:"embeds,omitempty"`
+	AllowedMentions AllowedMentions `json:"allowed_mentions,omitzero"`
+	Components      Components      `json:"components,omitzero"`
+	Flags           MessageFlags    `json:"flags,omitzero"`
+	FilesN          json.RawMessage `json:"files[n],omitempty"`
+	Attachments     []Attachment    `json:"attachments,omitempty"`
 }
 
 type EmailSettings struct {
@@ -3683,19 +3683,19 @@ type ExecuteServiceWebhookQuery struct {
 }
 
 type ExecuteWebhookParams struct {
-	Username        string            `json:"username,omitzero"`
-	AvatarURL       string            `json:"avatar_url,omitzero"`
-	ThreadName      string            `json:"thread_name,omitzero"`
-	AppliedTags     []snowflake.ID    `json:"applied_tags,omitempty"`
-	Content         string            `json:"content,omitzero"`
-	TTS             bool              `json:"tts,omitzero"`
-	Embeds          []Embed           `json:"embeds,omitempty"`
-	AllowedMentions AllowedMentions   `json:"allowed_mentions,omitzero"`
-	Components      []json.RawMessage `json:"components,omitempty"`
-	Flags           MessageFlags      `json:"flags,omitzero"`
-	FilesN          json.RawMessage   `json:"files[n],omitempty"`
-	Attachments     []Attachment      `json:"attachments,omitempty"`
-	Poll            json.RawMessage   `json:"poll,omitempty"`
+	Username        string          `json:"username,omitzero"`
+	AvatarURL       string          `json:"avatar_url,omitzero"`
+	ThreadName      string          `json:"thread_name,omitzero"`
+	AppliedTags     []snowflake.ID  `json:"applied_tags,omitempty"`
+	Content         string          `json:"content,omitzero"`
+	TTS             bool            `json:"tts,omitzero"`
+	Embeds          []Embed         `json:"embeds,omitempty"`
+	AllowedMentions AllowedMentions `json:"allowed_mentions,omitzero"`
+	Components      Components      `json:"components,omitzero"`
+	Flags           MessageFlags    `json:"flags,omitzero"`
+	FilesN          json.RawMessage `json:"files[n],omitempty"`
+	Attachments     []Attachment    `json:"attachments,omitempty"`
+	Poll            json.RawMessage `json:"poll,omitempty"`
 }
 
 type ExecuteWebhookQuery struct {
@@ -6274,20 +6274,20 @@ type InteractionCallbackIframeModalData struct {
 }
 
 type InteractionCallbackMessageData struct {
-	Content         string            `json:"content,omitzero"`
-	TTS             bool              `json:"tts,omitzero"`
-	Embeds          []Embed           `json:"embeds,omitempty"`
-	AllowedMentions AllowedMentions   `json:"allowed_mentions,omitzero"`
-	Components      []json.RawMessage `json:"components,omitempty"`
-	Flags           MessageFlags      `json:"flags,omitzero"`
-	Attachments     []Attachment      `json:"attachments,omitempty"`
-	Poll            PollCreate        `json:"poll,omitzero"`
+	Content         string          `json:"content,omitzero"`
+	TTS             bool            `json:"tts,omitzero"`
+	Embeds          []Embed         `json:"embeds,omitempty"`
+	AllowedMentions AllowedMentions `json:"allowed_mentions,omitzero"`
+	Components      Components      `json:"components,omitzero"`
+	Flags           MessageFlags    `json:"flags,omitzero"`
+	Attachments     []Attachment    `json:"attachments,omitempty"`
+	Poll            PollCreate      `json:"poll,omitzero"`
 }
 
 type InteractionCallbackModalData struct {
-	CustomID   string            `json:"custom_id"`
-	Title      string            `json:"title"`
-	Components []json.RawMessage `json:"components"`
+	CustomID   string     `json:"custom_id"`
+	Title      string     `json:"title"`
+	Components Components `json:"components"`
 }
 
 type InteractionCallbackResource struct {
@@ -6334,7 +6334,7 @@ type InteractionModalCreate struct {
 	CustomID    string                 `json:"custom_id"`
 	Application IntegrationApplication `json:"application"`
 	Title       string                 `json:"title"`
-	Components  []json.RawMessage      `json:"components"`
+	Components  Components             `json:"components"`
 	Nonce       *string                `json:"nonce"`
 	Resolved    ResolvedData           `json:"resolved,omitzero"`
 }
@@ -6551,11 +6551,11 @@ type KeywordFilterSettings struct {
 }
 
 type Label struct {
-	Type        ComponentType   `json:"type"`
-	ID          int64           `json:"id,omitzero"`
-	Label       string          `json:"label"`
-	Description string          `json:"description,omitzero"`
-	Component   json.RawMessage `json:"component"`
+	Type        ComponentType `json:"type"`
+	ID          int64         `json:"id,omitzero"`
+	Label       string        `json:"label"`
+	Description string        `json:"description,omitzero"`
+	Component   AnyComponent  `json:"component"`
 }
 
 type LastMessages struct {
@@ -7460,7 +7460,7 @@ type MemberVerificationFormField struct {
 	Label       string                          `json:"label"`
 	Choices     []string                        `json:"choices,omitempty"`
 	Values      []string                        `json:"values,omitempty"`
-	Response    *string                         `json:"response,omitempty"`
+	Response    json.RawMessage                 `json:"response,omitempty"`
 	Required    bool                            `json:"required"`
 	Description *string                         `json:"description"`
 	Automations []string                        `json:"automations"`
@@ -7515,7 +7515,7 @@ type Message struct {
 	Attachments          []Attachment                `json:"attachments"`
 	Embeds               []Embed                     `json:"embeds"`
 	Reactions            []Reaction                  `json:"reactions,omitempty"`
-	Nonce                int64                       `json:"nonce,omitzero"`
+	Nonce                json.RawMessage             `json:"nonce,omitempty"`
 	Pinned               bool                        `json:"pinned"`
 	WebhookID            snowflake.ID                `json:"webhook_id,omitzero"`
 	Type                 MessageType                 `json:"type"`
@@ -7534,7 +7534,7 @@ type Message struct {
 	RoleSubscriptionData MessageRoleSubscription     `json:"role_subscription_data,omitzero"`
 	PurchaseNotification MessagePurchaseNotification `json:"purchase_notification,omitzero"`
 	GiftInfo             MessageGiftInfo             `json:"gift_info,omitzero"`
-	Components           []json.RawMessage           `json:"components"`
+	Components           Components                  `json:"components"`
 	StickerItems         []StickerItem               `json:"sticker_items,omitempty"`
 	Stickers             []Sticker                   `json:"stickers,omitempty"`
 	Poll                 Poll                        `json:"poll,omitzero"`
@@ -7569,10 +7569,10 @@ type MessageCall struct {
 }
 
 type MessageComponentData struct {
-	CustomID      string         `json:"custom_id"`
-	ComponentType ComponentType  `json:"component_type"`
-	Values        []snowflake.ID `json:"values"`
-	Resolved      ResolvedData   `json:"resolved,omitzero"`
+	CustomID      string          `json:"custom_id"`
+	ComponentType ComponentType   `json:"component_type"`
+	Values        json.RawMessage `json:"values"`
+	Resolved      ResolvedData    `json:"resolved,omitzero"`
 }
 
 type MessageCreate struct {
@@ -7773,8 +7773,8 @@ type ModalSubmitComponentData struct {
 	ID         int64                      `json:"id"`
 	Type       ComponentType              `json:"type"`
 	CustomID   string                     `json:"custom_id"`
-	Value      string                     `json:"value"`
-	Values     []snowflake.ID             `json:"values"`
+	Value      json.RawMessage            `json:"value"`
+	Values     json.RawMessage            `json:"values"`
 	Component  *ModalSubmitComponentData  `json:"component"`
 	Components []ModalSubmitComponentData `json:"components"`
 }
@@ -10067,8 +10067,8 @@ type RadioGroupOption struct {
 }
 
 type RangeQuery struct {
-	Gte snowflake.ID `json:"gte,omitzero"`
-	Lte snowflake.ID `json:"lte,omitzero"`
+	Gte json.RawMessage `json:"gte,omitempty"`
+	Lte json.RawMessage `json:"lte,omitempty"`
 }
 
 type RateLimitMetadata struct {
@@ -10494,12 +10494,12 @@ type RequestClassificationReviewResponse struct {
 }
 
 type RequestGuildMembers struct {
-	GuildID   snowflake.ID `json:"guild_id"`
-	Query     string       `json:"query,omitzero"`
-	Limit     int64        `json:"limit,omitzero"`
-	Presences bool         `json:"presences,omitzero"`
-	UserIDs   snowflake.ID `json:"user_ids,omitzero"`
-	Nonce     string       `json:"nonce,omitzero"`
+	GuildID   json.RawMessage `json:"guild_id"`
+	Query     string          `json:"query,omitzero"`
+	Limit     int64           `json:"limit,omitzero"`
+	Presences bool            `json:"presences,omitzero"`
+	UserIDs   json.RawMessage `json:"user_ids,omitempty"`
+	Nonce     string          `json:"nonce,omitzero"`
 }
 
 type RequestLastMessages struct {
@@ -11163,10 +11163,10 @@ type SearchThreadsResponse struct {
 }
 
 type Section struct {
-	Type       ComponentType     `json:"type"`
-	ID         int64             `json:"id,omitzero"`
-	Components []json.RawMessage `json:"components"`
-	Accessory  Thumbnail         `json:"accessory"`
+	Type       ComponentType `json:"type"`
+	ID         int64         `json:"id,omitzero"`
+	Components Components    `json:"components"`
+	Accessory  AnyComponent  `json:"accessory"`
 }
 
 type SelectDefaultValue struct {
@@ -11183,11 +11183,11 @@ type SelectOption struct {
 }
 
 type SelectProtocol struct {
-	Protocol        ProtocolType  `json:"protocol"`
-	Data            *ProtocolData `json:"data"`
-	RTCConnectionID string        `json:"rtc_connection_id,omitzero"`
-	Codecs          []Codec       `json:"codecs,omitempty"`
-	Experiments     []string      `json:"experiments,omitempty"`
+	Protocol        ProtocolType    `json:"protocol"`
+	Data            json.RawMessage `json:"data"`
+	RTCConnectionID string          `json:"rtc_connection_id,omitzero"`
+	Codecs          []Codec         `json:"codecs,omitempty"`
+	Experiments     []string        `json:"experiments,omitempty"`
 }
 
 type SelectTextChannelArguments struct {
@@ -11299,10 +11299,10 @@ type SendableApplicationCommandData struct {
 }
 
 type SendableMessageComponentData struct {
-	ComponentType ComponentType  `json:"component_type,omitzero"`
-	Type          ComponentType  `json:"type,omitzero"`
-	CustomID      string         `json:"custom_id"`
-	Values        []snowflake.ID `json:"values,omitempty"`
+	ComponentType ComponentType   `json:"component_type,omitzero"`
+	Type          ComponentType   `json:"type,omitzero"`
+	CustomID      string          `json:"custom_id"`
+	Values        json.RawMessage `json:"values,omitempty"`
 }
 
 type SendableModalSubmitData struct {
@@ -11462,7 +11462,7 @@ type SnapshotMessage struct {
 	Embeds           []Embed           `json:"embeds"`
 	Type             MessageType       `json:"type"`
 	Flags            MessageFlags      `json:"flags"`
-	Components       []json.RawMessage `json:"components,omitempty"`
+	Components       Components        `json:"components,omitzero"`
 	Resolved         ResolvedData      `json:"resolved,omitzero"`
 	StickerItems     []StickerItem     `json:"sticker_items,omitempty"`
 	SoundboardSounds []SoundboardSound `json:"soundboard_sounds,omitempty"`
@@ -12378,16 +12378,16 @@ type ThreadMetadata struct {
 }
 
 type ThreadOnlyChannelMessage struct {
-	Content         string            `json:"content,omitzero"`
-	Embeds          []Embed           `json:"embeds,omitempty"`
-	AllowedMentions AllowedMentions   `json:"allowed_mentions,omitzero"`
-	Components      []json.RawMessage `json:"components,omitempty"`
-	StickerIDs      []snowflake.ID    `json:"sticker_ids,omitempty"`
-	Activity        MessageActivity   `json:"activity,omitzero"`
-	ApplicationID   snowflake.ID      `json:"application_id,omitzero"`
-	Flags           MessageFlags      `json:"flags,omitzero"`
-	FilesN          json.RawMessage   `json:"files[n],omitempty"`
-	Attachments     []Attachment      `json:"attachments,omitempty"`
+	Content         string          `json:"content,omitzero"`
+	Embeds          []Embed         `json:"embeds,omitempty"`
+	AllowedMentions AllowedMentions `json:"allowed_mentions,omitzero"`
+	Components      Components      `json:"components,omitzero"`
+	StickerIDs      []snowflake.ID  `json:"sticker_ids,omitempty"`
+	Activity        MessageActivity `json:"activity,omitzero"`
+	ApplicationID   snowflake.ID    `json:"application_id,omitzero"`
+	Flags           MessageFlags    `json:"flags,omitzero"`
+	FilesN          json.RawMessage `json:"files[n],omitempty"`
+	Attachments     []Attachment    `json:"attachments,omitempty"`
 }
 
 type ThreadPostData struct {
@@ -13501,8 +13501,8 @@ type WidgetLayoutField struct {
 }
 
 type WidgetSurface struct {
-	Layout     string                     `json:"layout"`
-	Components map[string]json.RawMessage `json:"components"`
+	Layout     string                  `json:"layout"`
+	Components map[string]AnyComponent `json:"components"`
 }
 
 type WidgetSurfaceComponent struct {
@@ -13673,12 +13673,12 @@ func (e *PingLobbyVoiceServerEvent) AsPingLobbyVoiceServer() PingLobbyVoiceServe
 }
 
 type RequestGuildMembersEvent struct {
-	GuildID   snowflake.ID `json:"guild_id"`
-	Query     string       `json:"query,omitzero"`
-	Limit     int64        `json:"limit,omitzero"`
-	Presences bool         `json:"presences,omitzero"`
-	UserIDs   snowflake.ID `json:"user_ids,omitzero"`
-	Nonce     string       `json:"nonce,omitzero"`
+	GuildID   json.RawMessage `json:"guild_id"`
+	Query     string          `json:"query,omitzero"`
+	Limit     int64           `json:"limit,omitzero"`
+	Presences bool            `json:"presences,omitzero"`
+	UserIDs   json.RawMessage `json:"user_ids,omitempty"`
+	Nonce     string          `json:"nonce,omitzero"`
 }
 
 func (e *RequestGuildMembersEvent) AsRequestGuildMembers() RequestGuildMembers {
@@ -16706,7 +16706,7 @@ type InteractionModalCreateEvent struct {
 	CustomID    string                 `json:"custom_id"`
 	Application IntegrationApplication `json:"application"`
 	Title       string                 `json:"title"`
-	Components  []json.RawMessage      `json:"components"`
+	Components  Components             `json:"components"`
 	Nonce       *string                `json:"nonce"`
 	Resolved    ResolvedData           `json:"resolved,omitzero"`
 }
@@ -16834,7 +16834,7 @@ type MessageCreateEvent struct {
 	Attachments          []Attachment                `json:"attachments"`
 	Embeds               []Embed                     `json:"embeds"`
 	Reactions            []Reaction                  `json:"reactions,omitempty"`
-	Nonce                int64                       `json:"nonce,omitzero"`
+	Nonce                json.RawMessage             `json:"nonce,omitempty"`
 	Pinned               bool                        `json:"pinned"`
 	WebhookID            snowflake.ID                `json:"webhook_id,omitzero"`
 	Type                 MessageType                 `json:"type"`
@@ -16853,7 +16853,7 @@ type MessageCreateEvent struct {
 	RoleSubscriptionData MessageRoleSubscription     `json:"role_subscription_data,omitzero"`
 	PurchaseNotification MessagePurchaseNotification `json:"purchase_notification,omitzero"`
 	GiftInfo             MessageGiftInfo             `json:"gift_info,omitzero"`
-	Components           []json.RawMessage           `json:"components"`
+	Components           Components                  `json:"components"`
 	StickerItems         []StickerItem               `json:"sticker_items,omitempty"`
 	Stickers             []Sticker                   `json:"stickers,omitempty"`
 	Poll                 Poll                        `json:"poll,omitzero"`
@@ -16931,7 +16931,7 @@ type MessageUpdateEvent struct {
 	Attachments          []Attachment                `json:"attachments"`
 	Embeds               []Embed                     `json:"embeds"`
 	Reactions            []Reaction                  `json:"reactions,omitempty"`
-	Nonce                int64                       `json:"nonce,omitzero"`
+	Nonce                json.RawMessage             `json:"nonce,omitempty"`
 	Pinned               bool                        `json:"pinned"`
 	WebhookID            snowflake.ID                `json:"webhook_id,omitzero"`
 	Type                 MessageType                 `json:"type"`
@@ -16950,7 +16950,7 @@ type MessageUpdateEvent struct {
 	RoleSubscriptionData MessageRoleSubscription     `json:"role_subscription_data,omitzero"`
 	PurchaseNotification MessagePurchaseNotification `json:"purchase_notification,omitzero"`
 	GiftInfo             MessageGiftInfo             `json:"gift_info,omitzero"`
-	Components           []json.RawMessage           `json:"components"`
+	Components           Components                  `json:"components"`
 	StickerItems         []StickerItem               `json:"sticker_items,omitempty"`
 	Stickers             []Sticker                   `json:"stickers,omitempty"`
 	Poll                 Poll                        `json:"poll,omitzero"`
@@ -17743,7 +17743,7 @@ type LobbyMessageCreateEvent struct {
 	Attachments          []Attachment                `json:"attachments"`
 	Embeds               []Embed                     `json:"embeds"`
 	Reactions            []Reaction                  `json:"reactions,omitempty"`
-	Nonce                int64                       `json:"nonce,omitzero"`
+	Nonce                json.RawMessage             `json:"nonce,omitempty"`
 	Pinned               bool                        `json:"pinned"`
 	WebhookID            snowflake.ID                `json:"webhook_id,omitzero"`
 	Type                 MessageType                 `json:"type"`
@@ -17762,7 +17762,7 @@ type LobbyMessageCreateEvent struct {
 	RoleSubscriptionData MessageRoleSubscription     `json:"role_subscription_data,omitzero"`
 	PurchaseNotification MessagePurchaseNotification `json:"purchase_notification,omitzero"`
 	GiftInfo             MessageGiftInfo             `json:"gift_info,omitzero"`
-	Components           []json.RawMessage           `json:"components"`
+	Components           Components                  `json:"components"`
 	StickerItems         []StickerItem               `json:"sticker_items,omitempty"`
 	Stickers             []Sticker                   `json:"stickers,omitempty"`
 	Poll                 Poll                        `json:"poll,omitzero"`
@@ -17840,7 +17840,7 @@ type LobbyMessageUpdateEvent struct {
 	Attachments          []Attachment                `json:"attachments"`
 	Embeds               []Embed                     `json:"embeds"`
 	Reactions            []Reaction                  `json:"reactions,omitempty"`
-	Nonce                int64                       `json:"nonce,omitzero"`
+	Nonce                json.RawMessage             `json:"nonce,omitempty"`
 	Pinned               bool                        `json:"pinned"`
 	WebhookID            snowflake.ID                `json:"webhook_id,omitzero"`
 	Type                 MessageType                 `json:"type"`
@@ -17859,7 +17859,7 @@ type LobbyMessageUpdateEvent struct {
 	RoleSubscriptionData MessageRoleSubscription     `json:"role_subscription_data,omitzero"`
 	PurchaseNotification MessagePurchaseNotification `json:"purchase_notification,omitzero"`
 	GiftInfo             MessageGiftInfo             `json:"gift_info,omitzero"`
-	Components           []json.RawMessage           `json:"components"`
+	Components           Components                  `json:"components"`
 	StickerItems         []StickerItem               `json:"sticker_items,omitempty"`
 	Stickers             []Sticker                   `json:"stickers,omitempty"`
 	Poll                 Poll                        `json:"poll,omitzero"`
@@ -18908,3 +18908,152 @@ var Events = map[string]func() any{
 	"VOICE_STATE_UPDATE":                             func() any { return new(VoiceStateUpdateEvent) },
 	"WEBHOOKS_UPDATE":                                func() any { return new(WebhooksUpdateEvent) },
 }
+
+type Component interface {
+	ComponentType() ComponentType
+}
+
+type UnknownComponent struct {
+	Type ComponentType   `json:"type"`
+	Raw  json.RawMessage `json:"-"`
+}
+
+func (u *UnknownComponent) ComponentType() ComponentType { return u.Type }
+
+func (u *UnknownComponent) MarshalJSON() ([]byte, error) { return u.Raw, nil }
+
+func (*ActionRow) ComponentType() ComponentType { return ComponentTypeActionRow }
+
+func (*Button) ComponentType() ComponentType { return ComponentTypeButton }
+
+func (*StringSelect) ComponentType() ComponentType { return ComponentTypeStringSelect }
+
+func (*TextInput) ComponentType() ComponentType { return ComponentTypeTextInput }
+
+func (*UserSelect) ComponentType() ComponentType { return ComponentTypeUserSelect }
+
+func (*RoleSelect) ComponentType() ComponentType { return ComponentTypeRoleSelect }
+
+func (*MentionableSelect) ComponentType() ComponentType { return ComponentTypeMentionableSelect }
+
+func (*ChannelSelect) ComponentType() ComponentType { return ComponentTypeChannelSelect }
+
+func (*Section) ComponentType() ComponentType { return ComponentTypeSection }
+
+func (*TextDisplay) ComponentType() ComponentType { return ComponentTypeTextDisplay }
+
+func (*Thumbnail) ComponentType() ComponentType { return ComponentTypeThumbnail }
+
+func (*MediaGallery) ComponentType() ComponentType { return ComponentTypeMediaGallery }
+
+func (*File) ComponentType() ComponentType { return ComponentTypeFile }
+
+func (*Separator) ComponentType() ComponentType { return ComponentTypeSeparator }
+
+func (*ContentInventoryEntry) ComponentType() ComponentType {
+	return ComponentTypeContentInventoryEntry
+}
+
+func (*Container) ComponentType() ComponentType { return ComponentTypeContainer }
+
+func (*Label) ComponentType() ComponentType { return ComponentTypeLabel }
+
+func (*FileUpload) ComponentType() ComponentType { return ComponentTypeFileUpload }
+
+func (*CheckpointCard) ComponentType() ComponentType { return ComponentTypeCheckpointCard }
+
+func (*RadioGroup) ComponentType() ComponentType { return ComponentTypeRadioGroup }
+
+func (*CheckboxGroup) ComponentType() ComponentType { return ComponentTypeCheckboxGroup }
+
+func (*Checkbox) ComponentType() ComponentType { return ComponentTypeCheckbox }
+
+func decodeComponent(raw json.RawMessage) (Component, error) {
+	var probe struct {
+		Type ComponentType `json:"type"`
+	}
+	if err := json.Unmarshal(raw, &probe); err != nil {
+		return nil, err
+	}
+	var v Component
+	switch probe.Type {
+	case ComponentTypeActionRow:
+		v = new(ActionRow)
+	case ComponentTypeButton:
+		v = new(Button)
+	case ComponentTypeStringSelect:
+		v = new(StringSelect)
+	case ComponentTypeTextInput:
+		v = new(TextInput)
+	case ComponentTypeUserSelect:
+		v = new(UserSelect)
+	case ComponentTypeRoleSelect:
+		v = new(RoleSelect)
+	case ComponentTypeMentionableSelect:
+		v = new(MentionableSelect)
+	case ComponentTypeChannelSelect:
+		v = new(ChannelSelect)
+	case ComponentTypeSection:
+		v = new(Section)
+	case ComponentTypeTextDisplay:
+		v = new(TextDisplay)
+	case ComponentTypeThumbnail:
+		v = new(Thumbnail)
+	case ComponentTypeMediaGallery:
+		v = new(MediaGallery)
+	case ComponentTypeFile:
+		v = new(File)
+	case ComponentTypeSeparator:
+		v = new(Separator)
+	case ComponentTypeContentInventoryEntry:
+		v = new(ContentInventoryEntry)
+	case ComponentTypeContainer:
+		v = new(Container)
+	case ComponentTypeLabel:
+		v = new(Label)
+	case ComponentTypeFileUpload:
+		v = new(FileUpload)
+	case ComponentTypeCheckpointCard:
+		v = new(CheckpointCard)
+	case ComponentTypeRadioGroup:
+		v = new(RadioGroup)
+	case ComponentTypeCheckboxGroup:
+		v = new(CheckboxGroup)
+	case ComponentTypeCheckbox:
+		v = new(Checkbox)
+	default:
+		return &UnknownComponent{Type: probe.Type, Raw: raw}, nil
+	}
+	return v, json.Unmarshal(raw, v)
+}
+
+type Components []Component
+
+func (c *Components) UnmarshalJSON(b []byte) error {
+	var raws []json.RawMessage
+	if err := json.Unmarshal(b, &raws); err != nil {
+		return err
+	}
+	out := make(Components, 0, len(raws))
+	for _, raw := range raws {
+		v, err := decodeComponent(raw)
+		if err != nil {
+			return err
+		}
+		out = append(out, v)
+	}
+	*c = out
+	return nil
+}
+
+type AnyComponent struct {
+	Component
+}
+
+func (a *AnyComponent) UnmarshalJSON(b []byte) error {
+	v, err := decodeComponent(b)
+	a.Component = v
+	return err
+}
+
+func (a AnyComponent) MarshalJSON() ([]byte, error) { return json.Marshal(a.Component) }

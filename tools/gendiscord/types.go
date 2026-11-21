@@ -10,6 +10,7 @@ type resolver struct {
 	names   map[*Structure]string
 	enums   map[string]*namedEnum
 	imports map[string]bool
+	unions  []*union
 }
 
 type namedEnum struct {
@@ -84,6 +85,9 @@ func (r *resolver) object(name, doc string) string {
 			}
 		}
 	}
+	if u := r.unionFor(name); u != nil {
+		return u.Single
+	}
 	r.imports["encoding/json"] = true
 	return "json.RawMessage"
 }
@@ -121,8 +125,44 @@ func splitTop(s string) []string {
 	return append(parts, strings.TrimSpace(s[start:]))
 }
 
+func (r *resolver) alternation(t, doc string) (string, bool) {
+	alts := strings.Split(t, "|")
+	if len(alts) < 2 {
+		return "", false
+	}
+	var types []string
+	for _, a := range alts {
+		types = append(types, strings.TrimPrefix(r.base(a, doc), "*"))
+	}
+	same := true
+	for _, x := range types[1:] {
+		same = same && x == types[0]
+	}
+	if same {
+		return types[0], true
+	}
+	for _, u := range r.unions {
+		members := map[string]bool{u.Single: true}
+		for _, m := range u.members {
+			members[m.structName] = true
+		}
+		all := true
+		for _, x := range types {
+			all = all && members[x]
+		}
+		if all {
+			return u.Single, true
+		}
+	}
+	r.imports["encoding/json"] = true
+	return "json.RawMessage", true
+}
+
 func (r *resolver) base(t, doc string) string {
 	t = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(t), "?"))
+	if alt, ok := r.alternation(t, doc); ok {
+		return alt
+	}
 	lt := strings.ToLower(t)
 	switch {
 	case strings.HasPrefix(lt, "array[") && strings.HasSuffix(lt, "]"):
@@ -134,7 +174,13 @@ func (r *resolver) base(t, doc string) string {
 				return "[]json.RawMessage"
 			}
 		}
-		return "[]" + r.field(elems[0], doc, "")
+		elem := r.field(elems[0], doc, "")
+		for _, u := range r.unions {
+			if strings.TrimPrefix(elem, "*") == u.Single {
+				return u.Slice
+			}
+		}
+		return "[]" + elem
 	case strings.HasPrefix(lt, "map[") && strings.HasSuffix(lt, "]"):
 		kv := splitTop(t[4 : len(t)-1])
 		if len(kv) == 2 {

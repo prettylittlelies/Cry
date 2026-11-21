@@ -70,6 +70,7 @@ func main() {
 	}
 	sort.Slice(enums, func(i, j int) bool { return enums[i].name < enums[j].name })
 	r := newResolver(spec, names, enums)
+	bindUnions(enums, r)
 	write := func(dir, name string, data []byte) {
 		if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
 			fmt.Fprintln(os.Stderr, err)
