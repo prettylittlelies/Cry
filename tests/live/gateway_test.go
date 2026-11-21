@@ -18,6 +18,7 @@ import (
 	"github.com/prettylittlelies/cry/fingerprint"
 	"github.com/prettylittlelies/cry/gateway"
 	"github.com/prettylittlelies/cry/properties"
+	"github.com/prettylittlelies/cry/snowflake"
 	"github.com/prettylittlelies/cry/transport"
 	"github.com/prettylittlelies/cry/transport/websocket"
 )
@@ -71,8 +72,8 @@ func TestGatewayReady(t *testing.T) {
 	case e := <-ready:
 		var d struct {
 			User struct {
-				ID       string `json:"id"`
-				Username string `json:"username"`
+				ID       snowflake.ID `json:"id"`
+				Username string       `json:"username"`
 			} `json:"user"`
 			SessionID string `json:"session_id"`
 			Guilds    []any  `json:"guilds"`
@@ -82,7 +83,7 @@ func TestGatewayReady(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Logf("READY: session=%s guilds=%d qos_token=%v ready_bytes=%d", d.SessionID, len(d.Guilds), d.QoSToken != "", len(e.Data))
-		if d.SessionID == "" || d.User.ID == "" {
+		if d.SessionID == "" || d.User.ID.IsZero() {
 			t.Fatal("READY missing session or user")
 		}
 	case err := <-errc:
