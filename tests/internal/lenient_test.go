@@ -23,3 +23,21 @@ func TestLenientCoercesETFShapes(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestLenientDropsShapeMismatches(t *testing.T) {
+	type inner struct{ A int }
+	type outer struct {
+		Keep  string           `json:"keep"`
+		Inner inner            `json:"inner"`
+		List  []inner          `json:"list"`
+		Byid  map[string]inner `json:"byid"`
+	}
+	var o outer
+	err := lenient.Unmarshal([]byte(`{"keep":"yes","inner":[1,2],"list":[{"A":1},[3]],"byid":{"x":[4],"y":{"A":5}}}`), &o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.Keep != "yes" || o.Inner.A != 0 || len(o.List) != 2 || o.List[0].A != 1 || o.Byid["y"].A != 5 {
+		t.Fatalf("%+v", o)
+	}
+}

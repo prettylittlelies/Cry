@@ -43,28 +43,39 @@ func coerce(v any, t reflect.Type) any {
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
-	if custom(t) {
+	if custom(t) || t.Kind() == reflect.Interface || v == nil {
 		return v
+	}
+	numeric := func(k reflect.Kind) bool {
+		return k >= reflect.Int && k <= reflect.Float64
 	}
 	switch val := v.(type) {
 	case json.Number:
-		if t.Kind() == reflect.String {
+		switch {
+		case t.Kind() == reflect.String:
 			return val.String()
+		case numeric(t.Kind()):
+			return val
 		}
 	case string:
-		switch t.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-			reflect.Float32, reflect.Float64:
+		switch {
+		case t.Kind() == reflect.String:
+			return val
+		case numeric(t.Kind()):
 			if _, err := strconv.ParseFloat(val, 64); err == nil {
 				return json.Number(val)
 			}
+		}
+	case bool:
+		if t.Kind() == reflect.Bool {
+			return val
 		}
 	case []any:
 		if t.Kind() == reflect.Slice || t.Kind() == reflect.Array {
 			for i := range val {
 				val[i] = coerce(val[i], t.Elem())
 			}
+			return val
 		}
 	case map[string]any:
 		switch t.Kind() {
@@ -72,6 +83,7 @@ func coerce(v any, t reflect.Type) any {
 			for k := range val {
 				val[k] = coerce(val[k], t.Elem())
 			}
+			return val
 		case reflect.Struct:
 			fields := fieldTypes(t)
 			for k := range val {
@@ -79,9 +91,10 @@ func coerce(v any, t reflect.Type) any {
 					val[k] = coerce(val[k], ft)
 				}
 			}
+			return val
 		}
 	}
-	return v
+	return nil
 }
 
 func fieldTypes(t reflect.Type) map[string]reflect.Type {
