@@ -15,6 +15,7 @@ type ContextDialer interface {
 
 type Dialer struct {
 	Hello    ClientHello
+	ALPN     []string
 	Sessions utls.ClientSessionCache
 	Net      ContextDialer
 	RootCAs  *x509.CertPool
@@ -23,6 +24,7 @@ type Dialer struct {
 func NewDialer(hello ClientHello) *Dialer {
 	return &Dialer{
 		Hello:    hello,
+		ALPN:     ALPNHTTP2,
 		Sessions: utls.NewLRUClientSessionCache(64),
 		Net:      &net.Dialer{Timeout: 15 * time.Second, KeepAlive: 30 * time.Second},
 	}
@@ -40,7 +42,7 @@ func (d *Dialer) DialTLS(ctx context.Context, network, addr string) (*utls.UConn
 	conn := utls.UClient(raw, &utls.Config{
 		ServerName:         host,
 		ClientSessionCache: d.Sessions,
-		NextProtos:         []string{"h2", "http/1.1"},
+		NextProtos:         d.ALPN,
 		OmitEmptyPsk:       true,
 		RootCAs:            d.RootCAs,
 	}, utls.HelloCustom)

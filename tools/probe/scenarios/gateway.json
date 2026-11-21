@@ -1,0 +1,5 @@
+{
+  "page": "https://discord.com/robots.txt",
+  "hosts": ["gateway.discord.gg"],
+  "script": "async () => { await new Promise((ok) => { const ws = new WebSocket('wss://gateway.discord.gg/?encoding=etf&v=9&compress=zstd-stream'); ws.binaryType = 'arraybuffer'; ws.onclose = ws.onerror = () => ok(); setTimeout(ok, 3000); }); }"
+}

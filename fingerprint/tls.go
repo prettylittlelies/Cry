@@ -1,6 +1,10 @@
 package fingerprint
 
-import utls "github.com/refraction-networking/utls"
+import (
+	"slices"
+
+	utls "github.com/refraction-networking/utls"
+)
 
 type ClientHello func() *utls.ClientHelloSpec
 
@@ -10,7 +14,20 @@ const (
 	MLDSA87 utls.SignatureScheme = 0x0906
 )
 
+var (
+	ALPNHTTP2 = []string{"h2", "http/1.1"}
+	ALPNHTTP1 = []string{"http/1.1"}
+)
+
 func Chromium152() *utls.ClientHelloSpec {
+	return chromium152(ALPNHTTP2)
+}
+
+func Chromium152HTTP1() *utls.ClientHelloSpec {
+	return chromium152(ALPNHTTP1)
+}
+
+func chromium152(alpn []string) *utls.ClientHelloSpec {
 	return &utls.ClientHelloSpec{
 		CipherSuites: []uint16{
 			utls.GREASE_PLACEHOLDER,
@@ -31,7 +48,7 @@ func Chromium152() *utls.ClientHelloSpec {
 			utls.TLS_RSA_WITH_AES_256_CBC_SHA,
 		},
 		CompressionMethods: []byte{0},
-		Extensions: utls.ShuffleChromeTLSExtensions([]utls.TLSExtension{
+		Extensions: utls.ShuffleChromeTLSExtensions(slices.DeleteFunc([]utls.TLSExtension{
 			&utls.UtlsGREASEExtension{},
 			&utls.SNIExtension{},
 			&utls.ExtendedMasterSecretExtension{},
@@ -45,7 +62,7 @@ func Chromium152() *utls.ClientHelloSpec {
 			}},
 			&utls.SupportedPointsExtension{SupportedPoints: []byte{0}},
 			&utls.SessionTicketExtension{},
-			&utls.ALPNExtension{AlpnProtocols: []string{"h2", "http/1.1"}},
+			&utls.ALPNExtension{AlpnProtocols: alpn},
 			&utls.StatusRequestExtension{},
 			&utls.SignatureAlgorithmsExtension{SupportedSignatureAlgorithms: []utls.SignatureScheme{
 				utls.SignatureScheme(grease()),
@@ -74,10 +91,17 @@ func Chromium152() *utls.ClientHelloSpec {
 				utls.VersionTLS12,
 			}},
 			&utls.UtlsCompressCertExtension{Algorithms: []utls.CertCompressionAlgo{utls.CertCompressionBrotli}},
-			&utls.ApplicationSettingsExtensionNew{SupportedProtocols: []string{"h2"}},
+			alps(alpn),
 			utls.BoringGREASEECH(),
 			&utls.UtlsGREASEExtension{},
 			&utls.UtlsPreSharedKeyExtension{},
-		}),
+		}, func(e utls.TLSExtension) bool { return e == nil })),
 	}
+}
+
+func alps(alpn []string) utls.TLSExtension {
+	if !slices.Contains(alpn, "h2") {
+		return nil
+	}
+	return &utls.ApplicationSettingsExtensionNew{SupportedProtocols: []string{"h2"}}
 }
