@@ -10,109 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gobwas/ws"
-	"github.com/klauspost/compress/zstd"
 	"github.com/prettylittlelies/cry/build"
 	"github.com/prettylittlelies/cry/gateway"
-	"github.com/prettylittlelies/cry/internal/etf"
 	"github.com/prettylittlelies/cry/properties"
 	"github.com/prettylittlelies/cry/tests/testkit"
 	"github.com/prettylittlelies/cry/transport/websocket"
 )
-
-type peer struct {
-	t   *testing.T
-	ws  *testkit.WSPeer
-	buf bytes.Buffer
-	zw  *zstd.Encoder
-}
-
-func newPeer(t *testing.T, srv *testkit.WSServer) *peer {
-	t.Helper()
-	select {
-	case p := <-srv.Peers:
-		g := &peer{t: t, ws: p}
-		g.zw, _ = zstd.NewWriter(&g.buf)
-		return g
-	case <-time.After(5 * time.Second):
-		t.Fatal("client never connected")
-	}
-	return nil
-}
-
-func (p *peer) send(v any) {
-	p.t.Helper()
-	b, err := etf.Marshal(v)
-	if err != nil {
-		p.t.Fatal(err)
-	}
-	p.zw.Write(b)
-	p.zw.Flush()
-	msg := bytes.Clone(p.buf.Bytes())
-	p.buf.Reset()
-	if err := p.ws.Send(ws.NewBinaryFrame(msg)); err != nil {
-		p.t.Fatal(err)
-	}
-}
-
-type packet struct {
-	Op   int             `json:"op"`
-	D    json.RawMessage `json:"d"`
-	raw  json.RawMessage
-	keys []string
-}
-
-func keysOf(t *testing.T, raw json.RawMessage) []string {
-	t.Helper()
-	dec := json.NewDecoder(bytes.NewReader(raw))
-	dec.Token()
-	var out []string
-	for dec.More() {
-		k, _ := dec.Token()
-		out = append(out, k.(string))
-		var skip json.RawMessage
-		dec.Decode(&skip)
-	}
-	return out
-}
-
-func (p *peer) recv() packet {
-	p.t.Helper()
-	p.ws.Conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-	f, err := p.ws.Receive()
-	if err != nil {
-		p.t.Fatal(err)
-	}
-	if f.Header.OpCode != ws.OpBinary {
-		p.t.Fatalf("expected binary frame, got %v", f.Header.OpCode)
-	}
-	raw, err := etf.ToJSON(f.Payload)
-	if err != nil {
-		p.t.Fatal(err)
-	}
-	var pk packet
-	json.Unmarshal(raw, &pk)
-	pk.raw, pk.keys = raw, keysOf(p.t, raw)
-	return pk
-}
-
-func (p *peer) expect(op int) packet {
-	p.t.Helper()
-	for {
-		pk := p.recv()
-		if pk.Op == op {
-			return pk
-		}
-		if pk.Op != int(gateway.OpQoSHeartbeat) && pk.Op != int(gateway.OpUpdateTimeSpentSessionID) {
-			p.t.Fatalf("expected op %d, got %s", op, pk.raw)
-		}
-	}
-}
-
-func (p *peer) close(code int) {
-	p.ws.Send(ws.NewCloseFrame(ws.NewCloseFrameBody(ws.StatusCode(code), "")))
-	p.ws.Conn.Close()
-}
 
 func session(t *testing.T) *properties.Session {
 	t.Helper()
@@ -150,19 +53,15 @@ func start(t *testing.T, fast bool) *harness {
 	return h
 }
 
-func hello(interval int) map[string]any {
-	return map[string]any{"op": 10, "d": map[string]any{"heartbeat_interval": interval}}
-}
-
 func TestFastConnectIdentifyThenHeartbeat(t *testing.T) {
 	h := start(t, true)
-	p := newPeer(t, h.srv)
-	p.send(hello(150))
-	id := p.expect(int(gateway.OpIdentify))
-	if want := []string{"op", "d"}; !slices.Equal(id.keys, want) {
-		t.Fatalf("frame keys %v", id.keys)
+	p := testkit.AcceptGatewayPeer(t, h.srv)
+	p.Hello(150)
+	id := p.Expect(gateway.OpIdentify)
+	if want := []string{"op", "d"}; !slices.Equal(id.Keys, want) {
+		t.Fatalf("frame keys %v", id.Keys)
 	}
-	if got, want := keysOf(t, id.D), []string{"token", "capabilities", "properties", "client_state"}; !slices.Equal(got, want) {
+	if got, want := testkit.KeysOf(t, id.D), []string{"token", "capabilities", "properties", "client_state"}; !slices.Equal(got, want) {
 		t.Fatalf("identify keys %v", got)
 	}
 	var d struct {
@@ -180,16 +79,16 @@ func TestFastConnectIdentifyThenHeartbeat(t *testing.T) {
 			t.Fatalf("fast connect properties carry %s", absent)
 		}
 	}
-	p.send(map[string]any{"op": 0, "s": 1, "t": "READY", "d": map[string]any{"session_id": "abc", "resume_gateway_url": h.srv.URL}})
+	p.Send(map[string]any{"op": 0, "s": 1, "t": "READY", "d": map[string]any{"session_id": "abc", "resume_gateway_url": h.srv.URL}})
 	if e := <-h.events; e.Type != "READY" || e.Seq != 1 {
 		t.Fatalf("event %+v", e)
 	}
-	ts := p.expect(int(gateway.OpUpdateTimeSpentSessionID))
-	if got := keysOf(t, ts.D); !slices.Equal(got, []string{"initialization_timestamp", "session_id", "client_launch_id"}) {
+	ts := p.Expect(gateway.OpUpdateTimeSpentSessionID)
+	if got := testkit.KeysOf(t, ts.D); !slices.Equal(got, []string{"initialization_timestamp", "session_id", "client_launch_id"}) {
 		t.Fatalf("time spent keys %v", got)
 	}
-	hb := p.expect(int(gateway.OpQoSHeartbeat))
-	if got := keysOf(t, hb.D); !slices.Equal(got, []string{"seq", "qos"}) {
+	hb := p.Expect(gateway.OpQoSHeartbeat)
+	if got := testkit.KeysOf(t, hb.D); !slices.Equal(got, []string{"seq", "qos"}) {
 		t.Fatalf("heartbeat keys %v", got)
 	}
 	var beat struct {
@@ -208,16 +107,16 @@ func TestFastConnectIdentifyThenHeartbeat(t *testing.T) {
 
 func TestReconnectResumes(t *testing.T) {
 	h := start(t, true)
-	p := newPeer(t, h.srv)
-	p.send(hello(10000))
-	p.expect(int(gateway.OpIdentify))
-	p.send(map[string]any{"op": 0, "s": 7, "t": "READY", "d": map[string]any{"session_id": "abc", "resume_gateway_url": h.srv.URL}})
+	p := testkit.AcceptGatewayPeer(t, h.srv)
+	p.Hello(10000)
+	p.Expect(gateway.OpIdentify)
+	p.Send(map[string]any{"op": 0, "s": 7, "t": "READY", "d": map[string]any{"session_id": "abc", "resume_gateway_url": h.srv.URL}})
 	<-h.events
-	p.send(map[string]any{"op": 7, "d": nil})
-	next := newPeer(t, h.srv)
-	next.send(hello(10000))
-	r := next.expect(int(gateway.OpResume))
-	if got := keysOf(t, r.D); !slices.Equal(got, []string{"token", "session_id", "seq"}) {
+	p.Send(map[string]any{"op": 7, "d": nil})
+	next := testkit.AcceptGatewayPeer(t, h.srv)
+	next.Hello(10000)
+	r := next.Expect(gateway.OpResume)
+	if got := testkit.KeysOf(t, r.D); !slices.Equal(got, []string{"token", "session_id", "seq"}) {
 		t.Fatalf("resume keys %v", got)
 	}
 	var res struct {
@@ -233,15 +132,15 @@ func TestReconnectResumes(t *testing.T) {
 
 func TestInvalidSessionFullIdentify(t *testing.T) {
 	h := start(t, true)
-	p := newPeer(t, h.srv)
-	p.send(hello(10000))
-	p.expect(int(gateway.OpIdentify))
+	p := testkit.AcceptGatewayPeer(t, h.srv)
+	p.Hello(10000)
+	p.Expect(gateway.OpIdentify)
 	derived := base64.StdEncoding.EncodeToString([]byte{0x0a, 0x02, 0xca, 0xfe})
-	p.send(map[string]any{"op": 0, "s": 1, "t": "READY", "d": map[string]any{"session_id": "abc", "qos_token": derived}})
+	p.Send(map[string]any{"op": 0, "s": 1, "t": "READY", "d": map[string]any{"session_id": "abc", "qos_token": derived}})
 	<-h.events
-	p.send(map[string]any{"op": 9, "d": false})
-	id := p.expect(int(gateway.OpIdentify))
-	if got, want := keysOf(t, id.D), []string{"token", "capabilities", "properties", "presence", "compress", "client_state", "qos_token"}; !slices.Equal(got, want) {
+	p.Send(map[string]any{"op": 9, "d": false})
+	id := p.Expect(gateway.OpIdentify)
+	if got, want := testkit.KeysOf(t, id.D), []string{"token", "capabilities", "properties", "presence", "compress", "client_state", "qos_token"}; !slices.Equal(got, want) {
 		t.Fatalf("identify keys %v", got)
 	}
 	var d struct {
@@ -265,10 +164,10 @@ func TestInvalidSessionFullIdentify(t *testing.T) {
 
 func TestAuthenticationFailureStops(t *testing.T) {
 	h := start(t, true)
-	p := newPeer(t, h.srv)
-	p.send(hello(10000))
-	p.expect(int(gateway.OpIdentify))
-	p.close(4004)
+	p := testkit.AcceptGatewayPeer(t, h.srv)
+	p.Hello(10000)
+	p.Expect(gateway.OpIdentify)
+	p.Close(4004)
 	select {
 	case err := <-h.done:
 		if !errors.Is(err, gateway.ErrAuthenticationFailed) {
