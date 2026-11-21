@@ -37,6 +37,16 @@ func (p *Parameter) Required() bool {
 	return !p.HasDefault
 }
 
+func (p *Parameter) DisplayDefault() (string, bool) {
+	switch {
+	case p.DisplayedDefault != "":
+		return p.DisplayedDefault, true
+	case !p.HasDefault:
+		return "", false
+	}
+	return p.Default, true
+}
+
 func (p *Parameter) converter() reflect.Type {
 	t := p.Type
 	if p.Kind == VarPositional || p.Greedy {

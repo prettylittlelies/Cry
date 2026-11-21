@@ -109,8 +109,20 @@ func nonce() json.RawMessage {
 }
 
 func (c *Context) SendMessage(params discord.CreateMessageParams) (*discord.Message, error) {
+	return c.sendTo(c.Message.ChannelID, params)
+}
+
+func (c *Context) SendAuthor(content string) (*discord.Message, error) {
+	dm, err := c.Bot.client.API().CreatePrivateChannel(c, discord.CreatePrivateChannelParams{Recipients: []snowflake.ID{c.Message.Author.ID}})
+	if err != nil {
+		return nil, err
+	}
+	return c.sendTo(dm.ID, discord.CreateMessageParams{Content: content})
+}
+
+func (c *Context) sendTo(channel snowflake.ID, params discord.CreateMessageParams) (*discord.Message, error) {
 	params.Nonce = nonce()
-	return c.Bot.client.API().CreateMessage(c, c.Message.ChannelID, params)
+	return c.Bot.client.API().CreateMessage(c, channel, params)
 }
 
 func (c *Context) Send(content string) (*discord.Message, error) {

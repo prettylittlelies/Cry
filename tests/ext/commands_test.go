@@ -56,7 +56,12 @@ type harness struct {
 
 func newBot(t *testing.T, opts ...commands.BotOption) *harness {
 	t.Helper()
-	srv := testkit.NewH2Server(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) }))
+	return newBotWith(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) }), opts...)
+}
+
+func newBotWith(t *testing.T, handler http.Handler, opts ...commands.BotOption) *harness {
+	t.Helper()
+	srv := testkit.NewH2Server(t, handler)
 	v := func(s string) build.Version { out, _ := build.ParseVersion(s); return out }
 	snap := &build.Snapshot{Releases: map[build.Channel]build.Release{build.Stable: {Channel: build.Stable, Number: 1, MacOS: build.MacOS{Host: v("0.0.421"), Electron: v("44.10.0"), Chrome: v("152.0.7977.169")}}}}
 	c, err := cry.New(context.Background(), "token", cry.WithSnapshot(snap), cry.WithAPIBase(srv.URL), cry.WithRootCAs(srv.Pool))

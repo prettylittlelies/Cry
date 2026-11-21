@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"slices"
 	"sync"
 
@@ -50,6 +51,9 @@ func WithCaseInsensitive() BotOption      { return func(b *Bot) { b.fold = true 
 func WithStripAfterPrefix() BotOption     { return func(b *Bot) { b.stripAfterPrefix = true } }
 func WithDescription(d string) BotOption  { return func(b *Bot) { b.Description = d } }
 func WithLogger(l *slog.Logger) BotOption { return func(b *Bot) { b.logger = l } }
+func WithHelpCommand(h HelpCommand) BotOption {
+	return func(b *Bot) { b.help, b.customHelp = h, true }
+}
 func WithOwnerIDs(ids ...snowflake.ID) BotOption {
 	return func(b *Bot) { b.ownerIDs = ids }
 }
@@ -86,6 +90,8 @@ type Bot struct {
 	cogs       map[string]*loadedCog
 	extensions map[string]*extensionRecord
 	loading    *extensionRecord
+	help       HelpCommand
+	customHelp bool
 }
 
 func NewBot(c *cry.Client, opts ...BotOption) *Bot {
@@ -100,6 +106,12 @@ func NewBot(c *cry.Client, opts ...BotOption) *Bot {
 		o(b)
 	}
 	b.group = newGroup(b.fold)
+	if !b.customHelp {
+		b.help = NewDefaultHelp()
+	}
+	if err := b.installHelp(b.help); err != nil {
+		panic(err)
+	}
 	b.remove = append(b.remove,
 		cry.On(c, func(ctx context.Context, m *discord.MessageCreateEvent) { b.ProcessCommands(ctx, m) }),
 		cry.On(c, func(_ context.Context, e *CommandErrorEvent) { b.defaultError(e) }),
@@ -352,4 +364,36 @@ func (b *Bot) Close(ctx context.Context) {
 	for _, remove := range b.remove {
 		remove()
 	}
+}
+
+func (b *Bot) HelpCommand() HelpCommand {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return b.help
+}
+
+func (b *Bot) SetHelpCommand(h HelpCommand) error {
+	b.mu.Lock()
+	old := b.help
+	b.mu.Unlock()
+	if old != nil {
+		b.RemoveCommand(old.helpBase().impl.Name)
+	}
+	if err := b.installHelp(h); err != nil {
+		return err
+	}
+	b.mu.Lock()
+	b.help = h
+	b.mu.Unlock()
+	return nil
+}
+
+func (b *Bot) installHelp(h HelpCommand) error {
+	if h == nil {
+		return nil
+	}
+	if v := reflect.ValueOf(h); v.Kind() != reflect.Pointer || v.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("commands: help command must be a pointer to a struct, got %T", h)
+	}
+	return b.AddCommand(newHelpImpl(h))
 }
