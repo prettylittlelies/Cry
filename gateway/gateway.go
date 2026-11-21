@@ -283,3 +283,7 @@ func jitter(d time.Duration) time.Duration {
 func trimSlash(s string) string {
 	return strings.TrimSuffix(s, "/")
 }
+
+func (g *Gateway) Browser() websocket.Browser { return g.cfg.Browser }
+
+func (g *Gateway) Jar() http.CookieJar { return g.cfg.Jar }

@@ -19,5 +19,5 @@ for src in $SOURCES; do
   [ -f "$obj" ] || g++ $FLAGS -c "$src" -o "$obj" &
 done
 wait
-g++ $FLAGS "$HERE/harness.cpp" "$OUT"/obj/*.o -o "$OUT/harness" -lssl -lcrypto -static-libgcc -static-libstdc++
+g++ $FLAGS "$HERE/harness.cpp" "$OUT"/obj/*.o -o "$OUT/harness" -lssl -lcrypto ${EXTRA_LIBS:-} -static-libgcc -static-libstdc++
 echo "$OUT/harness"
