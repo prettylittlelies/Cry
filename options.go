@@ -1,6 +1,7 @@
 package cry
 
 import (
+	"crypto/x509"
 	"log/slog"
 
 	"github.com/prettylittlelies/cry/build"
@@ -20,6 +21,7 @@ type config struct {
 	logger      *slog.Logger
 	endpoint    string
 	restBase    string
+	roots       *x509.CertPool
 }
 
 func defaults() config {
@@ -64,6 +66,10 @@ func WithLogger(l *slog.Logger) Option {
 
 func WithGatewayEndpoint(url string) Option {
 	return func(c *config) { c.endpoint = url }
+}
+
+func WithRootCAs(pool *x509.CertPool) Option {
+	return func(c *config) { c.roots = pool }
 }
 
 func WithAPIBase(url string) Option {

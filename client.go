@@ -41,7 +41,11 @@ func New(ctx context.Context, token string, opts ...Option) (*Client, error) {
 	for _, o := range opts {
 		o(&cfg)
 	}
-	tr := transport.New(fingerprint.Electron44())
+	var trOpts []transport.Option
+	if cfg.roots != nil {
+		trOpts = append(trOpts, transport.WithRootCAs(cfg.roots))
+	}
+	tr := transport.New(fingerprint.Electron44(), trOpts...)
 	snap := cfg.snapshot
 	if snap == nil {
 		var err error
@@ -82,6 +86,7 @@ func New(ctx context.Context, token string, opts ...Option) (*Client, error) {
 		Browser:     websocket.Browser{UserAgent: session.UserAgent(), Origin: rest.DefaultOrigin, AcceptLanguage: cfg.host.Locale},
 		Handler:     c.handle,
 	})
+	c.gateway.Dialer().RootCAs = cfg.roots
 	return c, nil
 }
 

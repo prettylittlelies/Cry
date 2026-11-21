@@ -72,3 +72,21 @@ func (s *State) Message(id snowflake.ID) (discord.MessageCreateEvent, bool) {
 	defer s.mu.RUnlock()
 	return s.messages.get(id)
 }
+
+func (s *State) UserByName(name string) (discord.PartialUser, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var display *discord.PartialUser
+	for _, u := range s.users {
+		if u.Username == name {
+			return *u, true
+		}
+		if display == nil && u.GlobalName != nil && *u.GlobalName == name {
+			display = u
+		}
+	}
+	if display != nil {
+		return *display, true
+	}
+	return discord.PartialUser{}, false
+}
