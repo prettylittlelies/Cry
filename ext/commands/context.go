@@ -2,11 +2,9 @@ package commands
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/prettylittlelies/cry"
 	"regexp"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/prettylittlelies/cry/discord"
 	"github.com/prettylittlelies/cry/snowflake"
@@ -106,25 +104,20 @@ func (c *Context) TopRoleID() snowflake.ID {
 	return top
 }
 
-func nonce() json.RawMessage {
-	return json.RawMessage(strconv.Quote(snowflake.FromTime(time.Now()).String()))
+func (c *Context) Channel() cry.Channel {
+	return c.Bot.client.Channel(c.Message.ChannelID)
+}
+
+func (c *Context) MessageHandle() cry.Message {
+	return c.Bot.client.Message(c.Message.ChannelID, c.Message.ID)
 }
 
 func (c *Context) SendMessage(params discord.CreateMessageParams) (*discord.Message, error) {
-	return c.sendTo(c.Message.ChannelID, params)
+	return c.Channel().SendMessage(c, params)
 }
 
 func (c *Context) SendAuthor(content string) (*discord.Message, error) {
-	dm, err := c.Bot.client.API().CreatePrivateChannel(c, discord.CreatePrivateChannelParams{Recipients: []snowflake.ID{c.Message.Author.ID}})
-	if err != nil {
-		return nil, err
-	}
-	return c.sendTo(dm.ID, discord.CreateMessageParams{Content: content})
-}
-
-func (c *Context) sendTo(channel snowflake.ID, params discord.CreateMessageParams) (*discord.Message, error) {
-	params.Nonce = nonce()
-	return c.Bot.client.API().CreateMessage(c, channel, params)
+	return c.Bot.client.User(c.Message.Author.ID).Send(c, content)
 }
 
 func (c *Context) Send(content string) (*discord.Message, error) {
@@ -132,9 +125,9 @@ func (c *Context) Send(content string) (*discord.Message, error) {
 }
 
 func (c *Context) Reply(content string) (*discord.Message, error) {
-	return c.SendMessage(discord.CreateMessageParams{
+	return c.MessageHandle().ReplyMessage(c, discord.CreateMessageParams{
 		Content:          content,
-		MessageReference: discord.MessageReference{MessageID: c.Message.ID, ChannelID: c.Message.ChannelID, GuildID: c.Message.GuildID},
+		MessageReference: discord.MessageReference{GuildID: c.Message.GuildID},
 	})
 }
 

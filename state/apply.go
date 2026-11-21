@@ -89,6 +89,8 @@ func (s *State) putChannel(c discord.Channel) {
 
 func (s *State) applyChannel(event any) {
 	switch e := event.(type) {
+	case *discord.Channel:
+		s.putChannel(*e)
 	case *discord.ChannelCreateEvent:
 		s.putChannel(e.AsChannel())
 	case *discord.ChannelUpdateEvent:

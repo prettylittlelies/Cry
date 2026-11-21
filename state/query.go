@@ -142,3 +142,14 @@ func (s *State) VoiceStates(guild snowflake.ID) []discord.VoiceState {
 	}
 	return out
 }
+
+func (s *State) DirectMessage(user snowflake.ID) (snowflake.ID, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for id, c := range s.channels {
+		if c.Type == discord.ChannelTypeDM && slices.ContainsFunc(c.Recipients, func(u discord.PartialUser) bool { return u.ID == user }) {
+			return id, true
+		}
+	}
+	return 0, false
+}
