@@ -4,31 +4,21 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/prettylittlelies/cry/discord"
 	"github.com/prettylittlelies/cry/properties"
 )
 
 const ColdStart = "COLD_START"
 
-type Status string
-
-const (
-	Online    Status = "online"
-	Idle      Status = "idle"
-	DND       Status = "dnd"
-	Invisible Status = "invisible"
-	Offline   Status = "offline"
-	Unknown   Status = "unknown"
-)
-
 type Presence struct {
-	Status     Status `json:"status"`
-	Since      int64  `json:"since"`
-	Activities []any  `json:"activities"`
-	AFK        bool   `json:"afk"`
+	Status     discord.StatusType `json:"status"`
+	Since      int64              `json:"since"`
+	Activities []discord.Activity `json:"activities"`
+	AFK        bool               `json:"afk"`
 }
 
 func DefaultPresence() Presence {
-	return Presence{Status: Online, Activities: []any{}}
+	return Presence{Status: discord.StatusTypeOnline, Activities: []discord.Activity{}}
 }
 
 type ClientState struct {

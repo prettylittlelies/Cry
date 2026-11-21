@@ -202,6 +202,7 @@ func (s *session) identify() error {
 	}
 	active := g.qos.active()
 	derived := g.derivedQoS
+	presence := g.presence
 	g.mu.Unlock()
 	props := g.cfg.Session.Properties()
 	if fast {
@@ -216,7 +217,7 @@ func (s *session) identify() error {
 		Token:        g.cfg.Token,
 		Capabilities: g.cfg.Capabilities,
 		Properties:   identifyProperties{Desktop: props, GatewayConnectReasons: reasons, InstallationID: g.cfg.InstallationID},
-		Presence:     g.cfg.Presence,
+		Presence:     presence,
 		Compress:     false,
 		ClientState:  freshClientState(),
 		QoSToken:     qosToken(active, derived),

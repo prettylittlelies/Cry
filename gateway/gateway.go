@@ -93,6 +93,7 @@ type Gateway struct {
 	connected  bool
 	wake       chan struct{}
 	timeSpent  timeSpent
+	presence   Presence
 }
 
 func New(cfg Config) *Gateway {
@@ -104,6 +105,7 @@ func New(cfg Config) *Gateway {
 		reasons: []string{ColdStart},
 		wake:    make(chan struct{}, 1),
 	}
+	g.presence = cfg.Presence
 	g.qos.change(initialQoS(cfg.Session.Properties().ClientAppState))
 	return g
 }
