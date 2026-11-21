@@ -43,7 +43,7 @@ func enumKind(e *Enum) string {
 
 func emitEnums(enums []*namedEnum) []byte {
 	var b bytes.Buffer
-	b.WriteString("package discord\n\n")
+	b.WriteString("package discord\n\nimport \"strconv\"\n\n")
 	for _, ne := range enums {
 		goType := map[string]string{"flags": "uint64", "int": "int64", "string": "string"}[ne.kind]
 		fmt.Fprintf(&b, "type %s %s\n\nconst (\n", ne.name, goType)
@@ -68,8 +68,30 @@ func emitEnums(enums []*namedEnum) []byte {
 			}
 		}
 		b.WriteString(")\n\n")
+		if ne.kind != "string" {
+			writeStringer(&b, ne, seen)
+		}
 	}
 	return gofmt(b.Bytes())
+}
+
+func writeStringer(b *bytes.Buffer, ne *namedEnum, seen map[string]bool) {
+	fmt.Fprintf(b, "func (v %s) String() string {\n\tswitch v {\n", ne.name)
+	done := map[uint64]bool{}
+	for _, v := range ne.enum.Values {
+		name := ne.name + GoName(v.Name)
+		key, ok := numericValue(v.Value)
+		if !ok || !seen[name] || done[key] || GoName(v.Name) == "X" {
+			continue
+		}
+		done[key] = true
+		fmt.Fprintf(b, "\tcase %s:\n\t\treturn %q\n", name, v.Name)
+	}
+	if ne.kind == "flags" {
+		b.WriteString("\t}\n\treturn strconv.FormatUint(uint64(v), 10)\n}\n\n")
+		return
+	}
+	b.WriteString("\t}\n\treturn strconv.FormatInt(int64(v), 10)\n}\n\n")
 }
 
 type genField struct {
@@ -79,6 +101,7 @@ type genField struct {
 var extras = map[string][]genField{
 	"GatewayGuild": {{name: "ID", typ: "snowflake.ID", tag: "id"}},
 	"GuildMember":  {{name: "UserID", typ: "snowflake.ID", tag: "user_id,omitzero"}},
+	"PartialGuild": {{name: "OwnerID", typ: "snowflake.ID", tag: "owner_id,omitzero"}},
 }
 
 func structFields(spec *Spec, r *resolver, overrides map[string]string) map[string][]genField {
@@ -197,4 +220,14 @@ func gofmt(src []byte) []byte {
 		panic(fmt.Sprintf("gendiscord: generated code does not format: %v", err))
 	}
 	return out
+}
+
+func numericValue(v string) (uint64, bool) {
+	if m := shiftValue.FindStringSubmatch(v); m != nil {
+		base, _ := strconv.ParseUint(m[1], 10, 64)
+		bit, _ := strconv.Atoi(m[2])
+		return base << bit, true
+	}
+	n, err := strconv.ParseInt(v, 10, 64)
+	return uint64(n), err == nil
 }

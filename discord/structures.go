@@ -8753,7 +8753,7 @@ type PartialApplication struct {
 	Type                        *ApplicationType                                   `json:"type"`
 	Flags                       ApplicationFlags                                   `json:"flags"`
 	FlagsNew                    string                                             `json:"flags_new"`
-	PrimarySKU                  *SKU                                               `json:"primary_sku,omitempty"`
+	PrimarySKU                  SKU                                                `json:"primary_sku,omitzero"`
 	PrimarySKUID                snowflake.ID                                       `json:"primary_sku_id,omitzero"`
 	VerifyKey                   string                                             `json:"verify_key"`
 	GuildID                     snowflake.ID                                       `json:"guild_id,omitzero"`
@@ -8833,6 +8833,7 @@ type PartialGuild struct {
 	Stickers                 []Sticker    `json:"stickers,omitempty"`
 	ApproximateMemberCount   int64        `json:"approximate_member_count,omitzero"`
 	ApproximatePresenceCount int64        `json:"approximate_presence_count,omitzero"`
+	OwnerID                  snowflake.ID `json:"owner_id,omitzero"`
 }
 
 type PartialGuildUpdates struct {
@@ -10802,7 +10803,7 @@ type SKU struct {
 	ID                             snowflake.ID                  `json:"id"`
 	Type                           SKUType                       `json:"type"`
 	ApplicationID                  snowflake.ID                  `json:"application_id"`
-	Application                    PartialApplication            `json:"application,omitzero"`
+	Application                    *PartialApplication           `json:"application,omitempty"`
 	ProductLine                    *SKUProductLine               `json:"product_line"`
 	ProductID                      snowflake.ID                  `json:"product_id,omitzero"`
 	Flags                          SKUFlags                      `json:"flags"`
