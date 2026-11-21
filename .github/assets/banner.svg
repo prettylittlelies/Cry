@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-label="cry">
+<rect width="1280" height="320" fill="#000000"/>
+<path d="M470 92C496 132 512 156 512 184A42 42 0 0 1 428 184C428 156 444 132 470 92Z" fill="#ffffff"/>
+<g fill="none" stroke="#cfff53" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+<path d="M640 140A42 42 0 1 0 640 196"/>
+<path d="M680 118V218M680 162Q680 118 728 118"/>
+<path d="M760 118L800 214M840 118L784 252"/>
+</g>
+</svg>
