@@ -77,13 +77,8 @@ func ParseTransition(payload []byte) (uint16, []byte, error) {
 	return uint16(payload[0])<<8 | uint16(payload[1]), payload[2:], nil
 }
 
-func EncodeKeyPackage(kp *mls.KeyPackage) []byte {
-	return append([]byte{byte(OpKeyPackage)}, mls.Marshal(&mls.Message{WireFormat: mls.WireKeyPackage, KeyPackage: kp})...)
-}
-
 func EncodeCommitWelcome(commit *mls.Message, welcome *mls.Welcome) []byte {
 	var w mls.Writer
-	w.U8(uint8(OpCommitWelcome))
 	w.Encode(commit)
 	if welcome != nil {
 		w.Encode(welcome)

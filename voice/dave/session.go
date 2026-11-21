@@ -128,7 +128,7 @@ func (s *Session) KeyPackage() ([]byte, error) {
 			return nil, err
 		}
 	}
-	return EncodeKeyPackage(&kp.Package), nil
+	return mls.Marshal(&kp.Package), nil
 }
 
 func (s *Session) base() *mls.Group {

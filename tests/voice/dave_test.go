@@ -62,21 +62,18 @@ func (g *gateway) connect(user snowflake.ID) {
 	if err != nil {
 		g.t.Fatal(err)
 	}
-	if encoded[0] != byte(dave.OpKeyPackage) {
-		g.t.Fatalf("key package opcode %d", encoded[0])
-	}
-	var m mls.Message
-	if err := mls.Unmarshal(encoded[1:], &m); err != nil {
+	kp := new(mls.KeyPackage)
+	if err := mls.Unmarshal(encoded, kp); err != nil {
 		g.t.Fatal(err)
 	}
-	if err := m.KeyPackage.Verify(g.suite); err != nil {
+	if err := kp.Verify(g.suite); err != nil {
 		g.t.Fatal(err)
 	}
-	if got, ok := dave.UserOf(m.KeyPackage.LeafNode.Credential); !ok || got != user {
+	if got, ok := dave.UserOf(kp.LeafNode.Credential); !ok || got != user {
 		g.t.Fatal("credential is not the user id")
 	}
 	g.members[user] = s
-	g.packages[user] = m.KeyPackage
+	g.packages[user] = kp
 }
 
 func (g *gateway) leafOf(user snowflake.ID, group *mls.Group) mls.LeafIndex {
@@ -115,10 +112,10 @@ func (g *gateway) round(proposals []*mls.Message, recipients []snowflake.ID, joi
 		if err != nil {
 			g.t.Fatalf("user %d proposals: %v", u, err)
 		}
-		if out == nil || out[0] != byte(dave.OpCommitWelcome) {
+		if out == nil {
 			g.t.Fatalf("user %d produced no commit", u)
 		}
-		commits[u] = out[1:]
+		commits[u] = out
 	}
 	commit, welcome, err := dave.ParseCommitWelcome(commits[winner])
 	if err != nil {
