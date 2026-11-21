@@ -43,3 +43,22 @@ func TestOggOpusDemux(t *testing.T) {
 		t.Fatalf("not ogg: %v", err)
 	}
 }
+
+func TestOggWriterRoundTrip(t *testing.T) {
+	var buf bytes.Buffer
+	w := voice.NewOggWriter(&buf)
+	packets := [][]byte{bytes.Repeat([]byte{1}, 300), {0xF8, 0xFF, 0xFE}}
+	for _, p := range packets {
+		if err := w.WritePacket(p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	w.Close()
+	r := voice.NewOggOpus(&buf)
+	for _, want := range packets {
+		got, err := r.Next()
+		if err != nil || !bytes.Equal(got, want) {
+			t.Fatalf("got %d bytes, %v", len(got), err)
+		}
+	}
+}

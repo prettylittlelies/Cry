@@ -2,3 +2,4 @@
 *.token
 token
 /tests/live/.token
+/tests/live/recordings/

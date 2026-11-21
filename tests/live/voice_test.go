@@ -8,7 +8,9 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -77,7 +79,8 @@ func TestVoiceJoin(t *testing.T) {
 
 	joinCtx, joinCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer joinCancel()
-	conn, err := voice.Join(joinCtx, c, guild, channel, voice.Options{SelfMute: false})
+	rec := newRecorder(t)
+	conn, err := voice.Join(joinCtx, c, guild, channel, voice.Options{SelfMute: false, OnOpus: rec.write})
 	if err != nil {
 		t.Fatalf("join: %v", err)
 	}
@@ -123,7 +126,76 @@ func TestVoiceJoin(t *testing.T) {
 	} else if err := conn.Play(ctx, &silence{left: 250}); err != nil {
 		t.Fatalf("play silence: %v", err)
 	}
+	if raw := os.Getenv("CRY_VOICE_RECORD"); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil {
+			t.Fatalf("CRY_VOICE_RECORD: %v", err)
+		}
+		rec.start()
+		t.Logf("recording for %s, talk from another account now", d)
+		time.Sleep(d)
+		rec.stop()
+	}
 	if err := conn.Err(); err != nil {
 		t.Fatalf("connection failed: %v", err)
+	}
+}
+
+type recorder struct {
+	t       *testing.T
+	mu      sync.Mutex
+	on      bool
+	files   map[snowflake.ID]*os.File
+	writers map[snowflake.ID]*voice.OggWriter
+	frames  map[snowflake.ID]int
+}
+
+func newRecorder(t *testing.T) *recorder {
+	return &recorder{t: t, files: map[snowflake.ID]*os.File{}, writers: map[snowflake.ID]*voice.OggWriter{}, frames: map[snowflake.ID]int{}}
+}
+
+func (r *recorder) start() {
+	r.mu.Lock()
+	r.on = true
+	r.mu.Unlock()
+}
+
+func (r *recorder) write(user snowflake.ID, frame []byte) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if !r.on {
+		return
+	}
+	w, ok := r.writers[user]
+	if !ok {
+		if err := os.MkdirAll("recordings", 0o755); err != nil {
+			r.t.Error(err)
+			return
+		}
+		f, err := os.Create(filepath.Join("recordings", user.String()+".ogg"))
+		if err != nil {
+			r.t.Error(err)
+			return
+		}
+		r.files[user], w = f, voice.NewOggWriter(f)
+		r.writers[user] = w
+	}
+	if err := w.WritePacket(frame); err == nil {
+		r.frames[user]++
+	}
+}
+
+func (r *recorder) stop() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.on = false
+	if len(r.writers) == 0 {
+		r.t.Log("heard nobody")
+	}
+	for user, w := range r.writers {
+		w.Close()
+		r.files[user].Close()
+		abs, _ := filepath.Abs(r.files[user].Name())
+		r.t.Logf("user %d: %d frames (%.1fs) -> %s", user, r.frames[user], float64(r.frames[user])*0.02, abs)
 	}
 }
