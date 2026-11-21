@@ -150,14 +150,19 @@ func (c *conn) fields(req *http.Request) []hpack.HeaderField {
 	if h == nil {
 		h = http.Header{}
 	}
-	if req.ContentLength > 0 && h.Get("Content-Length") == "" {
-		h.Set("Content-Length", strconv.FormatInt(req.ContentLength, 10))
+	if h.Get("Content-Length") == "" {
+		switch {
+		case req.ContentLength > 0:
+			h.Set("Content-Length", strconv.FormatInt(req.ContentLength, 10))
+		case req.Method == http.MethodPost || req.Method == http.MethodPut:
+			h.Set("Content-Length", "0")
+		}
 	}
 	out := make([]hpack.HeaderField, 0, len(h)+4)
 	for _, p := range c.profile.H2.PseudoOrder {
 		out = append(out, hpack.HeaderField{Name: string(p), Value: pseudo[p]})
 	}
-	return append(out, c.profile.Headers.Fields(h)...)
+	return append(out, c.profile.Headers.Fields(req.Method, h)...)
 }
 
 func (c *conn) open(fields []hpack.HeaderField, end bool, prio http2.PriorityParam) (*stream, error) {
