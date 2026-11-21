@@ -4,11 +4,13 @@ package live_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http/cookiejar"
 	"testing"
 	"time"
 
 	"github.com/prettylittlelies/cry/fingerprint"
+	"github.com/prettylittlelies/cry/gateway/codec"
 	"github.com/prettylittlelies/cry/transport/websocket"
 )
 
@@ -29,12 +31,27 @@ func TestGatewayHandshake(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer c.Close(1000, "")
-	op, msg, err := c.Read()
+	r, err := codec.NewReader(c, codec.ETF, codec.ZstdStream)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if op != websocket.Binary || len(msg) < 4 || msg[0] != 0x28 || msg[1] != 0xb5 || msg[2] != 0x2f || msg[3] != 0xfd {
-		t.Fatalf("expected a zstd frame, got op=%v % x", op, msg[:min(len(msg), 8)])
+	defer r.Close()
+	raw, err := r.Next()
+	if err != nil {
+		t.Fatal(err)
 	}
-	t.Logf("hello frame: %d zstd bytes, cookies set: %d", len(msg), len(c.Response.Cookies()))
+	var hello struct {
+		Op int `json:"op"`
+		D  struct {
+			HeartbeatInterval int      `json:"heartbeat_interval"`
+			Trace             []string `json:"_trace"`
+		} `json:"d"`
+	}
+	if err := json.Unmarshal(raw, &hello); err != nil {
+		t.Fatal(err)
+	}
+	if hello.Op != 10 || hello.D.HeartbeatInterval == 0 {
+		t.Fatalf("unexpected hello %s", raw)
+	}
+	t.Logf("HELLO: %s", raw)
 }
