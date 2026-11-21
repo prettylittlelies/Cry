@@ -31,6 +31,14 @@ func (s *State) applyGuild(event any) {
 		if g, ok := s.guilds[e.GuildID]; ok {
 			g.Stickers = e.Stickers
 		}
+	case *discord.GuildScheduledEventCreateEvent:
+		s.putScheduledEvent(e.AsGuildScheduledEvent())
+	case *discord.GuildScheduledEventUpdateEvent:
+		s.putScheduledEvent(e.AsGuildScheduledEvent())
+	case *discord.GuildScheduledEventDeleteEvent:
+		if g, ok := s.guilds[e.GuildID]; ok {
+			g.GuildScheduledEvents = deleteWhere(g.GuildScheduledEvents, func(x discord.GuildScheduledEvent) bool { return x.ID == e.ID })
+		}
 	case *discord.GuildMemberAddEvent:
 		s.putMember(e.GuildID, e.AsGuildMember())
 	case *discord.GuildMemberUpdateEvent:
@@ -136,4 +144,16 @@ func (s *State) putVoiceState(guild snowflake.ID, v discord.VoiceState) {
 		s.voice[guild] = map[snowflake.ID]*discord.VoiceState{}
 	}
 	s.voice[guild][v.UserID] = &v
+}
+
+func (s *State) putScheduledEvent(e discord.GuildScheduledEvent) {
+	g, ok := s.guilds[e.GuildID]
+	if !ok {
+		return
+	}
+	if i := slices.IndexFunc(g.GuildScheduledEvents, func(x discord.GuildScheduledEvent) bool { return x.ID == e.ID }); i >= 0 {
+		g.GuildScheduledEvents[i] = e
+		return
+	}
+	g.GuildScheduledEvents = append(g.GuildScheduledEvents, e)
 }

@@ -45,6 +45,7 @@ type HelpBase struct {
 	VerifyChecks   VerifyChecks
 	CommandName    string
 	CommandOptions []Option
+	Cog            Cog
 	Context        *Context
 
 	impl *Command
@@ -85,6 +86,13 @@ func (h *HelpBase) SubcommandNotFound(command *Command, name string) string {
 
 func (h *HelpBase) Command() *Command { return h.impl }
 
+func (h *HelpBase) SetCog(cog Cog) {
+	h.Cog = cog
+	if h.impl != nil {
+		h.impl.Cog = cog
+	}
+}
+
 func (h *HelpBase) InvokedWith() string {
 	name := h.impl.Name
 	ctx := h.Context
@@ -98,10 +106,18 @@ func (h *HelpBase) BotMapping() map[Cog][]*Command {
 	bot := h.Context.Bot
 	mapping := map[Cog][]*Command{}
 	for _, cog := range bot.Cogs() {
-		mapping[cog] = slices.DeleteFunc(slices.Clone(cog.CogCommands()), func(c *Command) bool { return c.Parent != nil })
+		mapping[cog] = h.CogCommands(cog)
 	}
 	mapping[nil] = slices.DeleteFunc(bot.Commands(), func(c *Command) bool { return c.Cog != nil })
 	return mapping
+}
+
+func (h *HelpBase) CogCommands(cog Cog) []*Command {
+	out := slices.DeleteFunc(slices.Clone(cog.CogCommands()), func(c *Command) bool { return c.Parent != nil })
+	if h.impl != nil && h.impl.Cog == cog && !slices.Contains(out, h.impl) {
+		out = append(out, h.impl)
+	}
+	return out
 }
 
 func (h *HelpBase) CommandSignature(command *Command) string {
@@ -195,6 +211,7 @@ func newHelpImpl(proto HelpCommand) *Command {
 		}))
 	}
 	cmd := New(name, func(ctx *Context, p helpParams) error { return runHelp(cloneHelp(proto, ctx), ctx, p.Command) }, opts...)
+	cmd.Cog = base.Cog
 	base.impl = cmd
 	return cmd
 }

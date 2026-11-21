@@ -102,6 +102,9 @@ func init() {
 		return invite, nil
 	})
 	RegisterConverter(convertClean)
+	RegisterConverter(lookup("Sticker", converting.Scope.Sticker))
+	RegisterConverter(lookup("Scheduled event", converting.Scope.ScheduledEvent))
+	RegisterConverter(parsed(converting.ParseTimestamp, func(a string) error { return errBadTimestamp(a) }))
 	RegisterConverter(parsed(converting.ParsePartialEmoji, func(a string) error { return errPartialEmoji(a) }))
 	RegisterConverter(parsed(converting.ParseColour, func(a string) error { return errBadColour(a) }))
 	RegisterConverter(parsed(converting.Object, func(a string) error { return errObjectNotFound(a) }))

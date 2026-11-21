@@ -170,7 +170,7 @@ func (h *DefaultHelp) SendCogHelp(cog Cog) error {
 			return err
 		}
 	}
-	filtered := h.FilterCommands(topLevel(cog), h.SortCommands, nil)
+	filtered := h.FilterCommands(h.CogCommands(cog), h.SortCommands, nil)
 	if err := h.AddIndentedCommands(filtered, h.CommandsHeading, 0); err != nil {
 		return err
 	}
@@ -178,14 +178,4 @@ func (h *DefaultHelp) SendCogHelp(cog Cog) error {
 		return err
 	}
 	return h.SendPages()
-}
-
-func topLevel(cog Cog) []*Command {
-	var out []*Command
-	for _, c := range cog.CogCommands() {
-		if c.Parent == nil {
-			out = append(out, c)
-		}
-	}
-	return out
 }

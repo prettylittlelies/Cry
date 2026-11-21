@@ -150,3 +150,21 @@ func TestHelpConfiguration(t *testing.T) {
 		t.Fatal("oversized line must fail")
 	}
 }
+
+func TestHelpInCog(t *testing.T) {
+	help := commands.NewDefaultHelp()
+	h, box := helpBot(t, commands.WithHelpCommand(help))
+	help.SetCog(h.bot.GetCog("Music"))
+	h.run(other, 10, "!help Music")
+	if got := waitSent(t, box); !strings.Contains(got, "  help Shows this message") {
+		t.Fatalf("cog help must list the help command:\n%s", got)
+	}
+	h.run(other, 10, "!help")
+	if got := waitSent(t, box); strings.Contains(got, "No Category:\n  help") {
+		t.Fatalf("help still uncategorised:\n%s", got)
+	}
+	h.bot.RemoveCog(t.Context(), "Music")
+	if h.bot.Get("help").Cog != nil {
+		t.Fatal("removing the cog must eject the help command")
+	}
+}

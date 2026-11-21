@@ -105,7 +105,7 @@ func (h *MinimalHelp) SendCogHelp(cog Cog) error {
 			return err
 		}
 	}
-	if filtered := h.FilterCommands(topLevel(cog), h.SortCommands, nil); len(filtered) > 0 {
+	if filtered := h.FilterCommands(h.CogCommands(cog), h.SortCommands, nil); len(filtered) > 0 {
 		if err := h.addSubcommands("**"+cog.CogName()+" "+h.CommandsHeading+"**", filtered); err != nil {
 			return err
 		}

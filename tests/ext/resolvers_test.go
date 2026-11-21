@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/prettylittlelies/cry/discord"
 	"github.com/prettylittlelies/cry/ext/commands"
@@ -235,5 +236,38 @@ func TestAttachments(t *testing.T) {
 	send("!bulk", discord.Attachment{Filename: "a"}, discord.Attachment{Filename: "b"}, discord.Attachment{Filename: "c"})
 	if len(all) != 3 {
 		t.Errorf("greedy %+v", all)
+	}
+}
+
+func TestStickerEventTimestampConverters(t *testing.T) {
+	h := resolverBot(t)
+	g, _ := h.client.State().Guild(guildID)
+	g.Stickers = []discord.Sticker{{ID: 800000000000000008, Name: "blob"}}
+	g.GuildScheduledEvents = []discord.GuildScheduledEvent{{ID: 900000000000000009, GuildID: guildID, Name: "movie night"}}
+	h.client.State().Apply(&discord.GuildCreateEvent{ID: guildID, Stickers: g.Stickers, GuildScheduledEvents: g.GuildScheduledEvents, Properties: g.Properties, Roles: g.Roles, Emojis: g.Emojis})
+	type params struct {
+		S discord.Sticker
+		E discord.GuildScheduledEvent
+		T time.Time
+	}
+	var got params
+	h.bot.AddCommand(commands.New("x", func(_ *commands.Context, p params) error { got = p; return nil }))
+	h.run(other, guildID, `!x blob "movie night" <t:1700000000:R>`)
+	if got.S.ID != 800000000000000008 || got.E.ID != 900000000000000009 || got.T.Unix() != 1700000000 {
+		t.Fatalf("by name %+v", got)
+	}
+	h.run(other, guildID, "!x 800000000000000008 https://discord.com/events/"+guildID.String()+"/900000000000000009 <t:0>")
+	if got.S.Name != "blob" || got.E.Name != "movie night" || !got.T.Equal(time.Unix(0, 0)) {
+		t.Fatalf("by id %+v", got)
+	}
+	h.run(other, guildID, "!x blob 900000000000000009 yesterday")
+	var bad *commands.BadTimestampArgument
+	if err := h.err(t); !errors.As(err, &bad) || err.Error() != "yesterday is not a recognised datetime or timestamp option" {
+		t.Fatalf("timestamp: %v", err)
+	}
+	h.run(other, guildID, "!x nope 900000000000000009 <t:0>")
+	var nf *commands.NotFoundError
+	if err := h.err(t); !errors.As(err, &nf) || err.Error() != `Sticker "nope" not found.` {
+		t.Fatalf("sticker: %v", err)
 	}
 }

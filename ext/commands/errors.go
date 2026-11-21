@@ -459,3 +459,7 @@ func errRange(value any, minimum, maximum any) *RangeError {
 	}
 	return &RangeError{newKind(badArg, "value must be %s but received %s", label, shown), value, minimum, maximum}
 }
+
+func errBadTimestamp(argument string) *BadTimestampArgument {
+	return &BadTimestampArgument{newKind(badArg, "%s is not a recognised datetime or timestamp option", argument), argument}
+}

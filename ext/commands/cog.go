@@ -103,6 +103,9 @@ func (b *Bot) eject(ctx context.Context, lc *loadedCog) {
 	for _, remove := range lc.unchecks {
 		remove()
 	}
+	if h := b.HelpCommand(); h != nil && h.helpBase().Cog == lc.cog {
+		h.helpBase().SetCog(nil)
+	}
 	if u, ok := lc.cog.(CogUnloader); ok {
 		u.CogUnload(ctx, b)
 	}
