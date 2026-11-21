@@ -1,3 +1,4 @@
 .env
 *.token
 token
+/tests/live/.token
