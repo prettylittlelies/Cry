@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/prettylittlelies/cry/tools/internal/naming"
 	"go/token"
 	"regexp"
 	"strings"
@@ -36,7 +37,7 @@ func lowerFirst(s string) string {
 }
 
 func argName(wire string) string {
-	n := lowerFirst(GoName(wire))
+	n := lowerFirst(naming.GoName(wire))
 	if token.IsKeyword(n) || n == "ctx" || n == "opts" || n == "query" || n == "params" {
 		n += "Arg"
 	}
@@ -106,13 +107,13 @@ func emitAPI(spec *Spec, r *resolver, fields map[string][]genField) []byte {
 	var body bytes.Buffer
 	names := map[string]int{}
 	for _, ep := range spec.Endpoints {
-		names[GoName(ep.Name)]++
+		names[naming.GoName(ep.Name)]++
 	}
 	used := map[string]bool{}
 	for _, ep := range spec.Endpoints {
-		method := GoName(ep.Name)
+		method := naming.GoName(ep.Name)
 		if names[method] > 1 || used[method] {
-			method = GoName(ep.Doc) + method
+			method = naming.GoName(ep.Doc) + method
 		}
 		if used[method] {
 			continue

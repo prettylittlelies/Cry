@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/prettylittlelies/cry/tools/internal/naming"
 	"strings"
 )
 
@@ -40,7 +41,7 @@ func bindUnions(enums []*namedEnum, r *resolver) {
 			u.enumName = e.name
 			for _, v := range e.enum.Values {
 				if name, ok := r.structNamed(strings.ToLower(strings.ReplaceAll(v.Name, "_", " ")), e.enum.Doc); ok {
-					u.members = append(u.members, unionMember{structName: name, constName: e.name + GoName(v.Name)})
+					u.members = append(u.members, unionMember{structName: name, constName: e.name + naming.GoName(v.Name)})
 				}
 			}
 		}

@@ -8753,7 +8753,7 @@ type PartialApplication struct {
 	Type                        *ApplicationType                                   `json:"type"`
 	Flags                       ApplicationFlags                                   `json:"flags"`
 	FlagsNew                    string                                             `json:"flags_new"`
-	PrimarySKU                  SKU                                                `json:"primary_sku,omitzero"`
+	PrimarySKU                  *SKU                                               `json:"primary_sku,omitempty"`
 	PrimarySKUID                snowflake.ID                                       `json:"primary_sku_id,omitzero"`
 	VerifyKey                   string                                             `json:"verify_key"`
 	GuildID                     snowflake.ID                                       `json:"guild_id,omitzero"`
@@ -10803,7 +10803,7 @@ type SKU struct {
 	ID                             snowflake.ID                  `json:"id"`
 	Type                           SKUType                       `json:"type"`
 	ApplicationID                  snowflake.ID                  `json:"application_id"`
-	Application                    *PartialApplication           `json:"application,omitempty"`
+	Application                    PartialApplication            `json:"application,omitzero"`
 	ProductLine                    *SKUProductLine               `json:"product_line"`
 	ProductID                      snowflake.ID                  `json:"product_id,omitzero"`
 	Flags                          SKUFlags                      `json:"flags"`

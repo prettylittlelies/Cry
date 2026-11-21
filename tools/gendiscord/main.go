@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/prettylittlelies/cry/tools/internal/naming"
 	"os"
 	"path/filepath"
 	"sort"
@@ -31,12 +32,12 @@ func main() {
 	n := &namer{taken: map[string]string{"Permissions": "manual", "ImageData": "manual"}}
 	count := map[string]int{}
 	for _, s := range spec.Structures {
-		count[GoName(s.Title)]++
+		count[naming.GoName(s.Title)]++
 	}
 	var enums []*namedEnum
 	for _, e := range spec.Enums {
 		if k := enumKind(e); k != "" {
-			count[GoName(e.Title)]++
+			count[naming.GoName(e.Title)]++
 			enums = append(enums, &namedEnum{enum: e, kind: k})
 		}
 	}

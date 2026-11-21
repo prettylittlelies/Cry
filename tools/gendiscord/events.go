@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/prettylittlelies/cry/tools/internal/naming"
 	"regexp"
 	"sort"
 	"strings"
@@ -14,7 +15,7 @@ var (
 )
 
 func wireName(event string) string {
-	return strings.ToUpper(strings.Join(words(event), "_"))
+	return strings.ToUpper(strings.Join(naming.Words(event), "_"))
 }
 
 func tagName(tag string) string {
@@ -77,7 +78,7 @@ func eventsBody(spec *Spec, r *resolver, fields map[string][]genField) []byte {
 			}
 		}
 		if sliceOf != "" {
-			name := GoName(ev.Name) + "Event"
+			name := naming.GoName(ev.Name) + "Event"
 			if !seen[name] {
 				seen[name] = true
 				entries = append(entries, entry{wire: wireName(ev.Name), goName: name})
@@ -93,7 +94,7 @@ func eventsBody(spec *Spec, r *resolver, fields map[string][]genField) []byte {
 		if base == nil && len(extras) == 0 {
 			continue
 		}
-		name := GoName(ev.Name) + "Event"
+		name := naming.GoName(ev.Name) + "Event"
 		if seen[name] {
 			continue
 		}

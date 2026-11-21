@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/prettylittlelies/cry/tools/internal/naming"
 	"go/format"
 	"regexp"
 	"sort"
@@ -49,8 +50,8 @@ func emitEnums(enums []*namedEnum) []byte {
 		fmt.Fprintf(&b, "type %s %s\n\nconst (\n", ne.name, goType)
 		seen := map[string]bool{}
 		for _, v := range ne.enum.Values {
-			name := ne.name + GoName(v.Name)
-			if seen[name] || GoName(v.Name) == "X" {
+			name := ne.name + naming.GoName(v.Name)
+			if seen[name] || naming.GoName(v.Name) == "X" {
 				continue
 			}
 			seen[name] = true
@@ -79,9 +80,9 @@ func writeStringer(b *bytes.Buffer, ne *namedEnum, seen map[string]bool) {
 	fmt.Fprintf(b, "func (v %s) String() string {\n\tswitch v {\n", ne.name)
 	done := map[uint64]bool{}
 	for _, v := range ne.enum.Values {
-		name := ne.name + GoName(v.Name)
+		name := ne.name + naming.GoName(v.Name)
 		key, ok := numericValue(v.Value)
-		if !ok || !seen[name] || done[key] || GoName(v.Name) == "X" {
+		if !ok || !seen[name] || done[key] || naming.GoName(v.Name) == "X" {
 			continue
 		}
 		done[key] = true
@@ -115,7 +116,7 @@ func structFields(spec *Spec, r *resolver, overrides map[string]string) map[stri
 		name := r.names[s]
 		used := map[string]bool{}
 		for _, f := range s.Fields {
-			goField := GoName(f.Name)
+			goField := naming.GoName(f.Name)
 			if used[goField] {
 				continue
 			}
@@ -157,9 +158,15 @@ func breakCycles(fields map[string][]genField) {
 		}
 		return walk(from)
 	}
+	owners := make([]string, 0, len(fields))
+	for owner := range fields {
+		owners = append(owners, owner)
+	}
+	sort.Strings(owners)
 	for changed := true; changed; {
 		changed = false
-		for owner, fs := range fields {
+		for _, owner := range owners {
+			fs := fields[owner]
 			for i, f := range fs {
 				if _, ok := fields[f.typ]; ok && reaches(f.typ, owner) {
 					fs[i].typ = "*" + f.typ
