@@ -80,7 +80,11 @@ func TestVoiceJoin(t *testing.T) {
 	joinCtx, joinCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer joinCancel()
 	rec := newRecorder(t)
-	conn, err := voice.Join(joinCtx, c, guild, channel, voice.Options{SelfMute: false, OnOpus: rec.write})
+	opts := voice.Options{OnOpus: rec.write}
+	if os.Getenv("CRY_VOICE_CAMERA") != "" {
+		opts.Video = voice.Camera
+	}
+	conn, err := voice.Join(joinCtx, c, guild, channel, opts)
 	if err != nil {
 		t.Fatalf("join: %v", err)
 	}
@@ -126,6 +130,24 @@ func TestVoiceJoin(t *testing.T) {
 	} else if err := conn.Play(ctx, &silence{left: 250}); err != nil {
 		t.Fatalf("play silence: %v", err)
 	}
+	if path := os.Getenv("CRY_VOICE_CAMERA"); path != "" {
+		playIVF(t, ctx, conn, path, "camera")
+	}
+	if path := os.Getenv("CRY_VOICE_STREAM"); path != "" {
+		streamCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		stream, err := conn.StartStream(streamCtx, voice.Options{})
+		cancel()
+		if err != nil {
+			t.Fatalf("start stream: %v", err)
+		}
+		t.Log("go live started")
+		playIVF(t, ctx, stream, path, "stream")
+		closeCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		if err := stream.Close(closeCtx); err != nil {
+			t.Logf("stop stream: %v", err)
+		}
+		cancel()
+	}
 	if raw := os.Getenv("CRY_VOICE_RECORD"); raw != "" {
 		d, err := time.ParseDuration(raw)
 		if err != nil {
@@ -139,6 +161,20 @@ func TestVoiceJoin(t *testing.T) {
 	if err := conn.Err(); err != nil {
 		t.Fatalf("connection failed: %v", err)
 	}
+}
+
+func playIVF(t *testing.T, ctx context.Context, conn *voice.Conn, path, what string) {
+	t.Helper()
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	start := time.Now()
+	if err := conn.PlayIVF(ctx, f, voice.VideoOptions{}); err != nil {
+		t.Fatalf("%s: %v", what, err)
+	}
+	t.Logf("%s: played %s in %s", what, path, time.Since(start).Round(time.Millisecond))
 }
 
 type recorder struct {

@@ -55,9 +55,13 @@ type Conn struct {
 	self    snowflake.ID
 	opts    Options
 
-	sessionID string
-	token     string
-	endpoint  string
+	sessionID    string
+	token        string
+	endpoint     string
+	stream       string
+	identServer  snowflake.ID
+	identChannel snowflake.ID
+	daveGroup    snowflake.ID
 
 	ws         atomic.Pointer[socket]
 	udp        atomic.Pointer[udpLink]
@@ -81,7 +85,7 @@ type Conn struct {
 	err    atomic.Pointer[error]
 }
 
-func Join(ctx context.Context, c *cry.Client, guild, channel snowflake.ID, opts Options) (*Conn, error) {
+func newConn(c *cry.Client, guild, channel snowflake.ID, opts Options) (*Conn, error) {
 	self := c.State().Me().ID
 	v := &Conn{client: c, guild: guild, channel: channel, self: self, opts: opts, users: map[uint32]snowflake.ID{}, done: make(chan error, 1)}
 	if opts.Video != "" {
@@ -94,6 +98,26 @@ func Join(ctx context.Context, c *cry.Client, guild, channel snowflake.ID, opts 
 		}
 		v.e2ee = newE2EE(v, session)
 	}
+	return v, nil
+}
+
+func (v *Conn) start(ctx context.Context) error {
+	v.ctx, v.cancel = context.WithCancel(context.Background())
+	if err := v.connect(ctx, false); err != nil {
+		v.cancel()
+		v.closeTransports()
+		return err
+	}
+	go v.run()
+	return nil
+}
+
+func Join(ctx context.Context, c *cry.Client, guild, channel snowflake.ID, opts Options) (*Conn, error) {
+	v, err := newConn(c, guild, channel, opts)
+	if err != nil {
+		return nil, err
+	}
+	self := v.self
 	states := make(chan *discord.VoiceStateUpdateEvent, 1)
 	servers := make(chan *discord.VoiceServerUpdateEvent, 1)
 	removeState := cry.On(c, func(_ context.Context, e *discord.VoiceStateUpdateEvent) {
@@ -131,12 +155,9 @@ func Join(ctx context.Context, c *cry.Client, guild, channel snowflake.ID, opts 
 		return nil, fmt.Errorf("voice: server has no endpoint yet")
 	}
 	v.sessionID, v.token, v.endpoint = state.SessionID, server.Token, *server.Endpoint
-	v.ctx, v.cancel = context.WithCancel(context.Background())
-	if err := v.connect(ctx, false); err != nil {
-		v.cancel()
+	if err := v.start(ctx); err != nil {
 		return nil, err
 	}
-	go v.run()
 	return v, nil
 }
 
@@ -149,8 +170,25 @@ func (v *Conn) voiceState(channel *snowflake.ID) discord.UpdateVoiceState {
 }
 
 func (v *Conn) serverID() snowflake.ID {
+	if v.identServer != 0 {
+		return v.identServer
+	}
 	if v.guild != 0 {
 		return v.guild
+	}
+	return v.channel
+}
+
+func (v *Conn) channelID() snowflake.ID {
+	if v.identChannel != 0 {
+		return v.identChannel
+	}
+	return v.channel
+}
+
+func (v *Conn) group() snowflake.ID {
+	if v.daveGroup != 0 {
+		return v.daveGroup
 	}
 	return v.channel
 }
@@ -173,7 +211,7 @@ func (v *Conn) connect(ctx context.Context, resuming bool) error {
 	go func() { v.done <- ws.read(v) }()
 	go ws.heartbeat(v.ctx)
 	if resuming {
-		if err := ws.send(OpResume, resume{ServerID: v.serverID(), ChannelID: v.channel, SessionID: v.sessionID, Token: v.token, SeqAck: int(ws.seq.Load())}); err != nil {
+		if err := ws.send(OpResume, resume{ServerID: v.serverID(), ChannelID: v.channelID(), SessionID: v.sessionID, Token: v.token, SeqAck: int(ws.seq.Load())}); err != nil {
 			return err
 		}
 		select {
@@ -187,7 +225,7 @@ func (v *Conn) connect(ctx context.Context, resuming bool) error {
 	if v.e2ee != nil {
 		maxDAVE = dave.ProtocolVersion
 	}
-	id := identify{ServerID: v.serverID(), ChannelID: v.channel, UserID: v.self, SessionID: v.sessionID, Token: v.token, MaxDAVEProtocol: maxDAVE}
+	id := identify{ServerID: v.serverID(), ChannelID: v.channelID(), UserID: v.self, SessionID: v.sessionID, Token: v.token, MaxDAVEProtocol: maxDAVE}
 	if v.video != nil {
 		id.Video = true
 		id.Streams = []streamInfo{{Type: string(v.opts.Video), RID: primaryRID, Quality: 100}}
@@ -533,5 +571,8 @@ func (v *Conn) Done() <-chan struct{} { return v.ctx.Done() }
 func (v *Conn) Close(ctx context.Context) error {
 	v.cancel()
 	v.closeTransports()
+	if v.stream != "" {
+		return v.stopStream(ctx)
+	}
 	return v.client.Gateway().UpdateVoiceState(ctx, v.voiceState(nil))
 }

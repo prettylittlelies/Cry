@@ -69,7 +69,7 @@ func (e *e2ee) start(version int) error {
 }
 
 func (e *e2ee) reset(version int) error {
-	e.session.Reset(version, e.conn.channel)
+	e.session.Reset(version, e.conn.group())
 	e.mu.Lock()
 	external := e.external
 	e.mu.Unlock()
