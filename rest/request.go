@@ -12,6 +12,7 @@ type Request struct {
 	Route       Route
 	Query       url.Values
 	JSON        any
+	Form        *Form
 	Body        []byte
 	ContentType string
 	Reason      string
@@ -30,6 +31,10 @@ func (r *Request) payload() ([]byte, string, error) {
 	if r.JSON != nil {
 		b, err := json.Marshal(r.JSON)
 		return b, "application/json", err
+	}
+	if r.Form != nil {
+		b, ct := r.Form.Encode()
+		return b, ct, nil
 	}
 	return r.Body, r.ContentType, nil
 }
