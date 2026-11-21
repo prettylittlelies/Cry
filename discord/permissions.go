@@ -3,64 +3,42 @@ package discord
 import (
 	"encoding/json"
 	"strconv"
-
-	"github.com/prettylittlelies/cry/snowflake"
 )
 
 type Permissions uint64
 
-const (
-	PermCreateInstantInvite Permissions = 1 << iota
-	PermKickMembers
-	PermBanMembers
-	PermAdministrator
-	PermManageChannels
-	PermManageGuild
-	PermAddReactions
-	PermViewAuditLog
-	PermPrioritySpeaker
-	PermStream
-	PermViewChannel
-	PermSendMessages
-	PermSendTTSMessages
-	PermManageMessages
-	PermEmbedLinks
-	PermAttachFiles
-	PermReadMessageHistory
-	PermMentionEveryone
-	PermUseExternalEmojis
-	PermViewGuildInsights
-	PermConnect
-	PermSpeak
-	PermMuteMembers
-	PermDeafenMembers
-	PermMoveMembers
-	PermUseVAD
-	PermChangeNickname
-	PermManageNicknames
-	PermManageRoles
-	PermManageWebhooks
-	PermManageGuildExpressions
-	PermUseApplicationCommands
-	PermRequestToSpeak
-	PermManageEvents
-	PermManageThreads
-	PermCreatePublicThreads
-	PermCreatePrivateThreads
-	PermUseExternalStickers
-	PermSendMessagesInThreads
-	PermUseEmbeddedActivities
-	PermModerateMembers
-)
+func (p Permissions) Has(want ...Permission) bool {
+	if Permission(p)&PermissionAdministrator != 0 {
+		return true
+	}
+	for _, w := range want {
+		if Permission(p)&w != w {
+			return false
+		}
+	}
+	return true
+}
 
-const PermAll Permissions = 1<<64 - 1
+func (p Permissions) With(add ...Permission) Permissions {
+	for _, a := range add {
+		p |= Permissions(a)
+	}
+	return p
+}
 
-func (p Permissions) Has(want Permissions) bool {
-	return p&PermAdministrator != 0 || p&want == want
+func (p Permissions) Without(remove ...Permission) Permissions {
+	for _, r := range remove {
+		p &^= Permissions(r)
+	}
+	return p
+}
+
+func (p Permissions) String() string {
+	return strconv.FormatUint(uint64(p), 10)
 }
 
 func (p Permissions) MarshalJSON() ([]byte, error) {
-	return json.Marshal(strconv.FormatUint(uint64(p), 10))
+	return json.Marshal(p.String())
 }
 
 func (p *Permissions) UnmarshalJSON(b []byte) error {
@@ -76,18 +54,4 @@ func (p *Permissions) UnmarshalJSON(b []byte) error {
 	n, err := strconv.ParseUint(s, 10, 64)
 	*p = Permissions(n)
 	return err
-}
-
-type OverwriteType int
-
-const (
-	OverwriteRole OverwriteType = iota
-	OverwriteMember
-)
-
-type Overwrite struct {
-	ID    snowflake.ID  `json:"id"`
-	Type  OverwriteType `json:"type"`
-	Allow Permissions   `json:"allow"`
-	Deny  Permissions   `json:"deny"`
 }
