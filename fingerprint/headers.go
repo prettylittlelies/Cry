@@ -10,7 +10,12 @@ import (
 
 const Wildcard = "*"
 
-type HeaderOrder []string
+type HeaderPolicy struct {
+	Insertion []string
+	Leading   []string
+	Hints     []string
+	Trailing  []string
+}
 
 var hopByHop = map[string]struct{}{
 	"connection":        {},
@@ -23,36 +28,31 @@ var hopByHop = map[string]struct{}{
 }
 
 var (
-	discordRequest = []string{
+	discordInsertion = []string{
 		"content-type",
 		Wildcard,
 		"x-audit-log-reason",
 		"x-context-properties",
 		"x-failed-requests",
-	}
-	discordPrepared = []string{
 		"authorization",
 		"x-super-properties",
 		"x-fingerprint",
 		"x-installation-id",
-	}
-	discordLocale = []string{
+		"accept-language",
 		"x-discord-locale",
 		"x-discord-timezone",
 		"x-debug-options",
 		"x-routing-key",
 		"x-client-trace-id",
 	}
+	chromiumHints    = []string{"sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform", "user-agent"}
 	chromiumTrailing = []string{
-		"content-length",
-		"user-agent",
-		"sec-ch-ua",
-		"sec-ch-ua-mobile",
 		"accept",
 		"origin",
 		"sec-fetch-site",
 		"sec-fetch-mode",
 		"sec-fetch-dest",
+		"sec-fetch-storage-access",
 		"referer",
 		"accept-encoding",
 		"accept-language",
@@ -61,52 +61,84 @@ var (
 	}
 )
 
-func DiscordWebOrder() HeaderOrder {
-	return slices.Concat([]string{"sec-ch-ua-platform"}, discordRequest, discordPrepared, discordLocale, chromiumTrailing)
+func DiscordWebPolicy() HeaderPolicy {
+	return HeaderPolicy{
+		Insertion: discordInsertion,
+		Leading:   []string{"content-length"},
+		Hints:     chromiumHints,
+		Trailing:  chromiumTrailing,
+	}
 }
 
-func DiscordDesktopOrder() HeaderOrder {
-	trailing := slices.DeleteFunc(slices.Clone(chromiumTrailing), func(s string) bool { return s == "accept-language" })
-	return slices.Concat([]string{"sec-ch-ua-platform"}, discordRequest, discordPrepared, []string{"accept-language"}, discordLocale, trailing)
+func DiscordDesktopPolicy() HeaderPolicy {
+	p := DiscordWebPolicy()
+	p.Trailing = slices.DeleteFunc(slices.Clone(chromiumTrailing), func(s string) bool { return s == "accept-language" })
+	return p
 }
 
-func (o HeaderOrder) Fields(h http.Header) []hpack.HeaderField {
-	values := make(map[string][]string, len(h))
-	for k, v := range h {
-		name := strings.ToLower(k)
-		if _, skip := hopByHop[name]; !skip {
-			values[name] = append(values[name], v...)
+func (p HeaderPolicy) Arrange(inserted []string) []string {
+	managed := make(map[string]struct{}, len(p.Leading)+len(p.Hints)+len(p.Trailing))
+	for _, group := range [][]string{p.Leading, p.Hints, p.Trailing} {
+		for _, n := range group {
+			managed[n] = struct{}{}
 		}
 	}
-	known := make(map[string]struct{}, len(o))
-	for _, n := range o {
+	present := make(map[string]struct{}, len(inserted))
+	var page []string
+	for _, n := range inserted {
+		present[n] = struct{}{}
+		if _, ok := managed[n]; !ok {
+			page = append(page, n)
+		}
+	}
+	keep := func(group []string) []string {
+		return slices.DeleteFunc(slices.Clone(group), func(n string) bool {
+			_, ok := present[n]
+			return !ok
+		})
+	}
+	return slices.Concat(keep(p.Leading), BlinkOrder(BlinkOrder(page), keep(p.Hints)), keep(p.Trailing))
+}
+
+func (p HeaderPolicy) insertion(names map[string]struct{}) []string {
+	known := make(map[string]struct{}, len(p.Insertion))
+	for _, n := range p.Insertion {
 		known[n] = struct{}{}
 	}
 	var unknown []string
-	for n := range values {
+	for n := range names {
 		if _, ok := known[n]; !ok {
 			unknown = append(unknown, n)
 		}
 	}
 	slices.Sort(unknown)
+	out := make([]string, 0, len(names))
+	for _, n := range p.Insertion {
+		if n == Wildcard {
+			out = append(out, unknown...)
+			unknown = nil
+		} else if _, ok := names[n]; ok {
+			out = append(out, n)
+		}
+	}
+	return append(out, unknown...)
+}
+
+func (p HeaderPolicy) Fields(h http.Header) []hpack.HeaderField {
+	values := make(map[string][]string, len(h))
+	names := make(map[string]struct{}, len(h))
+	for k, v := range h {
+		name := strings.ToLower(k)
+		if _, skip := hopByHop[name]; !skip {
+			values[name] = append(values[name], v...)
+			names[name] = struct{}{}
+		}
+	}
 	fields := make([]hpack.HeaderField, 0, len(values))
-	emit := func(name string) {
-		for _, v := range values[name] {
-			fields = append(fields, hpack.HeaderField{Name: name, Value: v})
+	for _, n := range p.Arrange(p.insertion(names)) {
+		for _, v := range values[n] {
+			fields = append(fields, hpack.HeaderField{Name: n, Value: v})
 		}
-	}
-	for _, n := range o {
-		if n != Wildcard {
-			emit(n)
-			continue
-		}
-		for _, u := range unknown {
-			emit(u)
-		}
-		unknown = nil
-	}
-	for _, u := range unknown {
-		emit(u)
 	}
 	return fields
 }

@@ -4,7 +4,7 @@ type Profile struct {
 	Name    string
 	Hello   ClientHello
 	H2      H2
-	Headers HeaderOrder
+	Headers HeaderPolicy
 }
 
 func Electron44() Profile {
@@ -12,6 +12,6 @@ func Electron44() Profile {
 		Name:    "electron44",
 		Hello:   Chromium152,
 		H2:      Chromium152H2(),
-		Headers: DiscordDesktopOrder(),
+		Headers: DiscordDesktopPolicy(),
 	}
 }
