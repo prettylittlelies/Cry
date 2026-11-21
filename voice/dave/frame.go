@@ -46,6 +46,23 @@ func (e *Encryptor) Active() bool {
 }
 
 func (e *Encryptor) Encrypt(frame []byte) ([]byte, error) {
+	return e.EncryptRanges(frame, nil)
+}
+
+type Range struct{ Offset, Size int }
+
+func VP8Ranges(frame []byte) []Range {
+	switch {
+	case len(frame) == 0:
+		return nil
+	case frame[0]&1 == 0 && len(frame) >= 10:
+		return []Range{{0, 10}}
+	default:
+		return []Range{{0, 1}}
+	}
+}
+
+func (e *Encryptor) EncryptRanges(frame []byte, clear []Range) ([]byte, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if e.ratchet == nil {
@@ -63,12 +80,20 @@ func (e *Encryptor) Encrypt(frame []byte) ([]byte, error) {
 		}
 		e.generation = generation
 	}
-	ciphertext, tag := e.cipher.seal(e.nonce, frame, nil)
-	out := make([]byte, 0, len(ciphertext)+footerFixed+5)
-	out = append(out, ciphertext...)
+	f := &footer{body: frame}
+	for _, r := range clear {
+		f.ranges = append(f.ranges, unencryptedRange{uint64(r.Offset), uint64(r.Size)})
+	}
+	aad, plaintext := f.split()
+	ciphertext, tag := e.cipher.seal(e.nonce, plaintext, aad)
+	out := f.join(ciphertext)
+	start := len(out)
 	out = append(out, tag...)
 	out = appendULEB128(out, uint64(e.nonce))
-	out = append(out, byte(len(out)-len(ciphertext)+3), markerByte, markerByte)
+	for _, r := range f.ranges {
+		out = appendULEB128(appendULEB128(out, r.offset), r.size)
+	}
+	out = append(out, byte(len(out)-start+3), markerByte, markerByte)
 	return out, nil
 }
 

@@ -20,6 +20,7 @@ const (
 	OpHello              Opcode = 8
 	OpResumed            Opcode = 9
 	OpClientsConnect     Opcode = 11
+	OpVideo              Opcode = 12
 	OpClientDisconnect   Opcode = 13
 	OpSessionUpdate      Opcode = 14
 	OpClientFlags        Opcode = 18
@@ -54,7 +55,34 @@ type identify struct {
 	SessionID       string       `json:"session_id"`
 	Token           string       `json:"token"`
 	Video           bool         `json:"video"`
+	Streams         []streamInfo `json:"streams,omitempty"`
 	MaxDAVEProtocol int          `json:"max_dave_protocol_version"`
+}
+
+type resolution struct {
+	Type   string `json:"type"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+}
+
+type streamInfo struct {
+	Type          string      `json:"type"`
+	RID           string      `json:"rid"`
+	Quality       int         `json:"quality"`
+	Active        bool        `json:"active"`
+	MaxBitrate    int         `json:"max_bitrate,omitempty"`
+	MaxFramerate  int         `json:"max_framerate,omitempty"`
+	MaxResolution *resolution `json:"max_resolution,omitempty"`
+	SSRC          uint32      `json:"ssrc,omitempty"`
+	RTXSSRC       uint32      `json:"rtx_ssrc,omitempty"`
+}
+
+type videoState struct {
+	AudioSSRC uint32       `json:"audio_ssrc"`
+	VideoSSRC uint32       `json:"video_ssrc"`
+	RTXSSRC   uint32       `json:"rtx_ssrc"`
+	Streams   []streamInfo `json:"streams"`
+	UserID    snowflake.ID `json:"user_id,omitempty"`
 }
 
 type resume struct {
@@ -76,10 +104,11 @@ type heartbeat struct {
 }
 
 type ready struct {
-	SSRC  uint32   `json:"ssrc"`
-	IP    string   `json:"ip"`
-	Port  int      `json:"port"`
-	Modes []string `json:"modes"`
+	SSRC    uint32       `json:"ssrc"`
+	IP      string       `json:"ip"`
+	Port    int          `json:"port"`
+	Modes   []string     `json:"modes"`
+	Streams []streamInfo `json:"streams"`
 }
 
 type protocolData struct {
@@ -89,10 +118,13 @@ type protocolData struct {
 }
 
 type codec struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Priority    int    `json:"priority"`
-	PayloadType int    `json:"payload_type"`
+	Name           string `json:"name"`
+	Type           string `json:"type"`
+	Priority       int    `json:"priority"`
+	PayloadType    int    `json:"payload_type"`
+	RTXPayloadType int    `json:"rtx_payload_type,omitempty"`
+	Encode         *bool  `json:"encode,omitempty"`
+	Decode         *bool  `json:"decode,omitempty"`
 }
 
 type selectProtocol struct {
@@ -104,6 +136,7 @@ type selectProtocol struct {
 
 type sessionDescription struct {
 	AudioCodec     string `json:"audio_codec"`
+	VideoCodec     string `json:"video_codec"`
 	MediaSessionID string `json:"media_session_id"`
 	Mode           string `json:"mode"`
 	SecretKey      []int  `json:"secret_key"`

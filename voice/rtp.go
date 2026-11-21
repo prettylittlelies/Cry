@@ -19,11 +19,21 @@ type rtpSender struct {
 	ssrc      uint32
 	sequence  uint16
 	timestamp uint32
+	stats     senderStats
 }
 
-func (s *rtpSender) next() []byte {
+func (s *rtpSender) snapshot() (uint32, senderStats) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.ssrc, s.stats
+}
+
+func (s *rtpSender) next(payload int) []byte {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.stats.packets++
+	s.stats.octets += uint32(payload)
+	s.stats.timestamp = s.timestamp
 	h := make([]byte, rtpHeaderLen)
 	h[0], h[1] = rtpVersion, opusPayloadType
 	binary.BigEndian.PutUint16(h[2:], s.sequence)

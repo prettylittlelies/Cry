@@ -367,9 +367,20 @@ func (v *Conn) keepalive() {
 			ping := binary.BigEndian.AppendUint32(binary.BigEndian.AppendUint32(nil, udpPingMagic), seq)
 			if u := v.udp.Load(); u != nil {
 				u.write(ping)
+				v.report(u)
 			}
 		}
 	}
+}
+
+func (v *Conn) report(u *udpLink) {
+	t := v.crypt.Load()
+	ssrc, stats := v.rtp.snapshot()
+	if t == nil || stats.packets == 0 {
+		return
+	}
+	header, body := senderReport(ssrc, time.Now(), stats)
+	u.write(t.seal(header, body))
 }
 
 func (v *Conn) Speaking(flags SpeakingFlags) error {
@@ -395,7 +406,7 @@ func (v *Conn) WriteOpus(frame []byte) error {
 			return err
 		}
 	}
-	return u.write(t.seal(v.rtp.next(), payload))
+	return u.write(t.seal(v.rtp.next(len(payload)), payload))
 }
 
 func (v *Conn) Play(ctx context.Context, src FrameSource) error {
