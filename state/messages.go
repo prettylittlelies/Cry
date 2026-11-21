@@ -1,6 +1,8 @@
 package state
 
 import (
+	"encoding/json"
+
 	"github.com/prettylittlelies/cry/discord"
 	"github.com/prettylittlelies/cry/snowflake"
 )
@@ -41,4 +43,44 @@ func (c *messageCache) get(id snowflake.ID) (discord.MessageCreateEvent, bool) {
 
 func (c *messageCache) remove(id snowflake.ID) {
 	delete(c.byID, id)
+}
+
+func (c *messageCache) edit(id snowflake.ID, fn func(*discord.MessageCreateEvent)) {
+	if m, ok := c.byID[id]; ok {
+		fn(&m)
+		c.byID[id] = m
+	}
+}
+
+func (s *State) applyMessage(event any) {
+	switch e := event.(type) {
+	case *discord.MessageCreateEvent:
+		s.messages.put(*e)
+	case *discord.MessageUpdateEvent:
+		s.messages.edit(e.ID, func(m *discord.MessageCreateEvent) { remarshal(e, m) })
+	case *discord.MessageDeleteEvent:
+		s.messages.remove(e.ID)
+	case *discord.MessageDeleteBulkEvent:
+		for _, id := range e.IDs {
+			s.messages.remove(id)
+		}
+	case *discord.MessageReactionAddEvent:
+		burst := e.Type == discord.ReactionTypeBurst
+		mine := e.UserID == s.me.ID
+		s.messages.edit(e.MessageID, func(m *discord.MessageCreateEvent) { m.Reactions = addReaction(m.Reactions, e.Emoji, burst, mine) })
+	case *discord.MessageReactionRemoveEvent:
+		var emoji discord.Emoji
+		if json.Unmarshal(e.Emoji, &emoji) != nil {
+			return
+		}
+		burst := e.Type == discord.ReactionTypeBurst
+		mine := e.UserID == s.me.ID
+		s.messages.edit(e.MessageID, func(m *discord.MessageCreateEvent) { m.Reactions = removeReaction(m.Reactions, emoji, burst, mine) })
+	case *discord.MessageReactionRemoveEmojiEvent:
+		s.messages.edit(e.MessageID, func(m *discord.MessageCreateEvent) {
+			m.Reactions = deleteWhere(m.Reactions, func(r discord.Reaction) bool { return sameEmoji(r.Emoji, e.Emoji) })
+		})
+	case *discord.MessageReactionRemoveAllEvent:
+		s.messages.edit(e.MessageID, func(m *discord.MessageCreateEvent) { m.Reactions = nil })
+	}
 }

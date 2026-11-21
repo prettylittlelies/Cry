@@ -122,3 +122,23 @@ func (s *State) GuildChannels(guild snowflake.ID) []discord.Channel {
 	}
 	return out
 }
+
+func (s *State) VoiceState(guild, user snowflake.ID) (discord.VoiceState, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	v, ok := s.voice[guild][user]
+	if !ok {
+		return discord.VoiceState{}, false
+	}
+	return *v, true
+}
+
+func (s *State) VoiceStates(guild snowflake.ID) []discord.VoiceState {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]discord.VoiceState, 0, len(s.voice[guild]))
+	for _, v := range s.voice[guild] {
+		out = append(out, *v)
+	}
+	return out
+}

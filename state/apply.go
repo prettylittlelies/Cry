@@ -1,6 +1,8 @@
 package state
 
 import (
+	"encoding/json"
+
 	"github.com/prettylittlelies/cry/discord"
 	"github.com/prettylittlelies/cry/snowflake"
 )
@@ -11,41 +13,22 @@ func (s *State) Apply(event any) {
 	switch e := event.(type) {
 	case *discord.ReadyEvent:
 		s.ready(e)
-	case *discord.GuildCreateEvent:
-		s.putGuild(e.AsGatewayGuild(), nil)
-	case *discord.GuildDeleteEvent:
-		s.deleteGuild(e.ID, e.Unavailable)
-	case *discord.ChannelCreateEvent:
-		s.putChannel(e.AsChannel())
-	case *discord.ChannelUpdateEvent:
-		s.putChannel(e.AsChannel())
-	case *discord.ChannelDeleteEvent:
-		delete(s.channels, e.ID)
-	case *discord.ThreadCreateEvent:
-		s.putChannel(e.AsChannel())
-	case *discord.ThreadUpdateEvent:
-		s.putChannel(e.AsChannel())
-	case *discord.ThreadDeleteEvent:
-		delete(s.channels, e.ID)
-	case *discord.GuildMemberAddEvent:
-		s.putMember(e.GuildID, e.AsGuildMember())
-	case *discord.GuildMemberRemoveEvent:
-		delete(s.members[e.GuildID], e.User.ID)
-	case *discord.RelationshipAddEvent:
-		if id, err := snowflake.Parse(e.ID); err == nil {
-			r := e.AsRelationship()
-			s.relationships[id] = &r
-		}
-	case *discord.RelationshipRemoveEvent:
-		delete(s.relationships, e.ID)
-	case *discord.PresenceUpdateEvent:
-		s.presences[e.User.ID] = e
+	case *discord.ReadySupplementalEvent:
+		s.readySupplemental(e)
 	case *discord.UserUpdateEvent:
 		s.me = e.AsUser()
-	case *discord.MessageCreateEvent:
-		s.messages.put(*e)
-	case *discord.MessageDeleteEvent:
-		s.messages.remove(e.ID)
+	default:
+		s.applyGuild(event)
+		s.applyChannel(event)
+		s.applyMessage(event)
+		s.applySocial(event)
+	}
+}
+
+func remarshal(src, dst any) {
+	raw, err := json.Marshal(src)
+	if err == nil {
+		_ = json.Unmarshal(raw, dst)
 	}
 }
 
@@ -66,35 +49,37 @@ func (s *State) ready(e *discord.ReadyEvent) {
 		s.putChannel(c)
 	}
 	for i := range e.Relationships {
-		r := &e.Relationships[i]
-		if id, err := snowflake.Parse(r.ID); err == nil {
-			s.relationships[id] = r
-		}
+		s.putRelationship(e.Relationships[i])
 	}
 }
 
-func (s *State) putGuild(g discord.GatewayGuild, merged []discord.GuildMember) {
-	for _, c := range append(g.Channels, g.Threads...) {
-		c.GuildID = g.ID
+func (s *State) readySupplemental(e *discord.ReadySupplementalEvent) {
+	for _, p := range e.MergedPresences.Friends {
+		s.putPresence(p)
+	}
+	for i, presences := range e.MergedPresences.Guilds {
+		for _, p := range presences {
+			if p.GuildID == 0 && i < len(e.Guilds) {
+				p.GuildID = e.Guilds[i].ID
+			}
+			s.putPresence(p)
+		}
+	}
+	for i, g := range e.Guilds {
+		for _, v := range g.VoiceStates {
+			s.putVoiceState(g.ID, v)
+		}
+		if i < len(e.MergedMembers) {
+			for _, raw := range e.MergedMembers[i] {
+				var m discord.GuildMember
+				if json.Unmarshal(raw, &m) == nil {
+					s.putMember(g.ID, m)
+				}
+			}
+		}
+	}
+	for _, c := range e.LazyPrivateChannels {
 		s.putChannel(c)
-	}
-	for _, m := range append(g.Members, merged...) {
-		s.putMember(g.ID, m)
-	}
-	s.guilds[g.ID] = &g
-}
-
-func (s *State) deleteGuild(id snowflake.ID, unavailable bool) {
-	if g, ok := s.guilds[id]; ok && unavailable {
-		g.Unavailable = true
-		return
-	}
-	delete(s.guilds, id)
-	delete(s.members, id)
-	for cid, c := range s.channels {
-		if c.GuildID == id {
-			delete(s.channels, cid)
-		}
 	}
 }
 
@@ -102,13 +87,49 @@ func (s *State) putChannel(c discord.Channel) {
 	s.channels[c.ID] = &c
 }
 
-func (s *State) putMember(guild snowflake.ID, m discord.GuildMember) {
-	if s.members[guild] == nil {
-		s.members[guild] = map[snowflake.ID]*discord.GuildMember{}
+func (s *State) applyChannel(event any) {
+	switch e := event.(type) {
+	case *discord.ChannelCreateEvent:
+		s.putChannel(e.AsChannel())
+	case *discord.ChannelUpdateEvent:
+		s.putChannel(e.AsChannel())
+	case *discord.ChannelDeleteEvent:
+		delete(s.channels, e.ID)
+	case *discord.ThreadCreateEvent:
+		s.putChannel(e.AsChannel())
+	case *discord.ThreadUpdateEvent:
+		s.putChannel(e.AsChannel())
+	case *discord.ThreadDeleteEvent:
+		delete(s.channels, e.ID)
+	case *discord.ThreadListSyncEvent:
+		for _, c := range e.Threads {
+			c.GuildID = e.GuildID
+			s.putChannel(c)
+		}
+	case *discord.ChannelRecipientAddEvent:
+		if c, ok := s.channels[e.ChannelID]; ok {
+			c.Recipients = append(c.Recipients, e.User)
+		}
+	case *discord.ChannelRecipientRemoveEvent:
+		if c, ok := s.channels[e.ChannelID]; ok {
+			c.Recipients = deleteWhere(c.Recipients, func(u discord.PartialUser) bool { return u.ID == e.User.ID })
+		}
 	}
-	id := m.User.ID
-	if id == 0 {
-		id = m.UserID
+}
+
+func deleteWhere[T any](items []T, match func(T) bool) []T {
+	out := items[:0]
+	for _, v := range items {
+		if !match(v) {
+			out = append(out, v)
+		}
 	}
-	s.members[guild][id] = &m
+	return out
+}
+
+func idOf(id *snowflake.ID) snowflake.ID {
+	if id == nil {
+		return 0
+	}
+	return *id
 }

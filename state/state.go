@@ -17,6 +17,7 @@ type State struct {
 	members       map[snowflake.ID]map[snowflake.ID]*discord.GuildMember
 	relationships map[snowflake.ID]*discord.Relationship
 	presences     map[snowflake.ID]*discord.PresenceUpdateEvent
+	voice         map[snowflake.ID]map[snowflake.ID]*discord.VoiceState
 	messages      *messageCache
 }
 
@@ -28,6 +29,7 @@ func New(messageLimit int) *State {
 		members:       map[snowflake.ID]map[snowflake.ID]*discord.GuildMember{},
 		relationships: map[snowflake.ID]*discord.Relationship{},
 		presences:     map[snowflake.ID]*discord.PresenceUpdateEvent{},
+		voice:         map[snowflake.ID]map[snowflake.ID]*discord.VoiceState{},
 		messages:      newMessageCache(messageLimit),
 	}
 }
