@@ -237,4 +237,14 @@ func exchangeMedia(t *testing.T, native *libdave, g *gateway, goUser, nativeUser
 	if back := native.must("decrypt", goUser, protected); !bytes.Equal(back, frame) {
 		t.Fatal("libdave decrypted a different frame")
 	}
+	key, inter := vp8Frames()
+	for _, f := range [][]byte{key, inter} {
+		ranged, err := enc.EncryptRanges(f, dave.VP8Ranges(f))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if back := native.must("decrypt", goUser, ranged); !bytes.Equal(back, f) {
+			t.Fatal("libdave decrypted a different vp8 frame")
+		}
+	}
 }

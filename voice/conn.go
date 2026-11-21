@@ -40,6 +40,7 @@ type Options struct {
 	DisableDAVE      bool
 	Signer           *mls.SignaturePrivateKey
 	PreferredRegions []string
+	Video            MediaType
 	OnOpus           func(user snowflake.ID, frame []byte)
 }
 
@@ -58,13 +59,16 @@ type Conn struct {
 	token     string
 	endpoint  string
 
-	ws        atomic.Pointer[socket]
-	udp       atomic.Pointer[udpLink]
-	ssrc      uint32
-	crypt     atomic.Pointer[transport]
-	rtp       rtpSender
-	handshake chan error
-	resumed   chan struct{}
+	ws         atomic.Pointer[socket]
+	udp        atomic.Pointer[udpLink]
+	ssrc       uint32
+	crypt      atomic.Pointer[transport]
+	rtp        rtpSender
+	video      *videoSender
+	videoFPS   atomic.Int32
+	videoCodec atomic.Pointer[string]
+	handshake  chan error
+	resumed    chan struct{}
 
 	usersMu sync.RWMutex
 	users   map[uint32]snowflake.ID
@@ -80,6 +84,9 @@ type Conn struct {
 func Join(ctx context.Context, c *cry.Client, guild, channel snowflake.ID, opts Options) (*Conn, error) {
 	self := c.State().Me().ID
 	v := &Conn{client: c, guild: guild, channel: channel, self: self, opts: opts, users: map[uint32]snowflake.ID{}, done: make(chan error, 1)}
+	if opts.Video != "" {
+		v.video = &videoSender{}
+	}
 	if !opts.DisableDAVE {
 		session, err := dave.NewSession(self, opts.Signer)
 		if err != nil {
@@ -180,7 +187,12 @@ func (v *Conn) connect(ctx context.Context, resuming bool) error {
 	if v.e2ee != nil {
 		maxDAVE = dave.ProtocolVersion
 	}
-	if err := ws.send(OpIdentify, identify{ServerID: v.serverID(), ChannelID: v.channel, UserID: v.self, SessionID: v.sessionID, Token: v.token, MaxDAVEProtocol: maxDAVE}); err != nil {
+	id := identify{ServerID: v.serverID(), ChannelID: v.channel, UserID: v.self, SessionID: v.sessionID, Token: v.token, MaxDAVEProtocol: maxDAVE}
+	if v.video != nil {
+		id.Video = true
+		id.Streams = []streamInfo{{Type: string(v.opts.Video), RID: primaryRID, Quality: 100}}
+	}
+	if err := ws.send(OpIdentify, id); err != nil {
 		return err
 	}
 	select {
@@ -269,6 +281,9 @@ func (v *Conn) onJSON(op Opcode, d json.RawMessage) error {
 			return err
 		}
 		v.crypt.Store(t)
+		if sd.VideoCodec != "" {
+			v.videoCodec.Store(&sd.VideoCodec)
+		}
 		if v.e2ee != nil {
 			if err := v.e2ee.start(sd.DAVEProtocol); err != nil {
 				return err
@@ -342,6 +357,20 @@ func (v *Conn) selectProtocol(r ready) error {
 		old.close()
 	}
 	v.ssrc, v.rtp.ssrc = r.SSRC, r.SSRC
+	if v.video != nil {
+		for _, s := range r.Streams {
+			if s.RID == primaryRID || v.video.ssrc == 0 {
+				v.video.ssrc, v.video.rtx = s.SSRC, s.RTXSSRC
+			}
+		}
+		if v.video.rtx == 0 && v.video.ssrc != 0 {
+			v.video.rtx = v.video.ssrc + 1
+		}
+	}
+	codecs := []codec{{Name: "opus", Type: "audio", Priority: 1000, PayloadType: opusPayloadType}}
+	if v.video != nil {
+		codecs = append(codecs, codec{Name: "VP8", Type: "video", Priority: 1000, PayloadType: vp8PayloadType, RTXPayloadType: vp8RTXPayloadType})
+	}
 	ip, port, err := link.discover(r.SSRC)
 	if err != nil {
 		return err
@@ -349,7 +378,7 @@ func (v *Conn) selectProtocol(r ready) error {
 	return v.ws.Load().send(OpSelectProtocol, selectProtocol{
 		Protocol:        "udp",
 		Data:            protocolData{Address: ip, Port: port, Mode: mode},
-		Codecs:          []codec{{Name: "opus", Type: "audio", Priority: 1000, PayloadType: opusPayloadType}},
+		Codecs:          codecs,
 		RTCConnectionID: uuid.NewString(),
 	})
 }
@@ -375,12 +404,19 @@ func (v *Conn) keepalive() {
 
 func (v *Conn) report(u *udpLink) {
 	t := v.crypt.Load()
-	ssrc, stats := v.rtp.snapshot()
-	if t == nil || stats.packets == 0 {
+	if t == nil {
 		return
 	}
-	header, body := senderReport(ssrc, time.Now(), stats)
-	u.write(t.seal(header, body))
+	snapshots := []func() (uint32, senderStats){v.rtp.snapshot}
+	if v.video != nil {
+		snapshots = append(snapshots, v.video.snapshot)
+	}
+	for _, snap := range snapshots {
+		if ssrc, stats := snap(); stats.packets > 0 {
+			header, body := senderReport(ssrc, time.Now(), stats)
+			u.write(t.seal(header, body))
+		}
+	}
 }
 
 func (v *Conn) Speaking(flags SpeakingFlags) error {

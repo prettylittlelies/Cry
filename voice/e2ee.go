@@ -233,6 +233,16 @@ func (e *e2ee) protect(frame []byte) ([]byte, error) {
 	return e.encryptor.Encrypt(frame)
 }
 
+func (e *e2ee) protectRanges(frame []byte, clear []dave.Range) ([]byte, error) {
+	e.mu.Lock()
+	version := e.version
+	e.mu.Unlock()
+	if version == 0 || !e.encryptor.Active() {
+		return frame, nil
+	}
+	return e.encryptor.EncryptRanges(frame, clear)
+}
+
 func (e *e2ee) unprotect(user snowflake.ID, frame []byte) ([]byte, error) {
 	e.mu.Lock()
 	d := e.decryptors[user]
