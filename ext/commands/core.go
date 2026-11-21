@@ -63,7 +63,7 @@ func StrictArguments() Option      { return func(c *Command) { c.IgnoreExtra = f
 func RequireVarPositional() Option { return func(c *Command) { c.RequireVarPositional = true } }
 func CooldownAfterParsing() Option { return func(c *Command) { c.CooldownAfterParsing = true } }
 func InvokeWithoutCommand() Option { return func(c *Command) { c.InvokeWithoutCommand = true } }
-func CaseInsensitive() Option      { return func(c *Command) { c.fold = true } }
+func CaseInsensitive() Option      { return func(c *Command) { c.setFold(true) } }
 func Checks(checks ...Check) Option {
 	return func(c *Command) { c.Checks = append(c.Checks, checks...) }
 }
