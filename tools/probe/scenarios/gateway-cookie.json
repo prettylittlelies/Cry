@@ -1,0 +1,6 @@
+{
+  "page": "https://discord.com/robots.txt",
+  "hosts": ["gateway.discord.gg"],
+  "cookies": [{ "url": "https://gateway.discord.gg", "domain": ".discord.gg", "name": "__cf_bm", "value": "probe", "secure": true, "httpOnly": true, "sameSite": "no_restriction" }],
+  "script": "async () => { await new Promise((ok) => { const ws = new WebSocket('wss://gateway.discord.gg/?encoding=etf&v=9&compress=zstd-stream'); ws.binaryType = 'arraybuffer'; ws.onclose = ws.onerror = () => ok(); setTimeout(ok, 3000); }); }"
+}
